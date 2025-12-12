@@ -1,0 +1,9 @@
+name = "ban-dong-hanh-worker"
+main = "workers/ai-proxy.js"
+compatibility_date = "2024-12-01"
+workers_dev = true
+preview_urls = true
+
+[vars]
+# CORS origin allow-list (comma separated). In dev keep localhost; add FE domain on prod.
+ALLOW_ORIGIN = "http://localhost:5173"

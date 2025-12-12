@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #FFB6C1;   /* Pastel Pink */
+  --color-secondary: #E6E6FA; /* Lavender */
+  --color-accent: #B0E0E6;    /* Powder Blue */
+  --color-danger: #FFB4B4;    /* Soft Red (SOS) */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
+  --font-heading: 'Nunito', var(--font-sans);
+}
+
+:root,
+[data-theme="light"] {
+  /* Brand palette v2: Teal brand (AA), Pink accent for background chips/badges */
+  --brand: #0d9488;            /* teal-600 */
+  --brand-foreground: #ffffff; /* text on brand */
+  --accent: #ffb6c1;           /* soft pink */
+
+  --bg: #ffffff;
+  --text: #0f172a;             /* slate-900 */
+  --surface: #ffffff;
+  --surface-border: #e5e7eb;   /* gray-200 */
+  --muted: #6b7280;            /* gray-500 */
+  --ring: #22c1b7;             /* teal-400 for focus ring */
+  --fs-scale: 1;               /* font size scale */
+}
+
+[data-theme="dark"] {
+  --brand: #14b8a6;            /* teal-500 (brighter on dark) */
+  --brand-foreground: #001512; /* deep teal-very-dark for hover states if needed */
+  --accent: #ffb6c1;
+
+  --bg: #0b1020;               /* deep slate/navy */
+  --text: #e5e7eb;             /* gray-200 */
+  --surface: #0f172a;          /* slate-900 */
+  --surface-border: #334155;   /* slate-700 */
+  --muted: #94a3b8;            /* slate-400 */
+  --ring: #2dd4bf;             /* teal-400 */
+  --fs-scale: 1;
+}
+
+/* Base */
+html, body, #root { height: 100%; }
+html { font-size: 16px; }
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.65;
+  font-size: calc(16px * var(--fs-scale, 1));
+}
+
+/* Typography scale */
+h1, h2, h3 { font-family: var(--font-heading, var(--font-sans)); }
+h1 { @apply text-3xl md:text-4xl font-semibold tracking-[-0.01em]; }
+h2 { @apply text-2xl md:text-3xl font-semibold; }
+h3 { @apply text-xl md:text-2xl font-medium; }
+p  { @apply leading-relaxed; }
+
+/* Interactive */
+a { color: var(--brand); }
+button { outline: none; }
+button:focus-visible, a:focus-visible { box-shadow: 0 0 0 2px var(--ring); border-radius: 8px; }
+
+/* Utility for brand backgrounds */
+.bg-brand { background-color: var(--brand); }
+.text-brand { color: var(--brand); }
+.text-brand-foreground { color: var(--brand-foreground); }
+.border-surface { border-color: var(--surface-border); }
+.bg-surface { background-color: var(--surface); }
