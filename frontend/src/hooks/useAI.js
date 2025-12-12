@@ -1,8 +1,8 @@
 // src/hooks/useAI.js
 // Chú thích: Chat store + AI hook: hỗ trợ đa hội thoại (threads), timestamps,
-// lưu/persist localStorage, tiền kiểm SOS, streaming SSE, TTS gọi ở UI.
+// lưu/persist localStorage, tiền kiểm SOS multi-level, streaming SSE, TTS gọi ở UI.
 import { useEffect, useMemo, useState } from 'react';
-import { detectSOSLocal, sosMessage } from '../utils/sosDetector';
+import { detectSOSLevel, sosMessage, getSuggestedAction } from '../utils/sosDetector';
 
 const THREADS_KEY = 'chat_threads_v1';
 
@@ -28,7 +28,7 @@ function loadThreads() {
 function saveThreads(threads) {
   try {
     localStorage.setItem(THREADS_KEY, JSON.stringify(threads));
-  } catch (_) {}
+  } catch (_) { }
 }
 
 export function useAI() {
@@ -61,7 +61,7 @@ export function useAI() {
         localStorage.removeItem('chat_messages_v1');
         return;
       }
-    } catch (_) {}
+    } catch (_) { }
     // no data → tạo thread mới
     const t = makeThread();
     setThreads([t]);
@@ -166,10 +166,16 @@ export function useAI() {
     if (!trimmed) return;
     if (!currentThread) return;
 
-    // SOS pre-check
-    if (detectSOSLocal(trimmed) === 'high') {
-      setSos(sosMessage());
-      return;
+    // SOS multi-level pre-check
+    const sosLevel = detectSOSLevel(trimmed);
+    const sosAction = getSuggestedAction(sosLevel);
+
+    if (sosAction.showOverlay) {
+      setSos({ level: sosLevel, message: sosMessage(sosLevel) });
+      // Nếu level critical, block hoàn toàn
+      if (sosAction.blockNormalResponse) {
+        return;
+      }
     }
 
     // Push user message
@@ -204,7 +210,7 @@ export function useAI() {
       await stream.read(({ event, data }) => {
         if (event === 'error') {
           let msg = 'Lỗi không xác định';
-          try { const j = JSON.parse(data); msg = j?.note || msg; } catch (_) {}
+          try { const j = JSON.parse(data); msg = j?.note || msg; } catch (_) { }
           const bot = { role: 'assistant', content: `Lỗi: ${msg}`, ts: nowISO() };
           setThreads((prev) => prev.map((t) => (t.id === currentId ? { ...t, messages: [...t.messages, bot], updatedAt: nowISO() } : t)));
           return;

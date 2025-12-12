@@ -1,32 +1,44 @@
 // src/components/games/BeeGame.jsx
-// Chú thích: Minigame ong bay đơn giản (Flappy-like) dùng Canvas API
-// - Space/Click/Touch để vỗ cánh (jump)
-// - Vật cản dạng cột với khe hở; tính điểm khi vượt qua
-// - Có thể restart khi thua
+// Chú thích: BeeGame v3.0 - Enhanced game UI với modern frame, intro screen, better UX
 import { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Card from '../ui/Card';
+import Button from '../ui/Button';
+import Badge from '../ui/Badge';
+import GlowOrbs from '../ui/GlowOrbs';
+import { Play, RotateCcw, Trophy, Gamepad2, Star, Info } from 'lucide-react';
 
 const WIDTH = 800;
 const HEIGHT = 500;
-const BEE_X = 120; // vị trí ngang cố định của ong
+const BEE_X = 120;
 const GRAVITY = 0.45;
 const FLAP_VELOCITY = -7.5;
 const PIPE_SPEED = 2.6;
-const PIPE_GAP = 140; // chiều cao khe
+const PIPE_GAP = 140;
 const PIPE_SPAWN_MS = 1600;
 
 export default function BeeGame() {
   const canvasRef = useRef(null);
   const rafRef = useRef(0);
-  const obstaclesRef = useRef([]); // mảng cột
+  const obstaclesRef = useRef([]);
   const lastSpawnRef = useRef(0);
   const velocityRef = useRef(0);
   const beeYRef = useRef(HEIGHT / 2);
   const scoreRef = useRef(0);
 
   const [score, setScore] = useState(0);
-  const [running, setRunning] = useState(true);
+  const [highScore, setHighScore] = useState(0);
+  const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+  const [showIntro, setShowIntro] = useState(true);
+
+  // Load high score
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('bee_high_score');
+      if (saved) setHighScore(parseInt(saved, 10));
+    } catch (_) { }
+  }, []);
 
   const reset = () => {
     obstaclesRef.current = [];
@@ -36,56 +48,92 @@ export default function BeeGame() {
     scoreRef.current = 0;
     setScore(0);
     setGameOver(false);
+    setShowIntro(false);
     setRunning(true);
   };
 
-  // Vẽ ong đơn giản (hình tròn vàng + viền)
+  const startGame = () => {
+    setShowIntro(false);
+    reset();
+  };
+
+  // Draw bee
   const drawBee = (ctx, x, y) => {
     ctx.save();
-    ctx.fillStyle = '#FFD54F';
+    // Body
+    ctx.fillStyle = '#FCD34D';
     ctx.beginPath();
-    ctx.arc(x, y, 16, 0, Math.PI * 2);
+    ctx.arc(x, y, 18, 0, Math.PI * 2);
     ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = '#333';
-    ctx.stroke();
-    // mắt
-    ctx.fillStyle = '#333';
+
+    // Stripes
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(x - 8, y - 4, 16, 3);
+    ctx.fillRect(x - 8, y + 2, 16, 3);
+
+    // Eye
+    ctx.fillStyle = '#0f172a';
     ctx.beginPath();
-    ctx.arc(x + 6, y - 4, 2, 0, Math.PI * 2);
+    ctx.arc(x + 8, y - 4, 4, 0, Math.PI * 2);
     ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(x + 9, y - 5, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Wings
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.beginPath();
+    ctx.ellipse(x - 5, y - 18, 8, 12, -0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(x + 5, y - 18, 8, 12, 0.3, 0, Math.PI * 2);
+    ctx.fill();
+
     ctx.restore();
   };
 
   const spawnPipe = () => {
-    // Tạo cặp cột với khe ngẫu nhiên theo chiều dọc
-    const margin = 40;
+    const margin = 60;
     const maxTop = HEIGHT - margin - PIPE_GAP - margin;
-    const gapTop = margin + Math.random() * maxTop; // y của đầu khe
+    const gapTop = margin + Math.random() * maxTop;
     obstaclesRef.current.push({ x: WIDTH + 40, gapTop, passed: false });
   };
 
   const drawPipes = (ctx) => {
-    ctx.fillStyle = '#9CA3AF'; // gray-400
     for (const ob of obstaclesRef.current) {
-      // cột trên
-      ctx.fillRect(ob.x, 0, 60, ob.gapTop);
-      // cột dưới
+      // Gradient for pipes
+      const gradient = ctx.createLinearGradient(ob.x, 0, ob.x + 60, 0);
+      gradient.addColorStop(0, '#0d9488');
+      gradient.addColorStop(1, '#14b8a6');
+      ctx.fillStyle = gradient;
+
+      // Top pipe
+      ctx.beginPath();
+      ctx.roundRect(ob.x, 0, 60, ob.gapTop, [0, 0, 10, 10]);
+      ctx.fill();
+
+      // Bottom pipe
       const bottomTop = ob.gapTop + PIPE_GAP;
-      ctx.fillRect(ob.x, bottomTop, 60, HEIGHT - bottomTop);
+      ctx.beginPath();
+      ctx.roundRect(ob.x, bottomTop, 60, HEIGHT - bottomTop, [10, 10, 0, 0]);
+      ctx.fill();
+
+      // Pipe caps
+      ctx.fillStyle = '#0f766e';
+      ctx.fillRect(ob.x - 5, ob.gapTop - 20, 70, 20);
+      ctx.fillRect(ob.x - 5, bottomTop, 70, 20);
     }
   };
 
   const checkCollision = () => {
     const y = beeYRef.current;
-    // chạm trần/sàn
     if (y < 0 || y > HEIGHT) return true;
-    // chạm cột
     for (const ob of obstaclesRef.current) {
-      const withinX = BEE_X + 16 > ob.x && BEE_X - 16 < ob.x + 60;
+      const withinX = BEE_X + 18 > ob.x && BEE_X - 18 < ob.x + 60;
       if (withinX) {
         const gapBottom = ob.gapTop + PIPE_GAP;
-        const inGap = y - 16 > ob.gapTop && y + 16 < gapBottom;
+        const inGap = y - 18 > ob.gapTop && y + 18 < gapBottom;
         if (!inGap) return true;
       }
     }
@@ -97,8 +145,25 @@ export default function BeeGame() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
-    // Clear
-    ctx.clearRect(0, 0, WIDTH, HEIGHT);
+    // Clear with gradient background
+    const bg = ctx.createLinearGradient(0, 0, 0, HEIGHT);
+    bg.addColorStop(0, '#e0f2fe');
+    bg.addColorStop(1, '#f0fdf4');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+    // Clouds
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.beginPath();
+    ctx.arc(150, 80, 30, 0, Math.PI * 2);
+    ctx.arc(180, 70, 40, 0, Math.PI * 2);
+    ctx.arc(220, 80, 30, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(550, 120, 25, 0, Math.PI * 2);
+    ctx.arc(580, 110, 35, 0, Math.PI * 2);
+    ctx.arc(615, 120, 25, 0, Math.PI * 2);
+    ctx.fill();
 
     // Spawn pipe
     if (!lastSpawnRef.current) lastSpawnRef.current = t;
@@ -107,11 +172,11 @@ export default function BeeGame() {
       lastSpawnRef.current = t;
     }
 
-    // Update physics ong
+    // Update physics
     velocityRef.current += GRAVITY;
     beeYRef.current += velocityRef.current;
 
-    // Move pipes và tính điểm
+    // Move pipes
     for (const ob of obstaclesRef.current) {
       ob.x -= PIPE_SPEED;
       if (!ob.passed && ob.x + 60 < BEE_X) {
@@ -120,12 +185,7 @@ export default function BeeGame() {
         setScore(scoreRef.current);
       }
     }
-    // Remove pipes off-screen
     obstaclesRef.current = obstaclesRef.current.filter((ob) => ob.x > -80);
-
-    // Draw background nhạt (theo theme surface)
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--surface') || '#E6E6FA';
-    ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
     // Draw pipes
     drawPipes(ctx);
@@ -133,51 +193,55 @@ export default function BeeGame() {
     // Draw bee
     drawBee(ctx, BEE_X, beeYRef.current);
 
-    // HUD điểm
-    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text') || '#111827';
-    ctx.font = 'bold 20px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto';
-    ctx.fillText(`Điểm: ${scoreRef.current}`, 16, 28);
-
-    // Kiểm tra va chạm
+    // Check collision
     if (checkCollision()) {
+      // Save high score
+      if (scoreRef.current > highScore) {
+        setHighScore(scoreRef.current);
+        try {
+          localStorage.setItem('bee_high_score', String(scoreRef.current));
+        } catch (_) { }
+      }
       setGameOver(true);
       setRunning(false);
+      return;
     }
 
     if (running) {
       rafRef.current = requestAnimationFrame(loop);
-    } else {
-      // Overlay Game Over
-      ctx.fillStyle = 'rgba(0,0,0,0.4)';
-      ctx.fillRect(0, 0, WIDTH, HEIGHT);
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 28px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto';
-      ctx.fillText('Game Over', WIDTH / 2 - 80, HEIGHT / 2 - 10);
-      ctx.font = '16px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto';
-      ctx.fillText('Nhấn R để chơi lại', WIDTH / 2 - 80, HEIGHT / 2 + 16);
     }
   };
 
   useEffect(() => {
-    if (!running) return; // pause khi thua
+    if (!running) return;
     rafRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running]);
 
   useEffect(() => {
     const onKey = (e) => {
       if (e.code === 'Space') {
         e.preventDefault();
-        if (gameOver) return;
-        velocityRef.current = FLAP_VELOCITY; // flap
-      } else if (e.code === 'KeyR') {
+        if (showIntro) {
+          startGame();
+        } else if (gameOver) {
+          reset();
+        } else if (running) {
+          velocityRef.current = FLAP_VELOCITY;
+        }
+      } else if (e.code === 'KeyR' && gameOver) {
         reset();
       }
     };
+
     const onPointer = () => {
-      if (gameOver) return;
-      velocityRef.current = FLAP_VELOCITY;
+      if (showIntro) {
+        startGame();
+      } else if (gameOver) {
+        reset();
+      } else if (running) {
+        velocityRef.current = FLAP_VELOCITY;
+      }
     };
 
     const canvas = canvasRef.current;
@@ -188,19 +252,145 @@ export default function BeeGame() {
       window.removeEventListener('keydown', onKey);
       canvas?.removeEventListener('pointerdown', onPointer);
     };
-  }, [gameOver]);
+  }, [gameOver, running, showIntro]);
 
   return (
-    <Card className="p-4">
-      <div className="text-gray-600 mb-3 text-sm">Nhấn Space hoặc chạm để bay. Tránh các cột và ghi điểm!</div>
-      <div className="overflow-auto md:overflow-visible">
-        <canvas
-          ref={canvasRef}
-          width={WIDTH}
-          height={HEIGHT}
-          className="border rounded-lg bg-white shadow"
-        />
+    <div className="min-h-[70vh] relative">
+      <GlowOrbs className="opacity-30" />
+
+      <div className="relative z-10 max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <motion.div
+          className="flex items-center justify-between"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
+              <Gamepad2 className="w-8 h-8 text-[--brand]" />
+              <span className="gradient-text">Ong Bay</span>
+            </h1>
+            <p className="text-[--muted] text-sm mt-1">Thư giãn với mini game vui nhộn</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Badge variant="accent" icon={<Star size={14} />}>
+              Best: {highScore}
+            </Badge>
+            <Badge variant="primary" icon={<Trophy size={14} />}>
+              Score: {score}
+            </Badge>
+          </div>
+        </motion.div>
+
+        {/* Game Container */}
+        <Card variant="elevated" className="relative overflow-hidden p-0">
+          <div className="relative">
+            <canvas
+              ref={canvasRef}
+              width={WIDTH}
+              height={HEIGHT}
+              className="w-full h-auto block rounded-2xl"
+            />
+
+            {/* Intro Overlay */}
+            <AnimatePresence>
+              {showIntro && (
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-b from-[--bg]/90 to-[--surface]/90 backdrop-blur-sm flex flex-col items-center justify-center rounded-2xl"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', delay: 0.2 }}
+                    className="text-7xl mb-6"
+                  >
+                    🐝
+                  </motion.div>
+                  <h2 className="text-3xl font-bold gradient-text mb-2">Ong Bay</h2>
+                  <p className="text-[--text-secondary] mb-8 max-w-sm text-center">
+                    Giúp chú ong bay qua các chướng ngại vật.
+                    Nhấn Space hoặc chạm để bay!
+                  </p>
+                  <Button size="xl" onClick={startGame} icon={<Play size={22} />}>
+                    Bắt đầu chơi
+                  </Button>
+
+                  <div className="mt-8 flex items-center gap-6 text-sm text-[--muted]">
+                    <div className="flex items-center gap-2">
+                      <kbd className="px-2 py-1 rounded bg-[--surface-border] text-xs">Space</kbd>
+                      <span>để bay</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <kbd className="px-2 py-1 rounded bg-[--surface-border] text-xs">R</kbd>
+                      <span>chơi lại</span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Game Over Overlay */}
+            <AnimatePresence>
+              {gameOver && (
+                <motion.div
+                  className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center rounded-2xl"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <motion.div
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: 'spring' }}
+                  >
+                    <Card variant="elevated" className="text-center p-8">
+                      <div className="text-5xl mb-4">💥</div>
+                      <h2 className="text-2xl font-bold text-[--text] mb-2">Game Over!</h2>
+
+                      <div className="flex items-center justify-center gap-6 my-6">
+                        <div>
+                          <div className="text-3xl font-bold gradient-text">{score}</div>
+                          <div className="text-xs text-[--muted]">Điểm số</div>
+                        </div>
+                        <div className="w-px h-12 bg-[--surface-border]" />
+                        <div>
+                          <div className="text-3xl font-bold text-[--accent]">{highScore}</div>
+                          <div className="text-xs text-[--muted]">Kỷ lục</div>
+                        </div>
+                      </div>
+
+                      {score >= highScore && score > 0 && (
+                        <Badge variant="accent" className="mb-4">
+                          🎉 Kỷ lục mới!
+                        </Badge>
+                      )}
+
+                      <Button onClick={reset} icon={<RotateCcw size={18} />}>
+                        Chơi lại
+                      </Button>
+                    </Card>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </Card>
+
+        {/* Tips */}
+        <Card size="sm">
+          <div className="flex items-start gap-3">
+            <Info size={18} className="text-[--brand] shrink-0 mt-0.5" />
+            <div className="text-sm text-[--text-secondary]">
+              <strong className="text-[--text]">Mẹo:</strong> Nhấn nhẹ và đều đặn để
+              giữ ong bay ổn định. Đừng để ong bay quá cao hoặc quá thấp!
+            </div>
+          </div>
+        </Card>
       </div>
-    </Card>
+    </div>
   );
 }

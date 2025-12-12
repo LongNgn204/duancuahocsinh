@@ -1,9 +1,8 @@
 // src/App.jsx
-// Chú thích: App layout với AppHeader, Breadcrumbs, Sidebar, Focus Mode, lazy routes và Suspense fallback
+// Chú thích: App layout v3.0 với Landing Page, modern components, lazy routes
 import React, { Suspense, lazy, useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import AppHeader from './components/layout/AppHeader';
-import Breadcrumbs from './components/layout/Breadcrumbs';
 import Sidebar from './components/layout/Sidebar';
 import FocusModeToggle from './components/layout/FocusModeToggle';
 import MobileNav from './components/layout/MobileNav';
@@ -11,26 +10,91 @@ import ThemeToggle from './components/layout/ThemeToggle';
 import PrivacyNotice from './components/modals/PrivacyNotice';
 import OnboardingModal from './components/modals/OnboardingModal';
 import { useFocusMode } from './hooks/useFocusMode';
+import GlowOrbs from './components/ui/GlowOrbs';
+import FloatingChatButton from './components/ui/FloatingChatButton';
 
+// Lazy load pages
+const LandingPage = lazy(() => import('./pages/LandingPage'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Chat = lazy(() => import('./pages/Chat'));
 const BreathingBubble = lazy(() => import('./components/breathing/BreathingBubble'));
 const GratitudeJar = lazy(() => import('./components/gratitude/GratitudeJar'));
 const BeeGame = lazy(() => import('./components/games/BeeGame'));
+const BubblePop = lazy(() => import('./components/games/BubblePop'));
+const ColorMatch = lazy(() => import('./components/games/ColorMatch'));
+const DoodleCanvas = lazy(() => import('./components/games/DoodleCanvas'));
+const Games = lazy(() => import('./pages/Games'));
 const Settings = lazy(() => import('./pages/Settings'));
+const Focus = lazy(() => import('./pages/Focus'));
+const Journal = lazy(() => import('./pages/Journal'));
+const Sleep = lazy(() => import('./pages/Sleep'));
+const Resources = lazy(() => import('./pages/Resources'));
+const Analytics = lazy(() => import('./pages/Analytics'));
+const Achievements = lazy(() => import('./pages/Achievements'));
 
-function Fallback() {
+// Loading fallback với animation
+function LoadingFallback() {
   return (
-    <div className="py-12 text-[--muted]">Đang tải…</div>
+    <div className="min-h-[60vh] flex flex-col items-center justify-center">
+      <div className="relative">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[--brand] to-[--brand-light] animate-pulse" />
+        <div className="absolute inset-0 rounded-2xl bg-[--brand] animate-ping opacity-20" />
+      </div>
+      <p className="mt-4 text-[--muted] text-sm">Đang tải...</p>
+    </div>
   );
 }
 
-export default function App() {
+// App Layout cho các trang trong app (có header, sidebar)
+function AppLayout({ children }) {
   const { focusMode } = useFocusMode();
+
+  return (
+    <div className="min-h-screen flex flex-col relative">
+      {/* Background orbs - subtle */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-30">
+        <GlowOrbs />
+      </div>
+
+      {/* Header */}
+      {!focusMode && <AppHeader />}
+
+      {/* Body */}
+      <div className={`flex-1 relative z-10 ${focusMode ? 'grid place-items-center' : 'flex'}`}>
+        {!focusMode && <Sidebar />}
+        <main className="flex-1 p-4 pb-24 md:p-6 md:pb-8 lg:p-8" role="main">
+          <div className="max-w-6xl mx-auto">
+            {children}
+          </div>
+        </main>
+      </div>
+
+      {/* Mobile Navigation */}
+      {!focusMode && <MobileNav />}
+
+      {/* Floating Controls */}
+      <ThemeToggle />
+      <FocusModeToggle />
+
+      {/* Floating AI Chat Button */}
+      {!focusMode && <FloatingChatButton />}
+    </div>
+  );
+}
+
+// Router wrapper để check location
+function AppRoutes() {
+  const location = useLocation();
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
 
+  // Check if on landing page
+  const isLandingPage = location.pathname === '/' || location.pathname === '/landing';
+
   useEffect(() => {
+    // Only show modals on app pages, not landing
+    if (isLandingPage) return;
+
     try {
       const consent = localStorage.getItem('privacy_consent_v1');
       const seen = localStorage.getItem('onboarding_seen_v1');
@@ -39,58 +103,69 @@ export default function App() {
       } else if (!seen) {
         setOnboardingOpen(true);
       }
-    } catch (_) {}
-  }, []);
+    } catch (_) { }
+  }, [isLandingPage]);
 
   const acceptPrivacy = () => {
-    try { localStorage.setItem('privacy_consent_v1', '1'); } catch (_) {}
+    try { localStorage.setItem('privacy_consent_v1', '1'); } catch (_) { }
     setPrivacyOpen(false);
     try {
       const seen = localStorage.getItem('onboarding_seen_v1');
       if (!seen) setOnboardingOpen(true);
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const closeOnboarding = () => {
-    try { localStorage.setItem('onboarding_seen_v1', '1'); } catch (_) {}
+    try { localStorage.setItem('onboarding_seen_v1', '1'); } catch (_) { }
     setOnboardingOpen(false);
   };
 
   return (
+    <>
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
+          {/* Landing Page - Standalone without app layout */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/landing" element={<LandingPage />} />
+
+          {/* App Pages - With layout */}
+          <Route path="/app" element={<AppLayout><Dashboard /></AppLayout>} />
+          <Route path="/chat" element={<AppLayout><Chat /></AppLayout>} />
+          <Route path="/breathing" element={<AppLayout><BreathingBubble /></AppLayout>} />
+          <Route path="/gratitude" element={<AppLayout><GratitudeJar /></AppLayout>} />
+          <Route path="/games" element={<AppLayout><Games /></AppLayout>} />
+          <Route path="/games/bee" element={<AppLayout><BeeGame /></AppLayout>} />
+          <Route path="/games/bubble" element={<AppLayout><BubblePop /></AppLayout>} />
+          <Route path="/games/memory" element={<AppLayout><ColorMatch /></AppLayout>} />
+          <Route path="/games/doodle" element={<AppLayout><DoodleCanvas /></AppLayout>} />
+          <Route path="/focus" element={<AppLayout><Focus /></AppLayout>} />
+          <Route path="/journal" element={<AppLayout><Journal /></AppLayout>} />
+          <Route path="/sleep" element={<AppLayout><Sleep /></AppLayout>} />
+          <Route path="/resources" element={<AppLayout><Resources /></AppLayout>} />
+          <Route path="/analytics" element={<AppLayout><Analytics /></AppLayout>} />
+          <Route path="/achievements" element={<AppLayout><Achievements /></AppLayout>} />
+          <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
+
+          {/* Fallback - Redirect unknown paths to landing */}
+          <Route path="*" element={<LandingPage />} />
+        </Routes>
+      </Suspense>
+
+      {/* First-run modals - Only show in app */}
+      {!isLandingPage && (
+        <>
+          <PrivacyNotice open={privacyOpen} onAccept={acceptPrivacy} />
+          <OnboardingModal open={onboardingOpen} onClose={closeOnboarding} />
+        </>
+      )}
+    </>
+  );
+}
+
+export default function App() {
+  return (
     <Router>
-      <div className="min-h-screen flex flex-col">
-        {/* Header */}
-        {!focusMode && <AppHeader />}
-        {!focusMode && <Breadcrumbs />}
-
-        {/* Body */}
-        <div className={`flex-1 ${focusMode ? 'grid place-items-center' : 'flex'}`}>
-          {!focusMode && <Sidebar />}
-          <main className="flex-1 p-6 pb-20 md:p-8 md:pb-8" role="main">
-            <div className="max-w-6xl mx-auto">
-              <Suspense fallback={<Fallback />}>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/breathing" element={<BreathingBubble />} />
-                  <Route path="/chat" element={<Chat />} />
-                  <Route path="/gratitude" element={<GratitudeJar />} />
-                  <Route path="/games" element={<BeeGame />} />
-                  <Route path="/settings" element={<Settings />} />
-                </Routes>
-              </Suspense>
-            </div>
-          </main>
-      </div>
-
-        {!focusMode && <MobileNav />}
-        {/* Theme & Focus toggles */}
-        <ThemeToggle />
-        <FocusModeToggle />
-
-        {/* First-run modals */}
-        <PrivacyNotice open={privacyOpen} onAccept={acceptPrivacy} />
-        <OnboardingModal open={onboardingOpen} onClose={closeOnboarding} />
-      </div>
+      <AppRoutes />
     </Router>
   );
 }
