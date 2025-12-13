@@ -318,9 +318,17 @@ export default function Chat() {
                   ) : null
                 }
               >
-                <ReactMarkdown remarkPlugins={[remarkGfm]} linkTarget="_blank">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    a: ({ href, children }) => (
+                      <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
+                    )
+                  }}
+                >
                   {m.content}
                 </ReactMarkdown>
+
               </Bubble>
             ))}
           </AnimatePresence>

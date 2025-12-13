@@ -129,40 +129,35 @@ export default function VoiceChat() {
     // Check if ready to listen
     const isReady = connectionStatus === 'ready';
 
-
-    if (!hasApiKey) {
-        return (
-            <div className="min-h-[60vh] flex items-center justify-center">
-                <Card className="max-w-md text-center py-10 px-6">
-                    <motion.div
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center mb-6 shadow-xl"
-                    >
-                        <AlertCircle className="w-10 h-10 text-white" />
-                    </motion.div>
-                    <h3 className="font-bold text-xl mb-3 text-[--text]">Cần cấu hình API Key</h3>
-                    <p className="text-[--muted] text-sm mb-6">
-                        Để sử dụng Voice Chat, bạn cần thêm Gemini API Key vào file cấu hình.
-                    </p>
-                    <div className="bg-gray-100 dark:bg-gray-800 rounded-xl p-4 text-left">
-                        <code className="text-xs text-[--text] break-all">
-                            VITE_GEMINI_API_KEY=your_api_key
-                        </code>
-                    </div>
-                    <p className="text-xs text-[--muted] mt-4">
-                        Lấy API key tại <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" className="text-[--brand] underline">Google AI Studio</a>
-                    </p>
-                </Card>
-            </div>
-        );
-    }
-
     return (
         <div className="min-h-[60vh] flex flex-col">
+            {/* Warning nếu chưa cấu hình API Key */}
+            {!hasApiKey && (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-4"
+                >
+                    <Card className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                        <div className="flex items-center gap-3">
+                            <AlertCircle size={20} className="text-amber-600 shrink-0" />
+                            <div className="flex-1">
+                                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                                    Chức năng Voice Chat cần Gemini API Key
+                                </p>
+                                <p className="text-xs text-amber-600 dark:text-amber-400">
+                                    Liên hệ quản trị viên để bật tính năng này.
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+                </motion.div>
+            )}
+
             {/* Error alert */}
             <AnimatePresence>
                 {error && (
+
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
