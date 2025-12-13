@@ -6,7 +6,9 @@
     "type": "module",
     "scripts": {
         "dev": "wrangler dev",
-        "deploy": "wrangler deploy",
+        "deploy": "wrangler deploy && npm run cleanup",
+        "deploy:only": "wrangler deploy",
+        "cleanup": "node scripts/cleanup.js",
         "tail": "wrangler tail",
         "test": "vitest run",
         "test:watch": "vitest"
