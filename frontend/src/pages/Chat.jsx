@@ -231,7 +231,7 @@ export default function Chat() {
   const currentThread = threads.find(t => t.id === currentId);
 
   return (
-    <div className="h-[calc(100vh-12rem)] grid md:grid-cols-[280px_1fr] gap-4" role="main">
+    <div className="h-[calc(100vh-10rem)] md:h-[calc(100vh-12rem)] flex flex-col md:grid md:grid-cols-[280px_1fr] gap-4" role="main">
       {/* A11y live region */}
       <div aria-live="polite" aria-atomic="false" className="sr-only" ref={liveRegionRef} />
 
@@ -373,12 +373,15 @@ export default function Chat() {
         <AnimatePresence>
           {info && (
             <motion.div
-              className="px-4 pb-2"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+              className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50"
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.9 }}
             >
-              <Badge variant="success">{info}</Badge>
+              <div className="px-4 py-2 rounded-xl bg-[--text] text-white shadow-lg backdrop-blur-sm flex items-center gap-2">
+                <Sparkles size={14} />
+                <span className="text-sm font-medium">{info}</span>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
