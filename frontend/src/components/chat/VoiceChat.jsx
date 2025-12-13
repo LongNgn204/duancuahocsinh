@@ -1,16 +1,18 @@
 // src/components/chat/VoiceChat.jsx
-// Chú thích: VoiceChat v2.0 - Giao diện voice chat hiện đại với animations
-// Sử dụng Gemini Live API qua WebSocket cho real-time voice
+// Chú thích: VoiceChat v3.0 - Sử dụng Web Speech API (browser-native)
+// STT: SpeechRecognition (vi-VN)
+// TTS: SpeechSynthesis (vi-VN) với Play/Stop
+// LLM: Workers AI qua backend SSE streaming
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGeminiVoice } from '../../hooks/useGeminiVoice';
+import { useVoiceAgentCF } from '../../hooks/useVoiceAgentCF';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
 import {
-    Mic, MicOff, Phone, PhoneOff, Volume2,
+    Mic, MicOff, Volume2, VolumeX,
     MessageCircle, AlertCircle, Sparkles, Send, X,
-    Waves, Heart
+    Waves, Heart, Loader2
 } from 'lucide-react';
 
 // Animated rings component cho voice visualization
@@ -22,7 +24,8 @@ function VoiceRings({ isActive, color = 'brand' }) {
                     key={i}
                     className={`absolute rounded-full border-2 ${color === 'brand' ? 'border-[--brand]/30' :
                         color === 'success' ? 'border-green-400/30' :
-                            'border-red-400/30'
+                            color === 'thinking' ? 'border-amber-400/30' :
+                                'border-red-400/30'
                         }`}
                     initial={{ width: 128, height: 128, opacity: 0 }}
                     animate={isActive ? {
@@ -67,72 +70,81 @@ function AudioBars({ isActive }) {
 
 export default function VoiceChat() {
     const {
-        isConnected,
-        isListening,
-        isSpeaking,
+        status,           // 'idle' | 'listening' | 'thinking' | 'speaking'
         transcript,
-        aiResponse,
+        response,
         error,
-        connectionStatus,
-        hasApiKey,
-        connect,
-        disconnect,
+        isSupported,
         startListening,
         stopListening,
-        sendText,
-        clearError,
-        clearResponse
-    } = useGeminiVoice();
+        stopSpeaking,
+        stop,
+        speak,
+    } = useVoiceAgentCF();
 
     const [textInput, setTextInput] = useState('');
     const [showTextInput, setShowTextInput] = useState(false);
+    const [displayedResponse, setDisplayedResponse] = useState('');
 
-    // Handle send text
-    const handleSendText = (e) => {
-        e.preventDefault();
-        if (!textInput.trim()) return;
-        sendText(textInput.trim());
-        setTextInput('');
-    };
+    // Sync response to displayed response
+    useEffect(() => {
+        setDisplayedResponse(response);
+    }, [response]);
 
     // Handle toggle listening
     const handleToggleListening = () => {
-        if (isListening) {
+        if (status === 'listening') {
             stopListening();
-        } else {
+        } else if (status === 'idle') {
             startListening();
         }
     };
 
-    // Handle connect/disconnect
-    const handleToggleConnection = () => {
-        if (isConnected) {
-            disconnect();
-        } else {
-            connect();
-        }
+    // Handle stop speaking
+    const handleStopSpeaking = () => {
+        stopSpeaking();
+    };
+
+    // Handle send text manually (nếu muốn gõ thay vì nói)
+    const handleSendText = (e) => {
+        e.preventDefault();
+        if (!textInput.trim()) return;
+        // For text input, we can call the speak function with the response
+        // But for now, redirect to the main chat page for text input
+        // Or implement text-to-LLM call here
+        setTextInput('');
+    };
+
+    // Clear conversation
+    const clearConversation = () => {
+        stop();
+        setDisplayedResponse('');
     };
 
     // Get current state info
     const getStateInfo = () => {
-        if (connectionStatus === 'connecting') return { text: 'Đang kết nối...', color: 'warning' };
-        if (connectionStatus === 'error') return { text: 'Lỗi kết nối', color: 'error' };
-        if (isSpeaking) return { text: 'AI đang trả lời...', color: 'secondary' };
-        if (isListening) return { text: 'Đang lắng nghe bạn...', color: 'brand' };
-        if (connectionStatus === 'ready') return { text: 'Sẵn sàng - Nhấn để nói', color: 'success' };
-        if (isConnected) return { text: 'Đang khởi tạo...', color: 'warning' };
-        return { text: 'Nhấn để kết nối', color: 'muted' };
+        switch (status) {
+            case 'listening':
+                return { text: 'Đang lắng nghe...', color: 'brand', description: 'Hãy nói điều bạn đang nghĩ' };
+            case 'thinking':
+                return { text: 'Đang suy nghĩ...', color: 'thinking', description: 'AI đang xử lý câu hỏi của bạn' };
+            case 'speaking':
+                return { text: 'Đang trả lời...', color: 'success', description: 'AI đang phản hồi bạn' };
+            default:
+                return { text: 'Nhấn để nói', color: 'muted', description: 'Nhấn nút microphone để bắt đầu' };
+        }
     };
 
     const stateInfo = getStateInfo();
-
-    // Check if ready to listen
-    const isReady = connectionStatus === 'ready';
+    const isActive = status !== 'idle';
+    const isListening = status === 'listening';
+    const isThinking = status === 'thinking';
+    const isSpeaking = status === 'speaking';
 
     return (
         <div className="min-h-[60vh] flex flex-col">
-            {/* Warning nếu chưa cấu hình Backend */}
-            {!hasApiKey && (
+            {/* Warning nếu browser không hỗ trợ */}
+            {!isSupported && (
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -143,10 +155,10 @@ export default function VoiceChat() {
                             <AlertCircle size={20} className="text-amber-600 shrink-0" />
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                                    Chưa kết nối được với Backend AI
+                                    Trình duyệt không hỗ trợ Web Speech API
                                 </p>
                                 <p className="text-xs text-amber-600 dark:text-amber-400">
-                                    Vui lòng kiểm tra kết nối mạng hoặc liên hệ quản trị viên.
+                                    Vui lòng sử dụng Chrome hoặc Edge để dùng tính năng Voice Chat.
                                 </p>
                             </div>
                         </div>
@@ -157,7 +169,6 @@ export default function VoiceChat() {
             {/* Error alert */}
             <AnimatePresence>
                 {error && (
-
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -170,7 +181,7 @@ export default function VoiceChat() {
                                     <AlertCircle size={20} />
                                     <span className="text-sm font-medium">{error}</span>
                                 </div>
-                                <button onClick={clearError} className="text-red-400 hover:text-red-600">
+                                <button onClick={stop} className="text-red-400 hover:text-red-600">
                                     <X size={18} />
                                 </button>
                             </div>
@@ -212,69 +223,64 @@ export default function VoiceChat() {
                     className="mb-8"
                 >
                     <Badge
-                        variant={isConnected ? (isListening ? 'primary' : 'success') : 'default'}
+                        variant={isActive ? 'primary' : 'default'}
                         className="px-4 py-2 text-sm"
                     >
-                        <span className={`inline-block w-2 h-2 rounded-full mr-2 ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-gray-400'
+                        <span className={`inline-block w-2 h-2 rounded-full mr-2 ${isActive ? 'bg-green-400 animate-pulse' : 'bg-gray-400'
                             }`} />
-                        {isConnected ? 'Đã kết nối' : 'Chưa kết nối'}
+                        {isActive ? 'Đang hoạt động' : 'Sẵn sàng'}
                     </Badge>
                 </motion.div>
 
                 {/* Main Voice Button */}
                 <div className="relative mb-8">
                     <VoiceRings
-                        isActive={isListening || isSpeaking}
-                        color={isListening ? 'brand' : isSpeaking ? 'success' : 'brand'}
+                        isActive={isActive}
+                        color={isListening ? 'brand' : isThinking ? 'thinking' : isSpeaking ? 'success' : 'brand'}
                     />
 
                     <motion.button
-                        onClick={isReady ? handleToggleListening : handleToggleConnection}
-                        disabled={isSpeaking || connectionStatus === 'connecting'}
+                        onClick={isSpeaking ? handleStopSpeaking : handleToggleListening}
+                        disabled={!isSupported || isThinking}
                         className={`
-              relative z-10 w-36 h-36 rounded-full 
-              flex flex-col items-center justify-center gap-2
-              shadow-2xl transition-all duration-300
-              disabled:opacity-70 disabled:cursor-not-allowed
-              ${isListening
+                            relative z-10 w-36 h-36 rounded-full 
+                            flex flex-col items-center justify-center gap-2
+                            shadow-2xl transition-all duration-300
+                            disabled:opacity-70 disabled:cursor-not-allowed
+                            ${isListening
                                 ? 'bg-gradient-to-br from-red-500 to-rose-600 scale-110'
-                                : isSpeaking
-                                    ? 'bg-gradient-to-br from-[--brand] to-[--secondary]'
-                                    : connectionStatus === 'connecting'
-                                        ? 'bg-gradient-to-br from-amber-400 to-orange-500 animate-pulse'
-                                        : isReady
-                                            ? 'bg-gradient-to-br from-green-500 to-emerald-600 hover:scale-105'
-                                            : 'bg-gradient-to-br from-gray-500 to-gray-600 hover:scale-105'
+                                : isThinking
+                                    ? 'bg-gradient-to-br from-amber-400 to-orange-500 animate-pulse'
+                                    : isSpeaking
+                                        ? 'bg-gradient-to-br from-[--brand] to-[--secondary]'
+                                        : 'bg-gradient-to-br from-green-500 to-emerald-600 hover:scale-105'
                             }
-            `}
+                        `}
                         whileTap={{ scale: 0.95 }}
                     >
-                        {connectionStatus === 'connecting' ? (
+                        {isThinking ? (
                             <>
-                                <div className="w-8 h-8 border-3 border-white/30 border-t-white rounded-full animate-spin" />
-                                <span className="text-white/80 text-xs font-medium">Đang kết nối...</span>
+                                <Loader2 className="w-10 h-10 text-white animate-spin" />
+                                <span className="text-white/80 text-xs font-medium">Đang xử lý</span>
                             </>
                         ) : isSpeaking ? (
-                            <AudioBars isActive={true} />
+                            <>
+                                <AudioBars isActive={true} />
+                                <span className="text-white/80 text-xs font-medium">Dừng</span>
+                            </>
                         ) : isListening ? (
                             <>
                                 <MicOff className="w-10 h-10 text-white" />
                                 <span className="text-white/80 text-xs font-medium">Dừng</span>
                             </>
-                        ) : isReady ? (
+                        ) : (
                             <>
                                 <Mic className="w-10 h-10 text-white" />
                                 <span className="text-white/80 text-xs font-medium">Nói</span>
                             </>
-                        ) : (
-                            <>
-                                <Phone className="w-10 h-10 text-white" />
-                                <span className="text-white/80 text-xs font-medium">Kết nối</span>
-                            </>
                         )}
                     </motion.button>
                 </div>
-
 
                 {/* State description */}
                 <motion.div
@@ -287,19 +293,12 @@ export default function VoiceChat() {
                         {stateInfo.text}
                     </p>
                     <p className="text-sm text-[--muted]">
-                        {isSpeaking
-                            ? 'AI đang phản hồi bạn'
-                            : isListening
-                                ? 'Hãy nói điều bạn đang nghĩ...'
-                                : isConnected
-                                    ? 'Nhấn nút microphone để bắt đầu nói'
-                                    : 'Kết nối để bắt đầu trò chuyện với AI'
-                        }
+                        {stateInfo.description}
                     </p>
                 </motion.div>
 
-                {/* Disconnect button */}
-                {isConnected && !isListening && !isSpeaking && (
+                {/* Stop button when active */}
+                {isActive && !isListening && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -307,11 +306,11 @@ export default function VoiceChat() {
                         <Button
                             variant="ghost"
                             size="sm"
-                            onClick={disconnect}
-                            icon={<PhoneOff size={16} />}
+                            onClick={stop}
+                            icon={<X size={16} />}
                             className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
                         >
-                            Ngắt kết nối
+                            Dừng tất cả
                         </Button>
                     </motion.div>
                 )}
@@ -319,7 +318,7 @@ export default function VoiceChat() {
 
             {/* Transcript & Response area */}
             <AnimatePresence>
-                {(transcript || aiResponse) && (
+                {(transcript || displayedResponse) && (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -343,21 +342,39 @@ export default function VoiceChat() {
                                     </div>
                                 )}
 
-                                {aiResponse && (
+                                {displayedResponse && (
                                     <div className="flex items-start gap-3">
                                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[--secondary] to-[--accent] flex items-center justify-center shrink-0">
                                             <Sparkles className="w-4 h-4 text-white" />
                                         </div>
                                         <div className="flex-1">
                                             <p className="text-xs text-[--muted] mb-1">Bạn Đồng Hành</p>
-                                            <p className="text-sm text-[--text] whitespace-pre-wrap leading-relaxed">{aiResponse}</p>
+                                            <p className="text-sm text-[--text] whitespace-pre-wrap leading-relaxed">{displayedResponse}</p>
                                         </div>
+                                        {/* TTS control */}
+                                        {isSpeaking ? (
+                                            <button
+                                                onClick={handleStopSpeaking}
+                                                className="p-2 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 hover:bg-red-200"
+                                                title="Dừng đọc"
+                                            >
+                                                <VolumeX size={16} />
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={() => speak(displayedResponse)}
+                                                className="p-2 rounded-full bg-[--brand]/10 text-[--brand] hover:bg-[--brand]/20"
+                                                title="Đọc lại"
+                                            >
+                                                <Volume2 size={16} />
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </div>
 
                             <div className="mt-4 pt-3 border-t border-[--surface-border] flex justify-end">
-                                <Button variant="ghost" size="sm" onClick={clearResponse}>
+                                <Button variant="ghost" size="sm" onClick={clearConversation}>
                                     Xóa hội thoại
                                 </Button>
                             </div>
@@ -374,42 +391,13 @@ export default function VoiceChat() {
                             <MessageCircle size={16} />
                             <span className="text-sm">Muốn gõ thay vì nói?</span>
                         </div>
-                        <button
-                            onClick={() => setShowTextInput(!showTextInput)}
+                        <a
+                            href="/chat"
                             className="text-sm text-[--brand] hover:underline font-medium"
                         >
-                            {showTextInput ? 'Ẩn' : 'Mở chat'}
-                        </button>
+                            Mở chat văn bản
+                        </a>
                     </div>
-
-                    <AnimatePresence>
-                        {showTextInput && (
-                            <motion.form
-                                onSubmit={handleSendText}
-                                className="mt-4 flex gap-2"
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                            >
-                                <input
-                                    type="text"
-                                    value={textInput}
-                                    onChange={(e) => setTextInput(e.target.value)}
-                                    placeholder="Chia sẻ điều bạn đang nghĩ..."
-                                    className="flex-1 px-4 py-3 rounded-xl bg-[--surface] border border-[--surface-border] text-[--text] placeholder:text-[--muted] outline-none focus:ring-2 focus:ring-[--brand]/50 transition-all"
-                                    disabled={!isConnected}
-                                />
-                                <Button
-                                    type="submit"
-                                    disabled={!isConnected || !textInput.trim()}
-                                    icon={<Send size={18} />}
-                                    className="px-5"
-                                >
-                                    Gửi
-                                </Button>
-                            </motion.form>
-                        )}
-                    </AnimatePresence>
                 </Card>
             </div>
 
@@ -418,7 +406,7 @@ export default function VoiceChat() {
                 <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-[--brand]/5 to-[--secondary]/5 border border-[--brand]/10">
                     <Heart className="w-5 h-5 text-[--brand] shrink-0" />
                     <p className="text-sm text-[--text-secondary]">
-                        <span className="font-medium text-[--text]">Mẹo:</span> Nói tự nhiên như đang tâm sự với bạn bè. AI sẽ lắng nghe và đáp lại bằng giọng nói.
+                        <span className="font-medium text-[--text]">Mẹo:</span> Nói tự nhiên như đang tâm sự với bạn bè. AI sẽ lắng nghe và đáp lại.
                     </p>
                 </div>
             </div>

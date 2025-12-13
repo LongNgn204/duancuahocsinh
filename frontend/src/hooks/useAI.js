@@ -154,7 +154,26 @@ export function useAI() {
               if (p.startsWith('event:')) event = p.slice(6).trim();
               if (p.startsWith('data:')) dataRaw = p.slice(5).trim();
             }
-            onChunk({ event, data: dataRaw });
+            // Parse standardized format: {"type":"delta","text":"..."} or {"type":"done"}
+            let parsedData = dataRaw;
+            try {
+              const jsonData = JSON.parse(dataRaw);
+              if (jsonData.type === 'delta' && jsonData.text) {
+                parsedData = jsonData.text;
+              } else if (jsonData.type === 'done') {
+                event = 'done';
+                parsedData = '';
+              } else if (jsonData.type === 'error') {
+                event = 'error';
+                parsedData = JSON.stringify(jsonData);
+              } else if (typeof jsonData === 'string') {
+                parsedData = jsonData;
+              }
+            } catch (_) {
+              // Keep original dataRaw if not valid JSON
+            }
+            onChunk({ event, data: parsedData });
+
           }
         }
       },

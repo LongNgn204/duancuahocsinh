@@ -4,7 +4,13 @@ compatibility_date = "2024-12-01"
 workers_dev = true
 preview_urls = true
 
+# Workers AI binding
+[ai]
+binding = "AI"
+
 [vars]
 # CORS origin allow-list (comma separated). Dùng * để cho phép tất cả subdomain
 # hoặc liệt kê cụ thể. Pattern *.pages.dev sẽ được xử lý trong code.
 ALLOW_ORIGIN = "http://localhost:5173,https://duancuahocsinh.pages.dev,*.duancuahocsinh.pages.dev"
+# Workers AI model
+MODEL = "@cf/openai/gpt-oss-120b"
