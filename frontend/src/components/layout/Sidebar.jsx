@@ -18,19 +18,19 @@ const sections = [
     ],
   },
   {
-    label: 'Wellbeing',
+    label: 'Sức khỏe',
     items: [
       { icon: Heart, label: 'Góc An Yên', path: '/breathing' },
       { icon: Sparkles, label: 'Lọ Biết Ơn', path: '/gratitude' },
-      { icon: Timer, label: 'Focus Timer', path: '/focus' },
+      { icon: Timer, label: 'Hẹn giờ Tập trung', path: '/focus' },
       { icon: BookOpenCheck, label: 'Nhật ký', path: '/journal' },
-      { icon: Moon, label: 'Sleep Helper', path: '/sleep' },
+      { icon: Moon, label: 'Hỗ trợ giấc ngủ', path: '/sleep' },
     ],
   },
   {
     label: 'Thư giãn',
     items: [
-      { icon: Gamepad2, label: 'Mini Games', path: '/games' },
+      { icon: Gamepad2, label: 'Trò chơi', path: '/games' },
       { icon: Trophy, label: 'Thành tích', path: '/achievements' },
     ],
   },

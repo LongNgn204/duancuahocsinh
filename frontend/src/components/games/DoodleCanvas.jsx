@@ -180,7 +180,7 @@ export default function DoodleCanvas() {
                     <div>
                         <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
                             <Paintbrush className="w-8 h-8 text-[--brand]" />
-                            <span className="gradient-text">Doodle Canvas</span>
+                            <span className="gradient-text">Vẽ Tự Do</span>
                         </h1>
                         <p className="text-[--muted] text-sm mt-1">Vẽ tự do để thư giãn</p>
                     </div>

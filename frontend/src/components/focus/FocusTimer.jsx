@@ -198,7 +198,7 @@ export default function FocusTimer() {
                     <div>
                         <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
                             <Target className="w-8 h-8 text-[--brand]" />
-                            <span className="gradient-text">Focus Timer</span>
+                            <span className="gradient-text">Hẹn giờ Tập trung</span>
                         </h1>
                         <p className="text-[--muted] text-sm mt-1">Tập trung hiệu quả với Pomodoro</p>
                     </div>
@@ -361,7 +361,7 @@ export default function FocusTimer() {
                     <Card size="sm" className="text-center">
                         <Flame className="w-6 h-6 mx-auto mb-2 text-[--accent]" />
                         <div className="text-2xl font-bold text-[--accent]">{stats.streak}</div>
-                        <div className="text-xs text-[--muted]">Ngày streak</div>
+                        <div className="text-xs text-[--muted]">Ngày liên tiếp</div>
                     </Card>
                 </motion.div>
 

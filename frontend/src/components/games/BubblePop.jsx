@@ -211,14 +211,14 @@ export default function BubblePop() {
                     <div>
                         <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
                             <Sparkles className="w-8 h-8 text-[--brand]" />
-                            <span className="gradient-text">Bubble Pop</span>
+                            <span className="gradient-text">Bấm Bong Bóng</span>
                         </h1>
                         <p className="text-[--muted] text-sm mt-1">Thư giãn và giải tỏa stress</p>
                     </div>
 
                     <div className="flex items-center gap-2">
                         <Badge variant="accent" icon={<Trophy size={14} />}>
-                            Best: {stats.highScore}
+                            Kỷ lục: {stats.highScore}
                         </Badge>
                         <Button
                             variant="ghost"
@@ -239,12 +239,12 @@ export default function BubblePop() {
                         </div>
                         <div className="text-center">
                             <div className="text-2xl font-bold text-[--secondary]">{streak}</div>
-                            <div className="text-xs text-[--muted]">Streak</div>
+                            <div className="text-xs text-[--muted]">Liên tiếp</div>
                         </div>
                         {combo > 1 && (
                             <Badge variant="warning" className="animate-pulse">
                                 <Zap size={12} className="mr-1" />
-                                x{combo} Combo!
+                                x{combo} Liên hoàn!
                             </Badge>
                         )}
                     </div>
@@ -331,7 +331,7 @@ export default function BubblePop() {
                                 ) : (
                                     <>
                                         <div className="text-6xl mb-4">🫧</div>
-                                        <h2 className="text-2xl font-bold mb-2">Bubble Pop</h2>
+                                        <h2 className="text-2xl font-bold mb-2">Bấm Bong Bóng</h2>
                                         <p className="text-[--muted] text-center max-w-xs mb-6">
                                             Bấm các bong bóng để ghi điểm. Càng nhanh combo càng cao!
                                         </p>
@@ -360,7 +360,7 @@ export default function BubblePop() {
                     <Card size="sm" className="text-center">
                         <Zap className="w-5 h-5 mx-auto mb-1 text-[--secondary]" />
                         <div className="text-lg font-bold">{stats.bestStreak}</div>
-                        <div className="text-xs text-[--muted]">Best streak</div>
+                        <div className="text-xs text-[--muted]">Liên tiếp cao nhất</div>
                     </Card>
                 </div>
             </div>

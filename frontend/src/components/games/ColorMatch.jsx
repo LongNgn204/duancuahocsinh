@@ -163,14 +163,14 @@ export default function ColorMatch() {
                     <div>
                         <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
                             <Brain className="w-8 h-8 text-[--brand]" />
-                            <span className="gradient-text">Color Match</span>
+                            <span className="gradient-text">Ghép Màu</span>
                         </h1>
                         <p className="text-[--muted] text-sm mt-1">Tìm các cặp màu giống nhau</p>
                     </div>
 
                     {stats.bestTime && (
                         <Badge variant="accent" icon={<Trophy size={14} />}>
-                            Best: {formatTime(stats.bestTime)}
+                            Kỷ lục: {formatTime(stats.bestTime)}
                         </Badge>
                     )}
                 </motion.div>
@@ -204,7 +204,7 @@ export default function ColorMatch() {
                             animate={{ opacity: 1 }}
                         >
                             <div className="text-6xl mb-4">🧠</div>
-                            <h2 className="text-xl font-bold mb-2">Color Match</h2>
+                            <h2 className="text-xl font-bold mb-2">Ghép Màu</h2>
                             <p className="text-[--muted] max-w-xs mx-auto mb-6">
                                 Lật thẻ và tìm các cặp màu giống nhau. Hoàn thành nhanh nhất có thể!
                             </p>
@@ -287,19 +287,19 @@ export default function ColorMatch() {
                     <Card size="sm" className="text-center">
                         <Trophy className="w-5 h-5 mx-auto mb-1 text-[--accent]" />
                         <div className="text-lg font-bold">{stats.bestTime ? formatTime(stats.bestTime) : '--'}</div>
-                        <div className="text-xs text-[--muted]">Best time</div>
+                        <div className="text-xs text-[--muted]">Thời gian tốt nhất</div>
                     </Card>
                     <Card size="sm" className="text-center">
                         <Brain className="w-5 h-5 mx-auto mb-1 text-[--brand]" />
                         <div className="text-lg font-bold">{stats.gamesPlayed}</div>
-                        <div className="text-xs text-[--muted]">Games played</div>
+                        <div className="text-xs text-[--muted]">Số ván chơi</div>
                     </Card>
                     <Card size="sm" className="text-center">
                         <Star className="w-5 h-5 mx-auto mb-1 text-[--secondary]" />
                         <div className="text-lg font-bold">
                             {stats.gamesPlayed > 0 ? Math.round(stats.totalMoves / stats.gamesPlayed) : 0}
                         </div>
-                        <div className="text-xs text-[--muted]">Avg moves</div>
+                        <div className="text-xs text-[--muted]">Tb số lượt</div>
                     </Card>
                 </div>
             </div>

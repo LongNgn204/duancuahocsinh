@@ -16,7 +16,7 @@ const ACHIEVEMENTS = [
     {
         id: 'focus_first',
         name: 'Bước đầu',
-        description: 'Hoàn thành phiên focus đầu tiên',
+        description: 'Hoàn thành phiên tập trung đầu tiên',
         icon: Target,
         category: 'focus',
         condition: (stats) => stats.focus?.sessions >= 1,
@@ -25,7 +25,7 @@ const ACHIEVEMENTS = [
     {
         id: 'focus_10',
         name: 'Tập trung cao',
-        description: 'Hoàn thành 10 phiên focus',
+        description: 'Hoàn thành 10 phiên tập trung',
         icon: Target,
         category: 'focus',
         condition: (stats) => stats.focus?.sessions >= 10,
@@ -54,7 +54,7 @@ const ACHIEVEMENTS = [
     {
         id: 'mood_first',
         name: 'Nhật ký đầu tiên',
-        description: 'Viết entry mood đầu tiên',
+        description: 'Viết nhật ký cảm xúc đầu tiên',
         icon: Heart,
         category: 'mood',
         condition: (stats) => stats.mood?.entries >= 1,
@@ -63,7 +63,7 @@ const ACHIEVEMENTS = [
     {
         id: 'mood_10',
         name: 'Thói quen tốt',
-        description: 'Viết 10 mood entries',
+        description: 'Viết 10 nhật ký cảm xúc',
         icon: Heart,
         category: 'mood',
         condition: (stats) => stats.mood?.entries >= 10,
@@ -72,7 +72,7 @@ const ACHIEVEMENTS = [
     {
         id: 'mood_30',
         name: 'Nhà tâm lý',
-        description: 'Viết 30 mood entries',
+        description: 'Viết 30 nhật ký cảm xúc',
         icon: Heart,
         category: 'mood',
         condition: (stats) => stats.mood?.entries >= 30,
@@ -103,7 +103,7 @@ const ACHIEVEMENTS = [
     {
         id: 'bubble_100',
         name: 'Bấm bong bóng',
-        description: 'Đạt 100 điểm Bubble Pop',
+        description: 'Đạt 100 điểm Bấm Bong Bóng',
         icon: Sparkles,
         category: 'games',
         condition: (stats) => stats.games?.bubbleScore >= 100,
@@ -112,7 +112,7 @@ const ACHIEVEMENTS = [
     {
         id: 'memory_fast',
         name: 'Trí nhớ siêu phàm',
-        description: 'Hoàn thành Color Match dưới 60 giây',
+        description: 'Hoàn thành Ghép Màu dưới 60 giây',
         icon: Brain,
         category: 'games',
         condition: (stats) => stats.games?.memoryBest > 0 && stats.games?.memoryBest < 60,
@@ -251,7 +251,7 @@ export default function AchievementSystem() {
                 <Card variant="highlight">
                     <div className="flex items-center justify-between mb-3">
                         <span className="font-medium">Tiến trình</span>
-                        <span className="text-sm text-[--muted]">{unlocked.length}/{ACHIEVEMENTS.length} badges</span>
+                        <span className="text-sm text-[--muted]">{unlocked.length}/{ACHIEVEMENTS.length} huy hiệu</span>
                     </div>
                     <div className="h-3 bg-[--surface-border] rounded-full overflow-hidden">
                         <motion.div

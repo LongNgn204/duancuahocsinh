@@ -179,7 +179,7 @@ export default function AnalyticsDashboard() {
                     <Card variant="highlight">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-[--muted] mb-1">Điểm Wellbeing</p>
+                                <p className="text-sm text-[--muted] mb-1">Điểm Sức khỏe</p>
                                 <div className="flex items-baseline gap-2">
                                     <span className={`text-4xl font-bold ${getScoreColor(wellbeingScore)}`}>
                                         {wellbeingScore}
@@ -229,7 +229,7 @@ export default function AnalyticsDashboard() {
                     <Card size="sm" className="text-center">
                         <Heart className="w-6 h-6 mx-auto mb-2 text-[--secondary]" />
                         <div className="text-2xl font-bold text-[--secondary]">{stats.mood.entries}</div>
-                        <div className="text-xs text-[--muted]">Nhật ký mood</div>
+                        <div className="text-xs text-[--muted]">Nhật ký cảm xúc</div>
                     </Card>
 
                     <Card size="sm" className="text-center">
@@ -291,7 +291,7 @@ export default function AnalyticsDashboard() {
                     <Card>
                         <h3 className="font-semibold flex items-center gap-2 mb-4">
                             <Target size={18} className="text-[--brand]" />
-                            Focus Timer
+                            Hẹn giờ Tập trung
                         </h3>
                         <div className="space-y-3">
                             <div className="flex justify-between">
@@ -303,7 +303,7 @@ export default function AnalyticsDashboard() {
                                 <span className="font-medium">{stats.focus.sessions}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-[--muted]">Streak</span>
+                                <span className="text-[--muted]">Ngày liên tiếp</span>
                                 <span className="font-medium flex items-center gap-1">
                                     {stats.focus.streak} <Flame size={14} className="text-[--accent]" />
                                 </span>
@@ -337,15 +337,15 @@ export default function AnalyticsDashboard() {
                     <Card>
                         <h3 className="font-semibold flex items-center gap-2 mb-4">
                             <Gamepad2 size={18} className="text-[--secondary]" />
-                            Mini Games
+                            Trò chơi
                         </h3>
                         <div className="space-y-3">
                             <div className="flex justify-between">
-                                <span className="text-[--muted]">Bubble Pop best</span>
+                                <span className="text-[--muted]">Bấm Bong Bóng</span>
                                 <span className="font-medium">{stats.games.bubbleScore} điểm</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-[--muted]">Color Match best</span>
+                                <span className="text-[--muted]">Ghép Màu</span>
                                 <span className="font-medium">
                                     {stats.games.memoryBest > 0
                                         ? `${Math.floor(stats.games.memoryBest / 60)}:${String(stats.games.memoryBest % 60).padStart(2, '0')}`
@@ -360,7 +360,7 @@ export default function AnalyticsDashboard() {
                     <Card>
                         <h3 className="font-semibold flex items-center gap-2 mb-4">
                             <MessageCircle size={18} className="text-emerald-500" />
-                            AI Chat
+                            Trò chuyện AI
                         </h3>
                         <div className="space-y-3">
                             <div className="flex justify-between">
@@ -373,7 +373,7 @@ export default function AnalyticsDashboard() {
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-[--muted]">Lọ Biết Ơn</span>
-                                <span className="font-medium">{stats.gratitude.entries} entries</span>
+                                <span className="font-medium">{stats.gratitude.entries} lời</span>
                             </div>
                         </div>
                     </Card>
