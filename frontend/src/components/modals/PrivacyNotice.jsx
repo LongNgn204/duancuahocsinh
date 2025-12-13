@@ -25,9 +25,19 @@ export default function PrivacyNotice({ open, onAccept }) {
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="max-w-md w-full"
           >
-            <Card variant="elevated" size="lg" className="relative overflow-hidden">
+            <Card
+              variant="elevated"
+              size="lg"
+              className="relative overflow-hidden"
+              style={{
+                background: 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(250,245,255,0.98) 100%)',
+                boxShadow: '0 25px 80px -12px rgba(139, 92, 246, 0.35), 0 10px 30px -5px rgba(0,0,0,0.15)',
+                border: '1px solid rgba(139, 92, 246, 0.2)',
+                backdropFilter: 'blur(20px)',
+              }}
+            >
               {/* Header decoration */}
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[--brand] via-[--secondary] to-[--accent]" />
+              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[--brand] via-[--secondary] to-[--accent]" />
 
               {/* Icon */}
               <div className="flex justify-center mb-4">

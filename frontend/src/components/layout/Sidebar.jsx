@@ -1,10 +1,10 @@
 // src/components/layout/Sidebar.jsx
-// Chú thích: Sidebar v4.0 - Full navigation với tất cả features
+// Chú thích: Sidebar v4.1 - Thêm Voice Chat menu
 import { NavLink } from 'react-router-dom';
 import {
   Home, Heart, MessageCircle, Gamepad2, Sparkles,
   BookOpenCheck, Timer, Library, Settings, Moon,
-  ChevronLeft, ChevronRight, BarChart3, Trophy
+  ChevronLeft, ChevronRight, BarChart3, Trophy, Headphones
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -14,9 +14,11 @@ const sections = [
     items: [
       { icon: Home, label: 'Trang chủ', path: '/app' },
       { icon: MessageCircle, label: 'Tâm sự (Chat)', path: '/chat' },
+      { icon: Headphones, label: 'Nói chuyện với AI', path: '/talk', badge: 'Mới' },
       { icon: BarChart3, label: 'Thống kê', path: '/analytics' },
     ],
   },
+
   {
     label: 'Sức khỏe',
     items: [
@@ -88,7 +90,7 @@ export default function Sidebar() {
 
             {/* Section Items */}
             <nav className="space-y-1">
-              {sec.items.map(({ icon: Icon, label, path }) => (
+              {sec.items.map(({ icon: Icon, label, path, badge }) => (
                 <NavLink
                   key={path}
                   to={path}
@@ -121,8 +123,14 @@ export default function Sidebar() {
                           {label}
                         </span>
                       )}
+                      {/* Badge for new items */}
+                      {badge && !collapsed && (
+                        <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-[--accent] text-white font-medium">
+                          {badge}
+                        </span>
+                      )}
                       {/* Active indicator */}
-                      {isActive && !collapsed && (
+                      {isActive && !collapsed && !badge && (
                         <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[--brand] animate-pulse" />
                       )}
                     </>
@@ -130,6 +138,7 @@ export default function Sidebar() {
                 </NavLink>
               ))}
             </nav>
+
           </div>
         ))}
       </div>

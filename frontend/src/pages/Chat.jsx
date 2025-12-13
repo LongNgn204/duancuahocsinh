@@ -1,5 +1,5 @@
 // src/pages/Chat.jsx
-// Chú thích: Chat v3.0 - Modern UI với glassmorphism, animated bubbles, improved UX
+// Chú thích: Chat v3.1 - Modern UI với EmergencyOverlay multi-step calming flow
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAI } from '../hooks/useAI';
@@ -12,11 +12,13 @@ import { useSpeech } from '../hooks/useSpeech';
 import MicVisualizer from '../components/chat/MicVisualizer';
 import { useTTS } from '../hooks/useTTS';
 import ChatList from '../components/chat/ChatList';
+import EmergencyOverlay from '../components/modals/EmergencyOverlay';
 import {
   Send, Mic, MicOff, Image, RotateCcw, Edit3,
   Copy, Volume2, VolumeX, ThumbsUp, ThumbsDown,
   Sparkles, Plus, Trash2, MessageCircle
 } from 'lucide-react';
+
 
 function formatTime(ts) {
   try {
@@ -456,88 +458,13 @@ export default function Chat() {
         </div>
       </Card>
 
-      {/* SOS Overlay - Multi-level */}
-      <AnimatePresence>
-        {sos && (
-          <motion.div
-            className="fixed inset-0 bg-black/70 backdrop-blur-md grid place-items-center z-50 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Cảnh báo SOS"
-          >
-            <motion.div
-              className="max-w-md w-full"
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-            >
-              <Card variant="elevated" size="lg" className="relative overflow-hidden">
-                {/* Top border based on level */}
-                <div className={`absolute top-0 left-0 right-0 h-2 ${sos.level === 'critical'
-                    ? 'bg-gradient-to-r from-red-600 to-red-500 animate-pulse'
-                    : 'bg-gradient-to-r from-orange-500 to-amber-500'
-                  }`} />
-
-                <div className="text-center mb-4">
-                  <motion.div
-                    className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 ${sos.level === 'critical'
-                        ? 'bg-red-500/20'
-                        : 'bg-orange-500/20'
-                      }`}
-                    animate={sos.level === 'critical' ? { scale: [1, 1.1, 1] } : {}}
-                    transition={{ duration: 1, repeat: Infinity }}
-                  >
-                    <span className="text-4xl">
-                      {sos.level === 'critical' ? '🆘' : '⚠️'}
-                    </span>
-                  </motion.div>
-                  <h3 className={`text-xl font-bold ${sos.level === 'critical' ? 'text-red-500' : 'text-orange-500'
-                    }`}>
-                    {sos.level === 'critical' ? 'Cần hỗ trợ ngay' : 'Mình lo lắng cho bạn'}
-                  </h3>
-                </div>
-
-                <p className="text-[--text-secondary] whitespace-pre-wrap text-center leading-relaxed text-sm">
-                  {typeof sos === 'string' ? sos : sos.message}
-                </p>
-
-                <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
-                  <Button onClick={clearSOS} variant="outline" size="md">
-                    {sos.level === 'critical' ? 'Tôi cần thêm thời gian' : 'Tiếp tục trò chuyện'}
-                  </Button>
-                  <Button
-                    as="a"
-                    href="tel:111"
-                    variant={sos.level === 'critical' ? 'danger' : 'primary'}
-                    size="md"
-                    className={sos.level === 'critical' ? 'animate-pulse' : ''}
-                  >
-                    📞 Gọi 111 ngay
-                  </Button>
-                </div>
-
-                {/* Additional hotlines for critical */}
-                {sos.level === 'critical' && (
-                  <div className="mt-4 pt-4 border-t border-[--surface-border] text-center">
-                    <p className="text-xs text-[--muted] mb-2">Đường dây hỗ trợ khác:</p>
-                    <div className="flex flex-wrap justify-center gap-2">
-                      <a href="tel:18005999920" className="text-xs px-3 py-1 rounded-full glass hover:bg-[--brand]/10 text-[--brand]">
-                        1800 599 920 (miễn phí)
-                      </a>
-                      <a href="tel:02473071111" className="text-xs px-3 py-1 rounded-full glass hover:bg-[--brand]/10 text-[--brand]">
-                        024.7307.1111
-                      </a>
-                    </div>
-                  </div>
-                )}
-              </Card>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Emergency Overlay - Multi-step calming flow */}
+      <EmergencyOverlay
+        isOpen={!!sos}
+        level={sos?.level || 'high'}
+        message={typeof sos === 'string' ? sos : sos?.message}
+        onClose={clearSOS}
+      />
     </div>
   );
 }

@@ -31,6 +31,7 @@ const Sleep = lazy(() => import('./pages/Sleep'));
 const Resources = lazy(() => import('./pages/Resources'));
 const Analytics = lazy(() => import('./pages/Analytics'));
 const Achievements = lazy(() => import('./pages/Achievements'));
+const TalkToAI = lazy(() => import('./pages/TalkToAI'));
 
 // Loading fallback với animation
 function LoadingFallback() {
@@ -145,6 +146,7 @@ function AppRoutes() {
           <Route path="/analytics" element={<AppLayout><Analytics /></AppLayout>} />
           <Route path="/achievements" element={<AppLayout><Achievements /></AppLayout>} />
           <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
+          <Route path="/talk" element={<AppLayout><TalkToAI /></AppLayout>} />
 
           {/* Fallback - Redirect unknown paths to landing */}
           <Route path="*" element={<LandingPage />} />
