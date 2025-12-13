@@ -1,6 +1,6 @@
 // src/components/journal/MoodJournal.jsx
-// Chú thích: Mood Journal v1.0 - Nhật ký cảm xúc với calendar view, mood tracking
-import { useState, useEffect, useMemo } from 'react';
+// Chú thích: Mood Journal v2.0 - Nhật ký cảm xúc với calendar view, mood tracking, backend sync
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
@@ -8,8 +8,10 @@ import Badge from '../ui/Badge';
 import GlowOrbs from '../ui/GlowOrbs';
 import {
     Calendar, BookOpen, Heart, Sparkles, ChevronLeft, ChevronRight,
-    Plus, Edit3, Trash2, Search, Filter, Download, TrendingUp
+    Plus, Edit3, Trash2, Search, Filter, Download, TrendingUp, Cloud, CloudOff
 } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { getJournalList, addJournalEntry, deleteJournalEntry } from '../../utils/api';
 
 // Mood options
 const MOODS = [
@@ -20,6 +22,24 @@ const MOODS = [
     { id: 'stressed', emoji: '😫', label: 'Căng thẳng', color: 'bg-orange-500' },
     { id: 'angry', emoji: '😠', label: 'Tức giận', color: 'bg-red-500' },
 ];
+
+// Map mood IDs between frontend and backend
+const MOOD_MAP = {
+    'great': 'happy',
+    'good': 'calm',
+    'okay': 'neutral',
+    'sad': 'sad',
+    'stressed': 'stressed',
+    'angry': 'stressed', // Map angry to stressed for backend
+};
+
+const MOOD_REVERSE_MAP = {
+    'happy': 'great',
+    'calm': 'good',
+    'neutral': 'okay',
+    'sad': 'sad',
+    'stressed': 'stressed',
+};
 
 // Prompt suggestions
 const PROMPTS = [
@@ -36,7 +56,7 @@ const PROMPTS = [
 // Storage
 const JOURNAL_KEY = 'mood_journal_v1';
 
-function loadEntries() {
+function loadLocalEntries() {
     try {
         const raw = localStorage.getItem(JOURNAL_KEY);
         return raw ? JSON.parse(raw) : [];
@@ -45,7 +65,7 @@ function loadEntries() {
     }
 }
 
-function saveEntries(entries) {
+function saveLocalEntries(entries) {
     try {
         localStorage.setItem(JOURNAL_KEY, JSON.stringify(entries));
     } catch (_) { }
@@ -74,6 +94,7 @@ function getFirstDayOfMonth(year, month) {
 }
 
 export default function MoodJournal() {
+    const { isLoggedIn } = useAuth();
     const [entries, setEntries] = useState([]);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [viewMonth, setViewMonth] = useState(new Date());
@@ -81,16 +102,61 @@ export default function MoodJournal() {
     const [editingEntry, setEditingEntry] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [view, setView] = useState('calendar'); // 'calendar' | 'list'
+    const [syncing, setSyncing] = useState(false);
+    const [syncError, setSyncError] = useState(null);
 
     // Form state
     const [mood, setMood] = useState('');
     const [content, setContent] = useState('');
     const [prompt, setPrompt] = useState('');
 
-    // Load entries
+    // Load entries from localStorage or API
+    const loadEntries = useCallback(async () => {
+        // Always load from localStorage first
+        const localEntries = loadLocalEntries();
+        setEntries(localEntries);
+
+        // If logged in, try to sync with server
+        if (isLoggedIn) {
+            setSyncing(true);
+            setSyncError(null);
+            try {
+                const response = await getJournalList(100, 0);
+                if (response.items && response.items.length > 0) {
+                    // Convert server entries to local format
+                    const serverEntries = response.items.map(item => ({
+                        id: item.id.toString(),
+                        date: item.created_at,
+                        mood: MOOD_REVERSE_MAP[item.mood] || item.mood || 'okay',
+                        content: item.content,
+                        createdAt: item.created_at,
+                        updatedAt: item.created_at,
+                        synced: true,
+                    }));
+
+                    // Merge: prefer server entries, add local entries not on server
+                    const merged = [...serverEntries];
+                    localEntries.forEach(local => {
+                        if (!local.synced && !serverEntries.find(s => isSameDay(s.date, local.date))) {
+                            merged.push(local);
+                        }
+                    });
+
+                    setEntries(merged);
+                    saveLocalEntries(merged);
+                }
+            } catch (err) {
+                console.error('[Journal] Sync error:', err);
+                setSyncError('Không thể đồng bộ');
+            } finally {
+                setSyncing(false);
+            }
+        }
+    }, [isLoggedIn]);
+
     useEffect(() => {
-        setEntries(loadEntries());
-    }, []);
+        loadEntries();
+    }, [loadEntries]);
 
     // Get current month's calendar
     const calendarDays = useMemo(() => {
@@ -150,7 +216,7 @@ export default function MoodJournal() {
     }, [entries, viewMonth]);
 
     // Save entry
-    const saveEntry = () => {
+    const saveEntry = async () => {
         if (!mood) return;
 
         const entry = {
@@ -160,8 +226,10 @@ export default function MoodJournal() {
             content,
             createdAt: editingEntry?.createdAt || new Date().toISOString(),
             updatedAt: new Date().toISOString(),
+            synced: false,
         };
 
+        // Save locally first
         let updated;
         if (editingEntry) {
             updated = entries.map(e => e.id === editingEntry.id ? entry : e);
@@ -172,15 +240,41 @@ export default function MoodJournal() {
         }
 
         setEntries(updated);
-        saveEntries(updated);
+        saveLocalEntries(updated);
         closeEditor();
+
+        // Sync to server if logged in
+        if (isLoggedIn) {
+            try {
+                const backendMood = MOOD_MAP[mood] || mood;
+                await addJournalEntry(content, backendMood, []);
+                // Mark as synced
+                entry.synced = true;
+                const syncedUpdated = updated.map(e => e.id === entry.id ? entry : e);
+                setEntries(syncedUpdated);
+                saveLocalEntries(syncedUpdated);
+            } catch (err) {
+                console.error('[Journal] Save to server error:', err);
+                // Entry is saved locally, will sync later
+            }
+        }
     };
 
     // Delete entry
-    const deleteEntry = (id) => {
+    const deleteEntry = async (id) => {
+        const entryToDelete = entries.find(e => e.id === id);
         const updated = entries.filter(e => e.id !== id);
         setEntries(updated);
-        saveEntries(updated);
+        saveLocalEntries(updated);
+
+        // Delete from server if logged in and entry was synced
+        if (isLoggedIn && entryToDelete?.synced) {
+            try {
+                await deleteJournalEntry(id);
+            } catch (err) {
+                console.error('[Journal] Delete from server error:', err);
+            }
+        }
     };
 
     // Open editor
@@ -237,7 +331,15 @@ export default function MoodJournal() {
                             <BookOpen className="w-8 h-8 text-[--brand]" />
                             <span className="gradient-text">Nhật ký Cảm xúc</span>
                         </h1>
-                        <p className="text-[--muted] text-sm mt-1">Ghi lại cảm xúc mỗi ngày</p>
+                        <div className="flex items-center gap-2 mt-1">
+                            <p className="text-[--muted] text-sm">Ghi lại cảm xúc mỗi ngày</p>
+                            {isLoggedIn && (
+                                <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${syncing ? 'bg-yellow-500/20 text-yellow-400' : syncError ? 'bg-red-500/20 text-red-400' : 'bg-green-500/20 text-green-400'}`}>
+                                    {syncing ? <Cloud size={12} className="animate-pulse" /> : syncError ? <CloudOff size={12} /> : <Cloud size={12} />}
+                                    {syncing ? 'Đang đồng bộ...' : syncError ? 'Offline' : 'Đã đồng bộ'}
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-2">

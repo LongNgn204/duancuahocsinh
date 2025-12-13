@@ -1,10 +1,13 @@
 // src/components/layout/AppHeader.jsx
-// Chú thích: Simplified Header - chỉ logo và notification bell
+// Chú thích: Header với logo, notification, user auth button
 import { Link } from 'react-router-dom';
-import { Bell } from 'lucide-react';
+import { Bell, User, LogOut } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function AppHeader() {
+  const { user, isLoggedIn, openAuthModal, logout } = useAuth();
+
   return (
     <header className="sticky top-0 z-50 glass-strong">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
@@ -24,8 +27,34 @@ export default function AppHeader() {
             </div>
           </Link>
 
-          {/* Right Actions - chỉ notification và theme */}
+          {/* Right Actions */}
           <div className="flex items-center gap-2">
+            {/* User Button */}
+            {isLoggedIn ? (
+              <div className="flex items-center gap-2">
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[--surface-border] rounded-full">
+                  <User size={16} className="text-[--brand]" />
+                  <span className="text-sm font-medium">{user?.username}</span>
+                </div>
+                <button
+                  onClick={logout}
+                  className="p-2 rounded-xl text-[--muted] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  aria-label="Đăng xuất"
+                  title="Đăng xuất"
+                >
+                  <LogOut size={18} />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={openAuthModal}
+                className="flex items-center gap-2 px-3 py-1.5 bg-[--brand]/20 text-[--brand] rounded-full hover:bg-[--brand]/30 transition-colors text-sm font-medium"
+              >
+                <User size={16} />
+                <span className="hidden sm:inline">Đăng nhập</span>
+              </button>
+            )}
+
             {/* Notification Bell */}
             <button
               className="relative p-2 rounded-xl text-[--muted] hover:text-[--text] hover:bg-[--surface-border] transition-colors"

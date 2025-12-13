@@ -13,6 +13,8 @@ import UpdateToast from './components/ui/UpdateToast';
 import { useFocusMode } from './hooks/useFocusMode';
 import GlowOrbs from './components/ui/GlowOrbs';
 import FloatingChatButton from './components/ui/FloatingChatButton';
+import { AuthProvider, useAuth } from './hooks/useAuth';
+import AuthModal from './components/auth/AuthModal';
 
 
 // Lazy load pages
@@ -166,12 +168,27 @@ function AppRoutes() {
   );
 }
 
+// AuthModal wrapper to access context
+function AuthModalWrapper() {
+  const { showAuthModal, closeAuthModal, login } = useAuth();
+  return (
+    <AuthModal
+      isOpen={showAuthModal}
+      onClose={closeAuthModal}
+      onSuccess={login}
+    />
+  );
+}
+
 export default function App() {
   return (
-    <Router>
-      <AppRoutes />
-      <UpdateToast />
-    </Router>
+    <AuthProvider>
+      <Router>
+        <AppRoutes />
+        <UpdateToast />
+        <AuthModalWrapper />
+      </Router>
+    </AuthProvider>
   );
 }
 

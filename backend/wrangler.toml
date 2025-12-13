@@ -1,5 +1,5 @@
 name = "ban-dong-hanh-worker"
-main = "workers/ai-proxy.js"
+main = "workers/router.js"
 compatibility_date = "2024-12-01"
 workers_dev = true
 preview_urls = true
@@ -8,9 +8,19 @@ preview_urls = true
 [ai]
 binding = "AI"
 
+# D1 Database binding
+# Chú thích: Chạy `wrangler d1 create ban-dong-hanh-db` để tạo database
+# Sau đó cập nhật database_id bên dưới
+[[d1_databases]]
+binding = "ban_dong_hanh_db"
+database_name = "ban-dong-hanh-db"
+database_id = "a6a814eb-b5fb-4626-9258-f519060d8c89"
+
 [vars]
-# CORS origin allow-list (comma separated). Dùng * để cho phép tất cả subdomain
-# hoặc liệt kê cụ thể. Pattern *.pages.dev sẽ được xử lý trong code.
+# CORS origin allow-list
 ALLOW_ORIGIN = "http://localhost:5173,https://duancuahocsinh.pages.dev,*.duancuahocsinh.pages.dev"
 # Workers AI model
 MODEL = "@cf/meta/llama-3.1-8b-instruct"
+# Token limit hàng tháng
+MONTHLY_TOKEN_LIMIT = "500000"
+

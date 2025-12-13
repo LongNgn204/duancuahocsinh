@@ -1,5 +1,5 @@
 // src/components/focus/FocusTimer.jsx
-// Chú thích: Focus Timer v1.0 - Pomodoro timer với ambient sounds, stats
+// Chú thích: Focus Timer v2.0 - Pomodoro timer với ambient sounds, stats, backend sync
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Card from '../ui/Card';
@@ -9,8 +9,10 @@ import GlowOrbs from '../ui/GlowOrbs';
 import {
     Play, Pause, RotateCcw, Coffee, BookOpen,
     Volume2, VolumeX, Settings2, Trophy, Target,
-    Clock, Flame, CheckCircle
+    Clock, Flame, CheckCircle, Cloud
 } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { saveFocusSession, getFocusSessions } from '../../utils/api';
 
 // Timer presets
 const PRESETS = {
@@ -55,6 +57,7 @@ function formatTime(seconds) {
 }
 
 export default function FocusTimer() {
+    const { isLoggedIn } = useAuth();
     const [preset, setPreset] = useState('pomodoro');
     const [customWork, setCustomWork] = useState(30);
     const [customBreak, setCustomBreak] = useState(5);
@@ -67,6 +70,7 @@ export default function FocusTimer() {
     const [sound, setSound] = useState('none');
     const [showSettings, setShowSettings] = useState(false);
     const [stats, setStats] = useState(loadStats);
+    const [syncing, setSyncing] = useState(false);
 
     const audioRef = useRef(null);
     const intervalRef = useRef(null);
@@ -107,7 +111,7 @@ export default function FocusTimer() {
     }, [isRunning]);
 
     // Timer complete
-    const onTimerComplete = () => {
+    const onTimerComplete = async () => {
         setIsRunning(false);
 
         // Play notification sound
@@ -130,6 +134,18 @@ export default function FocusTimer() {
             setStats(newStats);
             saveStats(newStats);
             setSessions((s) => s + 1);
+
+            // Sync to backend if logged in
+            if (isLoggedIn) {
+                try {
+                    setSyncing(true);
+                    await saveFocusSession(minutes, 'focus', true);
+                } catch (err) {
+                    console.error('[FocusTimer] Sync error:', err);
+                } finally {
+                    setSyncing(false);
+                }
+            }
 
             // Auto switch to break
             setMode('break');
