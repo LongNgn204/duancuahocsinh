@@ -131,7 +131,7 @@ export default function VoiceChat() {
 
     return (
         <div className="min-h-[60vh] flex flex-col">
-            {/* Warning nếu chưa cấu hình API Key */}
+            {/* Warning nếu chưa cấu hình Backend */}
             {!hasApiKey && (
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
@@ -143,10 +143,10 @@ export default function VoiceChat() {
                             <AlertCircle size={20} className="text-amber-600 shrink-0" />
                             <div className="flex-1">
                                 <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                                    Chức năng Voice Chat cần Gemini API Key
+                                    Chưa kết nối được với Backend AI
                                 </p>
                                 <p className="text-xs text-amber-600 dark:text-amber-400">
-                                    Liên hệ quản trị viên để bật tính năng này.
+                                    Vui lòng kiểm tra kết nối mạng hoặc liên hệ quản trị viên.
                                 </p>
                             </div>
                         </div>

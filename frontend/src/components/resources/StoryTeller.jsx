@@ -311,8 +311,12 @@ export default function StoryTeller() {
 
         setIsGenerating(true);
         try {
-            // Gọi API AI để viết truyện
-            const apiUrl = import.meta.env.VITE_AI_CHAT_URL || '/api/chat';
+            // Gọi API AI qua backend để viết truyện
+            const apiUrl = import.meta.env.VITE_API_URL;
+            if (!apiUrl) {
+                throw new Error('Backend chưa được cấu hình');
+            }
+
             const prompt = `Hãy viết một câu chuyện thú vị dành cho học sinh với chủ đề: "${storyPrompt}". 
       
 Yêu cầu:
@@ -333,7 +337,8 @@ Chỉ trả về nội dung truyện, không cần tiêu đề hay giải thích
             if (!response.ok) throw new Error('Không thể tạo truyện');
 
             const data = await response.json();
-            const storyContent = data.message || data.response || data.content || '';
+            const storyContent = data.text || data.message || data.response || data.content || '';
+
 
             if (storyContent) {
                 setAiStory({
@@ -485,8 +490,8 @@ Và họ sống hạnh phúc mãi mãi.`;
                         <Card
                             variant={selectedStory?.id === story.id ? 'elevated' : 'default'}
                             className={`cursor-pointer group transition-all ${selectedStory?.id === story.id
-                                    ? 'ring-2 ring-[--brand] shadow-lg'
-                                    : 'hover:shadow-md'
+                                ? 'ring-2 ring-[--brand] shadow-lg'
+                                : 'hover:shadow-md'
                                 }`}
                             onClick={() => {
                                 setSelectedStory(story);
