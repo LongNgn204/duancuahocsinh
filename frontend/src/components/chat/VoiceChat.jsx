@@ -21,8 +21,8 @@ function VoiceRings({ isActive, color = 'brand' }) {
                 <motion.div
                     key={i}
                     className={`absolute rounded-full border-2 ${color === 'brand' ? 'border-[--brand]/30' :
-                            color === 'success' ? 'border-green-400/30' :
-                                'border-red-400/30'
+                        color === 'success' ? 'border-green-400/30' :
+                            'border-red-400/30'
                         }`}
                     initial={{ width: 128, height: 128, opacity: 0 }}
                     animate={isActive ? {
@@ -73,6 +73,7 @@ export default function VoiceChat() {
         transcript,
         aiResponse,
         error,
+        connectionStatus,
         hasApiKey,
         connect,
         disconnect,
@@ -114,13 +115,20 @@ export default function VoiceChat() {
 
     // Get current state info
     const getStateInfo = () => {
+        if (connectionStatus === 'connecting') return { text: 'Đang kết nối...', color: 'warning' };
+        if (connectionStatus === 'error') return { text: 'Lỗi kết nối', color: 'error' };
         if (isSpeaking) return { text: 'AI đang trả lời...', color: 'secondary' };
         if (isListening) return { text: 'Đang lắng nghe bạn...', color: 'brand' };
-        if (isConnected) return { text: 'Sẵn sàng - Nhấn để nói', color: 'success' };
+        if (connectionStatus === 'ready') return { text: 'Sẵn sàng - Nhấn để nói', color: 'success' };
+        if (isConnected) return { text: 'Đang khởi tạo...', color: 'warning' };
         return { text: 'Nhấn để kết nối', color: 'muted' };
     };
 
     const stateInfo = getStateInfo();
+
+    // Check if ready to listen
+    const isReady = connectionStatus === 'ready';
+
 
     if (!hasApiKey) {
         return (
@@ -226,8 +234,8 @@ export default function VoiceChat() {
                     />
 
                     <motion.button
-                        onClick={isConnected ? handleToggleListening : handleToggleConnection}
-                        disabled={isSpeaking}
+                        onClick={isReady ? handleToggleListening : handleToggleConnection}
+                        disabled={isSpeaking || connectionStatus === 'connecting'}
                         className={`
               relative z-10 w-36 h-36 rounded-full 
               flex flex-col items-center justify-center gap-2
@@ -237,21 +245,28 @@ export default function VoiceChat() {
                                 ? 'bg-gradient-to-br from-red-500 to-rose-600 scale-110'
                                 : isSpeaking
                                     ? 'bg-gradient-to-br from-[--brand] to-[--secondary]'
-                                    : isConnected
-                                        ? 'bg-gradient-to-br from-green-500 to-emerald-600 hover:scale-105'
-                                        : 'bg-gradient-to-br from-gray-500 to-gray-600 hover:scale-105'
+                                    : connectionStatus === 'connecting'
+                                        ? 'bg-gradient-to-br from-amber-400 to-orange-500 animate-pulse'
+                                        : isReady
+                                            ? 'bg-gradient-to-br from-green-500 to-emerald-600 hover:scale-105'
+                                            : 'bg-gradient-to-br from-gray-500 to-gray-600 hover:scale-105'
                             }
             `}
                         whileTap={{ scale: 0.95 }}
                     >
-                        {isSpeaking ? (
+                        {connectionStatus === 'connecting' ? (
+                            <>
+                                <div className="w-8 h-8 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                                <span className="text-white/80 text-xs font-medium">Đang kết nối...</span>
+                            </>
+                        ) : isSpeaking ? (
                             <AudioBars isActive={true} />
                         ) : isListening ? (
                             <>
                                 <MicOff className="w-10 h-10 text-white" />
                                 <span className="text-white/80 text-xs font-medium">Dừng</span>
                             </>
-                        ) : isConnected ? (
+                        ) : isReady ? (
                             <>
                                 <Mic className="w-10 h-10 text-white" />
                                 <span className="text-white/80 text-xs font-medium">Nói</span>
@@ -264,6 +279,7 @@ export default function VoiceChat() {
                         )}
                     </motion.button>
                 </div>
+
 
                 {/* State description */}
                 <motion.div
