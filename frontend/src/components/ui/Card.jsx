@@ -3,15 +3,16 @@
 import clsx from 'clsx';
 
 const variants = {
-  // Default glass card
+  // Default glass card - solid background
   default: `
-    glass-card
+    bg-surface-elevated
+    border-surface
     hover:shadow-lg hover:shadow-[--glass-shadow]
   `,
-  // Elevated - Stronger presence
+  // Elevated - Stronger presence with solid background
   elevated: `
-    bg-[--surface-elevated]
-    border border-[--surface-border]
+    bg-surface-elevated
+    border-surface
     shadow-lg shadow-[--glass-shadow]
     hover:shadow-xl
   `,

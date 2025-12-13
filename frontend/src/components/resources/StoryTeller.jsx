@@ -312,10 +312,8 @@ export default function StoryTeller() {
         setIsGenerating(true);
         try {
             // Gọi API AI qua backend để viết truyện
-            const apiUrl = import.meta.env.VITE_API_URL;
-            if (!apiUrl) {
-                throw new Error('Backend chưa được cấu hình');
-            }
+            const apiUrl = import.meta.env.VITE_API_URL || 'https://ban-dong-hanh-worker.stu725114073.workers.dev';
+            const chatEndpoint = `${apiUrl}/api/chat`;
 
             const prompt = `Hãy viết một câu chuyện thú vị dành cho học sinh với chủ đề: "${storyPrompt}". 
       
@@ -328,16 +326,17 @@ Yêu cầu:
 
 Chỉ trả về nội dung truyện, không cần tiêu đề hay giải thích thêm.`;
 
-            const response = await fetch(apiUrl, {
+            const response = await fetch(chatEndpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: prompt })
+                body: JSON.stringify({ message: prompt, history: [] })
             });
 
             if (!response.ok) throw new Error('Không thể tạo truyện');
 
             const data = await response.json();
-            const storyContent = data.text || data.message || data.response || data.content || '';
+            // Backend trả về { reply: "...", sos: null }
+            const storyContent = data.reply || data.text || data.message || data.response || data.content || '';
 
 
             if (storyContent) {
