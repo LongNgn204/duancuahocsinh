@@ -6,4 +6,4 @@ preview_urls = true
 
 [vars]
 # CORS origin allow-list (comma separated). In dev keep localhost; add FE domain on prod.
-ALLOW_ORIGIN = "http://localhost:5173"
+ALLOW_ORIGIN = "http://localhost:5173,https://duancuahocsinh.pages.dev"
