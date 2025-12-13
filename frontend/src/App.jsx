@@ -9,9 +9,11 @@ import MobileNav from './components/layout/MobileNav';
 import ThemeToggle from './components/layout/ThemeToggle';
 import PrivacyNotice from './components/modals/PrivacyNotice';
 import OnboardingModal from './components/modals/OnboardingModal';
+import UpdateToast from './components/ui/UpdateToast';
 import { useFocusMode } from './hooks/useFocusMode';
 import GlowOrbs from './components/ui/GlowOrbs';
 import FloatingChatButton from './components/ui/FloatingChatButton';
+
 
 // Lazy load pages
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -168,6 +170,8 @@ export default function App() {
   return (
     <Router>
       <AppRoutes />
+      <UpdateToast />
     </Router>
   );
 }
+

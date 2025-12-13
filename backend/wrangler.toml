@@ -5,5 +5,6 @@ workers_dev = true
 preview_urls = true
 
 [vars]
-# CORS origin allow-list (comma separated). In dev keep localhost; add FE domain on prod.
-ALLOW_ORIGIN = "http://localhost:5173,https://duancuahocsinh.pages.dev"
+# CORS origin allow-list (comma separated). Dùng * để cho phép tất cả subdomain
+# hoặc liệt kê cụ thể. Pattern *.pages.dev sẽ được xử lý trong code.
+ALLOW_ORIGIN = "http://localhost:5173,https://duancuahocsinh.pages.dev,*.duancuahocsinh.pages.dev"

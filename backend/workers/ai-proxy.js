@@ -25,10 +25,39 @@ SUY LUẬN (NỘI BỘ)
 function getAllowedOrigin(request, env) {
   const reqOrigin = request.headers.get('Origin') || '';
   const allow = env.ALLOW_ORIGIN || '*';
-  if (allow === '*' || !reqOrigin) return allow;
+
+  // Nếu ALLOW_ORIGIN là *, cho phép tất cả
+  if (allow === '*' || !reqOrigin) return allow === '*' ? '*' : reqOrigin || '*';
+
   const list = allow.split(',').map((s) => s.trim());
-  return list.includes(reqOrigin) ? reqOrigin : 'null';
+
+  // Check exact match
+  if (list.includes(reqOrigin)) return reqOrigin;
+
+  // Check wildcard patterns (*.domain.com)
+  for (const pattern of list) {
+    if (pattern.startsWith('*.')) {
+      const domain = pattern.slice(2); // Remove *.
+      // Support both https://subdomain.domain.com and https://something.subdomain.domain.com
+      if (reqOrigin.endsWith('.' + domain) || reqOrigin.endsWith('//' + domain)) {
+        return reqOrigin;
+      }
+      // Also check if origin matches https://xxx.domain pattern
+      const originHost = reqOrigin.replace(/^https?:\/\//, '');
+      if (originHost.endsWith('.' + domain) || originHost === domain) {
+        return reqOrigin;
+      }
+    }
+  }
+
+  // Fallback: Cho phép các Cloudflare Pages preview URLs
+  if (reqOrigin.includes('.pages.dev')) {
+    return reqOrigin;
+  }
+
+  return 'null';
 }
+
 
 function corsHeaders(origin = '*') {
   return {
@@ -100,7 +129,7 @@ function formatHistory(history = [], message, images = []) {
   return [{ role: 'user', parts: userParts }];
 }
 
-async function callGemini(apiKey, payload, model = 'gemini-pro') {
+async function callGemini(apiKey, payload, model = 'gemini-2.5-flash-lite') {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   const res = await fetch(url, {
     method: 'POST',
@@ -113,7 +142,7 @@ async function callGemini(apiKey, payload, model = 'gemini-pro') {
   return { text };
 }
 
-async function* callGeminiStream(apiKey, payload, model = 'gemini-pro') {
+async function* callGeminiStream(apiKey, payload, model = 'gemini-2.5-flash-lite') {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent`;
   const res = await fetch(url, {
     method: 'POST',
@@ -144,7 +173,7 @@ async function* callGeminiStream(apiKey, payload, model = 'gemini-pro') {
         const j = JSON.parse(dataRaw);
         const parts = j?.candidates?.[0]?.content?.parts || [];
         for (const p of parts) if (typeof p.text === 'string' && p.text) yield p.text;
-      } catch (_) {}
+      } catch (_) { }
     }
   }
 }
@@ -182,7 +211,7 @@ export default {
       generationConfig: { temperature: 0.6, topP: 0.9 },
     };
 
-    const model = env.MODEL || 'gemini-pro';
+    const model = env.MODEL || 'gemini-2.5-flash-lite';
 
     try {
       const wantsStream = true;
