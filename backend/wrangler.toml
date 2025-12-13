@@ -13,4 +13,4 @@ binding = "AI"
 # hoặc liệt kê cụ thể. Pattern *.pages.dev sẽ được xử lý trong code.
 ALLOW_ORIGIN = "http://localhost:5173,https://duancuahocsinh.pages.dev,*.duancuahocsinh.pages.dev"
 # Workers AI model
-MODEL = "@cf/openai/gpt-oss-120b"
+MODEL = "@cf/meta/llama-3.1-8b-instruct"

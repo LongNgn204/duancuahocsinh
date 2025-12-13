@@ -86,7 +86,7 @@ export function classifyRiskRules(text, history = []) {
 }
 
 /**
- * Lấy response chuẩn cho RED tier
+ * Lấy response chuẩn cho RED tier - thông tin hotline Việt Nam
  * @returns {Object} Response object với hotline info
  */
 export function getRedTierResponse() {
@@ -95,15 +95,16 @@ export function getRedTierResponse() {
         sosLevel: 'red',
         riskLevel: 'red',
         emotion: 'nguy cấp',
-        reply: 'Mình rất lo cho bạn. Hãy liên hệ ngay với người lớn đáng tin cậy hoặc gọi đường dây hỗ trợ.',
+        reply: 'Mình rất lo cho bạn. Hãy liên hệ ngay với người lớn đáng tin cậy hoặc gọi đường dây hỗ trợ bên dưới. Bạn không đơn độc.',
         nextQuestion: '',
         actions: [
-            'Gọi 111 - Đường dây bảo vệ trẻ em (24/7)',
-            'Gọi 1800 599 920 - Hỗ trợ sức khỏe tâm thần (miễn phí)',
-            'Nói với bố mẹ, thầy cô, hoặc người lớn tin cậy'
+            '📞 Đường dây nóng bảo vệ trẻ em: 111 (miễn phí, 24/7)',
+            '📞 Tổng đài tư vấn sức khỏe tâm thần: 1800 599 913 (miễn phí)',
+            '📞 Đường dây hỗ trợ phụ nữ và trẻ em: 1800 1567 (miễn phí)',
+            '💬 Nhắn tin cho bố mẹ, thầy cô, hoặc người lớn bạn tin tưởng ngay bây giờ'
         ],
         confidence: 1,
-        disclaimer: 'Đây là hỗ trợ ban đầu. Vui lòng liên hệ chuyên gia tâm lý để được tư vấn chuyên sâu.'
+        disclaimer: 'Đây là hỗ trợ ban đầu. Các đường dây trên có chuyên gia sẵn sàng lắng nghe bạn 24/7.'
     };
 }
 

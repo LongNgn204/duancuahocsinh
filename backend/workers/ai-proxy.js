@@ -118,7 +118,7 @@ function sseHeaders(origin = '*', traceId) {
  * @returns {Promise<Object>} AI response
  */
 async function callWorkersAI(env, messages, options = {}) {
-  const model = options.model || env.MODEL || '@cf/openai/gpt-oss-120b';
+  const model = options.model || env.MODEL || '@cf/meta/llama-3.1-8b-instruct';
 
   try {
     const result = await env.AI.run(model, {
@@ -142,7 +142,7 @@ async function callWorkersAI(env, messages, options = {}) {
  * @returns {ReadableStream} SSE stream
  */
 async function callWorkersAIStream(env, messages, options = {}) {
-  const model = options.model || env.MODEL || '@cf/openai/gpt-oss-120b';
+  const model = options.model || env.MODEL || '@cf/meta/llama-3.1-8b-instruct';
 
   const result = await env.AI.run(model, {
     messages,
@@ -315,8 +315,39 @@ export default {
         latencyMs: Date.now() - startTime,
         status: 200,
       }));
+
+      // Check if streaming requested - emit SSE format
+      const url = new URL(request.url);
+      const wantsStream = url.searchParams.get('stream') === 'true' ||
+        request.headers.get('Accept')?.includes('text/event-stream');
+
+      if (wantsStream) {
+        // Emit RED tier response as SSE stream
+        const stream = new ReadableStream({
+          start(controller) {
+            const enc = new TextEncoder();
+            const send = (line) => controller.enqueue(enc.encode(line));
+
+            // Meta event
+            send(`event: meta\n`);
+            send(`data: ${JSON.stringify({ trace_id: traceId, riskLevel: 'red', sos: true })}\n\n`);
+
+            // Send the reply text
+            const replyText = redResponse.reply + '\n\n📞 ' + redResponse.actions.join('\n📞 ');
+            send(`data: ${JSON.stringify({ type: 'delta', text: replyText })}\n\n`);
+
+            // Done event
+            send(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+
+            controller.close();
+          },
+        });
+        return new Response(stream, { status: 200, headers: sseHeaders(origin, traceId) });
+      }
+
       return json(redResponse, 200, origin, traceId);
     }
+
 
     // ========================================================================
     // PREPARE MESSAGES FOR LLM
@@ -354,17 +385,39 @@ export default {
             try {
               let fullText = '';
               const reader = aiStream.getReader();
+              let buffer = '';
 
               while (true) {
                 const { value, done } = await reader.read();
                 if (done) break;
 
-                // Workers AI stream returns chunks directly
+                // Workers AI stream returns chunks as SSE-like format
                 const chunk = typeof value === 'string' ? value : new TextDecoder().decode(value);
-                if (chunk) {
-                  fullText += chunk;
-                  // Send delta event với format chuẩn
-                  send(`data: ${JSON.stringify({ type: 'delta', text: chunk })}\n\n`);
+                buffer += chunk;
+
+                // Parse SSE lines from buffer
+                let lineEnd;
+                while ((lineEnd = buffer.indexOf('\n')) !== -1) {
+                  const line = buffer.slice(0, lineEnd).trim();
+                  buffer = buffer.slice(lineEnd + 1);
+
+                  if (line.startsWith('data: ')) {
+                    const dataStr = line.slice(6);
+                    if (dataStr === '[DONE]') {
+                      continue;
+                    }
+                    try {
+                      const parsed = JSON.parse(dataStr);
+                      // Workers AI trả về {"response":"text"} hoặc {"response":null} khi done
+                      if (parsed.response && typeof parsed.response === 'string') {
+                        fullText += parsed.response;
+                        // Send delta event với format chuẩn cho frontend
+                        send(`data: ${JSON.stringify({ type: 'delta', text: parsed.response })}\n\n`);
+                      }
+                    } catch (_) {
+                      // Skip non-JSON lines
+                    }
+                  }
                 }
               }
 
@@ -378,6 +431,7 @@ export default {
                 riskLevel,
                 latencyMs: Date.now() - startTime,
                 status: 200,
+
                 stream: true,
               }));
 

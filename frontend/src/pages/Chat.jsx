@@ -326,10 +326,13 @@ export default function Chat() {
                     )
                   }}
                 >
-                  {m.content}
+                  {typeof m.content === 'string'
+                    ? m.content
+                    : (m.content?.reply || m.content?.text || JSON.stringify(m.content))}
                 </ReactMarkdown>
 
               </Bubble>
+
             ))}
           </AnimatePresence>
 
