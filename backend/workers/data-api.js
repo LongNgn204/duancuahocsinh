@@ -662,6 +662,13 @@ export async function importData(request, env) {
 
     try {
         const { data } = await request.json();
+        console.log('[Import] User', userId, 'importing data:', {
+            gratitude: data?.gratitude?.length || 0,
+            journal: data?.journal?.length || 0,
+            focus: data?.focus_sessions?.length || 0,
+            breathing: data?.breathing_sessions?.length || 0,
+            sleep: data?.sleep_logs?.length || 0,
+        });
 
         if (!data || typeof data !== 'object') {
             return json({ error: 'invalid_data_format' }, 400);
@@ -673,10 +680,20 @@ export async function importData(request, env) {
         if (Array.isArray(data.gratitude)) {
             for (const item of data.gratitude.slice(0, 1000)) {
                 if (item.content) {
-                    await env.ban_dong_hanh_db.prepare(
-                        'INSERT INTO gratitude (user_id, content, created_at) VALUES (?, ?, ?)'
-                    ).bind(userId, item.content, item.created_at || new Date().toISOString()).run();
-                    imported.gratitude++;
+                    const createdAt = item.created_at || new Date().toISOString();
+                    // Kiểm tra duplicate dựa trên content và created_at (trong cùng ngày)
+                    const existing = await env.ban_dong_hanh_db.prepare(
+                        `SELECT id FROM gratitude 
+                         WHERE user_id = ? AND content = ? 
+                         AND date(created_at) = date(?)`
+                    ).bind(userId, item.content, createdAt).first();
+                    
+                    if (!existing) {
+                        await env.ban_dong_hanh_db.prepare(
+                            'INSERT INTO gratitude (user_id, content, created_at) VALUES (?, ?, ?)'
+                        ).bind(userId, item.content, createdAt).run();
+                        imported.gratitude++;
+                    }
                 }
             }
         }
@@ -685,10 +702,21 @@ export async function importData(request, env) {
         if (Array.isArray(data.journal)) {
             for (const item of data.journal.slice(0, 500)) {
                 if (item.content) {
-                    await env.ban_dong_hanh_db.prepare(
-                        'INSERT INTO journal (user_id, content, mood, tags, created_at) VALUES (?, ?, ?, ?, ?)'
-                    ).bind(userId, item.content, item.mood || null, item.tags || null, item.created_at || new Date().toISOString()).run();
-                    imported.journal++;
+                    const createdAt = item.created_at || new Date().toISOString();
+                    // Kiểm tra duplicate dựa trên content và created_at (trong cùng ngày)
+                    const dateOnly = createdAt.split('T')[0];
+                    const existing = await env.ban_dong_hanh_db.prepare(
+                        `SELECT id FROM journal 
+                         WHERE user_id = ? AND content = ? 
+                         AND date(created_at) = date(?)`
+                    ).bind(userId, item.content, createdAt).first();
+                    
+                    if (!existing) {
+                        await env.ban_dong_hanh_db.prepare(
+                            'INSERT INTO journal (user_id, content, mood, tags, created_at) VALUES (?, ?, ?, ?, ?)'
+                        ).bind(userId, item.content, item.mood || null, item.tags || null, createdAt).run();
+                        imported.journal++;
+                    }
                 }
             }
         }
@@ -737,10 +765,11 @@ export async function importData(request, env) {
             }
         }
 
+        console.log('[Import] Successfully imported for user', userId, ':', imported);
         return json({ success: true, imported });
     } catch (error) {
         console.error('[Data] importData error:', error.message);
-        return json({ error: 'server_error' }, 500);
+        return json({ error: 'server_error', message: error.message }, 500);
     }
 }
 

@@ -12,7 +12,7 @@ import {
 import {
     getForumStats, getAdminLogs, getBannedUsers, getForumPosts,
     deleteForumPost, toggleLockPost, banUser, unbanUser,
-    adminLogin, isAdminLoggedIn, adminLogout, getSOSLogs
+    adminLogin, isAdminLoggedIn, adminLogout, getSOSLogs, getAllUsers
 } from '../utils/api';
 
 // =============================================================================
@@ -37,6 +37,7 @@ function AdminSidebar({ activeTab, setActiveTab, collapsed, setCollapsed }) {
 
     const menuItems = [
         { id: 'overview', label: 'Tổng quan', icon: BarChart3 },
+        { id: 'all-users', label: 'Tất cả người dùng', icon: Users },
         { id: 'posts', label: 'Quản lý bài viết', icon: FileText },
         { id: 'users', label: 'Người dùng bị cấm', icon: Ban },
         { id: 'sos', label: 'SOS Logs', icon: AlertTriangle },
@@ -420,6 +421,161 @@ function PostsTab({ onRefresh }) {
 }
 
 // =============================================================================
+// ALL USERS TAB
+// =============================================================================
+
+function AllUsersTab({ users, loading, onRefresh, sortBy, setSortBy }) {
+    const getSupportBadge = (user) => {
+        if (user.needs_support) {
+            return <span className="px-2 py-1 text-xs bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded">Cần hỗ trợ</span>;
+        }
+        if (user.recent_journal_count > 0) {
+            return <span className="px-2 py-1 text-xs bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 rounded">Đang tích cực</span>;
+        }
+        return null;
+    };
+
+    return (
+        <div className="space-y-4">
+            {/* Filters */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sắp xếp theo:</span>
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                            <option value="created_at">Ngày đăng ký</option>
+                            <option value="last_login">Lần đăng nhập cuối</option>
+                            <option value="journal_count">Số nhật ký</option>
+                            <option value="sos_count">Số SOS logs</option>
+                        </select>
+                    </div>
+                    <button
+                        onClick={onRefresh}
+                        disabled={loading}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 text-sm"
+                    >
+                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                        Làm mới
+                    </button>
+                </div>
+            </div>
+
+            {/* Users Table */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                        <Users className="w-5 h-5 text-blue-500" />
+                        Tất cả người dùng ({users.length})
+                    </h3>
+                </div>
+
+                {loading ? (
+                    <div className="p-8 text-center text-gray-500">
+                        <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2" />
+                        <p>Đang tải...</p>
+                    </div>
+                ) : users.length === 0 ? (
+                    <p className="text-gray-500 text-center py-8">Chưa có người dùng nào</p>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead className="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngày đăng ký</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lần đăng nhập cuối</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nhật ký</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">SOS (7 ngày)</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                {users.map(user => (
+                                    <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                        <td className="px-6 py-4 text-sm text-gray-500">#{user.id}</td>
+                                        <td className="px-6 py-4">
+                                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                                {user.username || `User #${user.id}`}
+                                            </p>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-500">
+                                            {formatDate(user.created_at)}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-500">
+                                            {user.last_login ? formatDate(user.last_login) : 'Chưa đăng nhập'}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                                    {user.journal_count || 0}
+                                                </span>
+                                                {user.recent_journal_count > 0 && (
+                                                    <span className="text-xs text-green-600 dark:text-green-400">
+                                                        +{user.recent_journal_count} (7 ngày)
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col">
+                                                <span className={`text-sm font-medium ${user.recent_sos_count > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
+                                                    {user.recent_sos_count || 0}
+                                                </span>
+                                                {user.sos_count > 0 && (
+                                                    <span className="text-xs text-gray-500">
+                                                        Tổng: {user.sos_count}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {getSupportBadge(user)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+
+            {/* Summary Stats */}
+            {users.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Tổng users</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{users.length}</p>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Cần hỗ trợ</p>
+                        <p className="text-2xl font-bold text-red-600">
+                            {users.filter(u => u.needs_support).length}
+                        </p>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Đang tích cực</p>
+                        <p className="text-2xl font-bold text-green-600">
+                            {users.filter(u => u.recent_journal_count > 0).length}
+                        </p>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">SOS (7 ngày)</p>
+                        <p className="text-2xl font-bold text-orange-600">
+                            {users.reduce((sum, u) => sum + (u.recent_sos_count || 0), 0)}
+                        </p>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// =============================================================================
 // BANNED USERS TAB
 // =============================================================================
 
@@ -734,6 +890,9 @@ export default function AdminDashboard() {
     const [bannedUsers, setBannedUsers] = useState([]);
     const [sosLogs, setSosLogs] = useState([]);
     const [sosStats, setSosStats] = useState(null);
+    const [allUsers, setAllUsers] = useState([]);
+    const [usersLoading, setUsersLoading] = useState(false);
+    const [usersSortBy, setUsersSortBy] = useState('created_at');
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -806,6 +965,26 @@ export default function AdminDashboard() {
             setLoading(false);
         }
     };
+
+    const loadAllUsers = async () => {
+        setUsersLoading(true);
+        try {
+            const result = await getAllUsers(100, 0, usersSortBy);
+            setAllUsers(result.items || []);
+        } catch (e) {
+            console.error('Load users error:', e);
+            setAllUsers([]);
+        } finally {
+            setUsersLoading(false);
+        }
+    };
+
+    // Load users when tab changes or sort changes
+    useEffect(() => {
+        if (activeTab === 'all-users') {
+            loadAllUsers();
+        }
+    }, [activeTab, usersSortBy]);
 
     const handleUnban = async (userId) => {
         try {
@@ -906,6 +1085,7 @@ export default function AdminDashboard() {
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                                 {activeTab === 'overview' && 'Tổng quan'}
+                                {activeTab === 'all-users' && 'Tất cả người dùng'}
                                 {activeTab === 'posts' && 'Quản lý bài viết'}
                                 {activeTab === 'users' && 'Người dùng bị cấm'}
                                 {activeTab === 'sos' && 'SOS Logs'}
@@ -937,6 +1117,22 @@ export default function AdminDashboard() {
                                 exit={{ opacity: 0, y: -10 }}
                             >
                                 <OverviewTab stats={stats} logs={logs} sosStats={sosStats} />
+                            </motion.div>
+                        )}
+                        {activeTab === 'all-users' && (
+                            <motion.div
+                                key="all-users"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                            >
+                                <AllUsersTab 
+                                    users={allUsers} 
+                                    loading={usersLoading}
+                                    onRefresh={loadAllUsers}
+                                    sortBy={usersSortBy}
+                                    setSortBy={setUsersSortBy}
+                                />
                             </motion.div>
                         )}
                         {activeTab === 'sos' && (

@@ -11,6 +11,7 @@ import { toDayStr } from '../../utils/gratitude';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Settings, Flame, Wind, Sparkles, Mic, Droplet } from 'lucide-react';
 import RandomWellnessCard from './RandomWellnessCard';
 import EncouragementMessages from './EncouragementMessages';
+import { isLoggedIn, saveBreathingSession, scheduleSync } from '../../utils/api';
 
 const STORAGE_KEY = 'breathing_sessions_v1';
 const VOICE_SETTINGS_KEY = 'breathing_voice_settings';
@@ -327,7 +328,7 @@ export default function BreathingBubble() {
     return clearAll;
   }, [running, patternKey, phase, curPhaseMs, speak, stopTTS, pattern]);
 
-  // Save session on stop
+  // Save session on stop and sync to backend
   const prevRunning = useRef(false);
   useEffect(() => {
     if (prevRunning.current && !running && elapsed > 0) {
@@ -336,9 +337,23 @@ export default function BreathingBubble() {
       setSessions(next);
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch (_) { }
       beep(500, 140);
+
+      // Sync to backend if logged in
+      if (isLoggedIn()) {
+        (async () => {
+          try {
+            await saveBreathingSession(patternKey, elapsed);
+            console.log('[Breathing] Synced session to server:', { pattern: patternKey, duration: elapsed });
+          } catch (err) {
+            console.error('[Breathing] Sync failed:', err);
+            // Schedule retry
+            scheduleSync(5000);
+          }
+        })();
+      }
     }
     prevRunning.current = running;
-  }, [running]);
+  }, [running, elapsed, patternKey, sessions]);
 
   // Format time
   const formatTime = (s) => {

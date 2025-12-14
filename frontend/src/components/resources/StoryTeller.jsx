@@ -613,7 +613,7 @@ Và họ sống hạnh phúc mãi mãi.`;
                                     {story.thumbnail}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-semibold text-[--text] truncate group-hover:text-[--brand] transition-colors">
+                                    <h3 className="font-semibold text-sm text-[--text] truncate group-hover:text-[--brand] transition-colors">
                                         {story.title}
                                     </h3>
                                     <div className="flex items-center gap-2 mt-1">

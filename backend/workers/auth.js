@@ -132,18 +132,59 @@ export async function handleLogin(request, env) {
             }, 404);
         }
 
-        // Update last login
-        await env.ban_dong_hanh_db.prepare(
-            'UPDATE users SET last_login = datetime("now") WHERE id = ?'
-        ).bind(user.id).run();
+        // Update last login - sử dụng datetime('now') trực tiếp trong SQL
+        // D1 database: UPDATE phải chạy trước SELECT
+        try {
+            const updateResult = await env.ban_dong_hanh_db.prepare(
+                "UPDATE users SET last_login = datetime('now') WHERE id = ?"
+            ).bind(user.id).run();
+            
+            console.log('[Auth] UPDATE executed - changes:', updateResult.changes, 'success:', updateResult.success);
+            
+            if (updateResult.changes === 0) {
+                console.warn('[Auth] WARNING: UPDATE affected 0 rows for user', user.id);
+            }
+        } catch (updateError) {
+            console.error('[Auth] UPDATE error:', updateError.message);
+            // Continue anyway - không fail login nếu update lỗi
+        }
 
+        // Get updated user with last_login
+        // Query lại để lấy giá trị mới nhất
+        const updatedUser = await env.ban_dong_hanh_db.prepare(
+            'SELECT id, username, created_at, COALESCE(last_login, NULL) as last_login FROM users WHERE id = ?'
+        ).bind(user.id).first();
+        
+        console.log('[Auth] SELECT result:', {
+            id: updatedUser?.id,
+            username: updatedUser?.username,
+            last_login: updatedUser?.last_login,
+            has_last_login: 'last_login' in (updatedUser || {})
+        });
+
+        // Build response - đảm bảo last_login luôn có
+        const responseUser = {
+            id: updatedUser.id,
+            username: updatedUser.username,
+            created_at: updatedUser.created_at,
+        };
+        
+        // Explicitly add last_login (có thể null hoặc undefined)
+        if ('last_login' in updatedUser) {
+            responseUser.last_login = updatedUser.last_login;
+        } else {
+            // Nếu không có trong result, query riêng
+            const lastLoginCheck = await env.ban_dong_hanh_db.prepare(
+                'SELECT last_login FROM users WHERE id = ?'
+            ).bind(user.id).first();
+            responseUser.last_login = lastLoginCheck?.last_login || null;
+        }
+        
+        console.log('[Auth] Final response user:', responseUser);
+        
         return createJsonResponse({
             success: true,
-            user: {
-                id: user.id,
-                username: user.username,
-                created_at: user.created_at
-            }
+            user: responseUser
         });
 
     } catch (error) {

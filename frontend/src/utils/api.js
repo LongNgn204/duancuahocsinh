@@ -132,10 +132,12 @@ export async function login(username) {
         // Chạy async để không block login flow
         setTimeout(async () => {
             try {
-                const { syncLocalDataToServer } = await import('./api.js');
-                const result = await syncLocalDataToServer();
-                if (result.synced) {
-                    console.log('[Login] Auto-synced local data:', result.imported);
+                // Import trực tiếp để tránh circular import
+                const syncResult = await syncLocalDataToServer();
+                if (syncResult.synced) {
+                    console.log('[Login] Auto-synced local data:', syncResult.imported);
+                } else {
+                    console.log('[Login] No local data to sync:', syncResult.reason);
                 }
             } catch (e) {
                 console.warn('[Login] Auto-sync failed:', e.message);
@@ -454,6 +456,16 @@ export async function getSOSLogs(limit = 100, riskLevel = null) {
     return adminApiRequest(url);
 }
 
+/**
+ * Lấy danh sách tất cả users với thống kê
+ * @param {number} limit - Số lượng tối đa
+ * @param {number} offset - Offset
+ * @param {string} sort - Sắp xếp: 'created_at' | 'last_login' | 'journal_count' | 'sos_count'
+ */
+export async function getAllUsers(limit = 50, offset = 0, sort = 'created_at') {
+    return adminApiRequest(`/api/admin/users?limit=${limit}&offset=${offset}&sort=${sort}`);
+}
+
 export async function banUser(userId, reason = null, durationDays = null) {
     return adminApiRequest('/api/admin/ban-user', {
         method: 'POST',
@@ -547,7 +559,8 @@ export async function syncLocalDataToServer() {
     }
 
     try {
-        console.log('[Sync] Syncing local data to server:', {
+        const user = getCurrentUser();
+        console.log('[Sync] Syncing local data to server for user:', user?.id, {
             gratitude: dataToImport.gratitude.length,
             journal: dataToImport.journal.length,
             focus: dataToImport.focus_sessions.length,
@@ -556,6 +569,7 @@ export async function syncLocalDataToServer() {
         });
 
         const result = await importData(dataToImport);
+        console.log('[Sync] Sync result:', result);
 
         // Xóa dữ liệu local sau khi sync thành công
         for (const key of keysToDelete) {

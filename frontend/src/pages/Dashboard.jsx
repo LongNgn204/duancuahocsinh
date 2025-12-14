@@ -12,7 +12,7 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import GlowOrbs, { GlowOrbsSmall } from '../components/ui/GlowOrbs';
-import { isLoggedIn, getCurrentUser, getUserStats } from '../utils/api';
+import { isLoggedIn, getCurrentUser, getUserStats, getBreathingSessions, getGratitudeList, getJournalList } from '../utils/api';
 
 // Mood options với icons và colors
 const moods = [
@@ -70,6 +70,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ streak: 0, chatCount: 0, xp: 0, level: 1 });
   const [loading, setLoading] = useState(true);
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
+  const [weekProgress, setWeekProgress] = useState(null);
 
   // Fetch real data từ backend khi component mount
   useEffect(() => {
@@ -98,6 +99,46 @@ export default function Dashboard() {
               level: userStats.level || 1
             });
           }
+
+          // Fetch week progress data
+          const now = new Date();
+          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+          // Get breathing sessions
+          const breathingData = await getBreathingSessions(100).catch(() => ({ items: [] }));
+          const breathingThisWeek = (breathingData.items || []).filter(s => {
+            const date = new Date(s.created_at);
+            return date >= weekAgo;
+          });
+          const breathingDays = new Set(
+            breathingThisWeek.map(s => new Date(s.created_at).toDateString())
+          ).size;
+
+          // Get gratitude entries
+          const gratitudeData = await getGratitudeList(100, 0).catch(() => ({ items: [] }));
+          const gratitudeThisWeek = (gratitudeData.items || []).filter(g => {
+            const date = new Date(g.created_at);
+            return date >= weekAgo;
+          });
+          const gratitudeDays = new Set(
+            gratitudeThisWeek.map(g => new Date(g.created_at).toDateString())
+          ).size;
+
+          // Get journal entries
+          const journalData = await getJournalList(100, 0).catch(() => ({ items: [] }));
+          const journalThisWeek = (journalData.items || []).filter(j => {
+            const date = new Date(j.created_at);
+            return date >= weekAgo;
+          });
+          const journalDays = new Set(
+            journalThisWeek.map(j => new Date(j.created_at).toDateString())
+          ).size;
+
+          setWeekProgress({
+            breathing: { days: breathingDays, max: 7 },
+            gratitude: { days: gratitudeDays, max: 7 },
+            journal: { days: journalDays, max: 7 },
+          });
         } catch (e) {
           console.error('Error loading user stats:', e);
         }
@@ -337,24 +378,30 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-3">
-              {[
-                { label: 'Thở có ý thức', value: 5, max: 7, color: 'bg-pink-500' },
-                { label: 'Lọ biết ơn', value: 6, max: 7, color: 'bg-amber-500' },
-                { label: 'Chat với AI', value: 3, max: 7, color: 'bg-teal-500' },
-              ].map((item) => (
-                <div key={item.label}>
-                  <div className="flex items-center justify-between text-sm mb-1">
-                    <span className="text-[--text-secondary]">{item.label}</span>
-                    <span className="text-[--muted]">{item.value}/{item.max} ngày</span>
+              {weekProgress ? (
+                [
+                  { label: 'Thở có ý thức', value: weekProgress.breathing.days, max: weekProgress.breathing.max, color: 'bg-pink-500' },
+                  { label: 'Lọ biết ơn', value: weekProgress.gratitude.days, max: weekProgress.gratitude.max, color: 'bg-amber-500' },
+                  { label: 'Nhật ký cảm xúc', value: weekProgress.journal.days, max: weekProgress.journal.max, color: 'bg-teal-500' },
+                ].map((item) => (
+                  <div key={item.label}>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="text-[--text-secondary]">{item.label}</span>
+                      <span className="text-[--muted]">{item.value}/{item.max} ngày</span>
+                    </div>
+                    <div className="h-2 bg-[--surface-border] rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${item.color} rounded-full transition-all duration-500`}
+                        style={{ width: `${(item.value / item.max) * 100}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 bg-[--surface-border] rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${item.color} rounded-full transition-all duration-500`}
-                      style={{ width: `${(item.value / item.max) * 100}%` }}
-                    />
-                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-[--muted] text-center py-4">
+                  {loading ? 'Đang tải...' : isUserLoggedIn ? 'Chưa có dữ liệu tuần này' : 'Đăng nhập để xem tiến độ'}
                 </div>
-              ))}
+              )}
             </div>
           </Card>
         </motion.section>

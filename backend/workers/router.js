@@ -30,7 +30,7 @@ import {
     getForumPosts, getForumPost, createForumPost,
     addComment, upvotePost, deletePost, deleteComment,
     toggleLockPost, banUser, unbanUser,
-    getAdminLogs, getBannedUsers, getForumStats,
+    getAdminLogs, getBannedUsers, getForumStats, getAllUsers,
     reportContent
 } from './forum-api.js';
 
@@ -175,6 +175,7 @@ function matchRoute(pathname, method) {
     if (pathname === '/api/admin/banned-users' && method === 'GET') return 'admin:banned';
     if (pathname === '/api/admin/forum-stats' && method === 'GET') return 'admin:forum-stats';
     if (pathname === '/api/admin/sos-logs' && method === 'GET') return 'admin:sos-logs';
+    if (pathname === '/api/admin/users' && method === 'GET') return 'admin:users';
 
     return null;
 }
@@ -444,6 +445,7 @@ export default {
                 case 'admin:banned':
                 case 'admin:forum-stats':
                 case 'admin:sos-logs':
+                case 'admin:users':
                     // Verify JWT token for all admin routes
                     const adminAuthHeader = request.headers.get('Authorization');
                     if (!adminAuthHeader || !adminAuthHeader.startsWith('Bearer ')) {
@@ -530,6 +532,10 @@ export default {
 
                             case 'admin:unban':
                                 response = json({ error: 'not_implemented', message: 'Tính năng unban user chưa sẵn sàng (cần database)' }, 501);
+                                break;
+
+                            case 'admin:users':
+                                response = await getAllUsers(request, env);
                                 break;
 
                             default:

@@ -60,29 +60,48 @@ export default function ChatList({ threads, currentId, onNew, onSelect, onRename
             {/* Action buttons on hover */}
             {t.id === currentId && (
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
+                <div
                   onClick={(e) => {
                     e.stopPropagation();
                     const name = window.prompt('Đặt tên hội thoại:', t.title || '');
                     if (name !== null && name.trim()) onRename(t.id, name.trim());
                   }}
-                  className="p-1.5 rounded-lg hover:bg-[--brand]/20 text-[--muted] hover:text-[--brand] transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-[--brand]/20 text-[--muted] hover:text-[--brand] transition-colors cursor-pointer"
                   title="Đổi tên"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation();
+                      const name = window.prompt('Đặt tên hội thoại:', t.title || '');
+                      if (name !== null && name.trim()) onRename(t.id, name.trim());
+                    }
+                  }}
                 >
                   <Edit2 size={14} />
-                </button>
-                <button
+                </div>
+                <div
                   onClick={(e) => {
                     e.stopPropagation();
                     if (confirm('Bạn có chắc muốn xóa hội thoại này?')) {
                       onDelete(t.id);
                     }
                   }}
-                  className="p-1.5 rounded-lg hover:bg-red-500/20 text-[--muted] hover:text-red-500 transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-red-500/20 text-[--muted] hover:text-red-500 transition-colors cursor-pointer"
                   title="Xóa"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation();
+                      if (confirm('Bạn có chắc muốn xóa hội thoại này?')) {
+                        onDelete(t.id);
+                      }
+                    }
+                  }}
                 >
                   <Trash2 size={14} />
-                </button>
+                </div>
               </div>
             )}
           </motion.button>

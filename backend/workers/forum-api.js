@@ -661,6 +661,95 @@ export async function getForumStats(request, env) {
 }
 
 /**
+ * GET /api/admin/users - Lấy danh sách tất cả users với thống kê
+ * Query params: limit, offset, sort (created_at|last_login|journal_count|sos_count)
+ */
+export async function getAllUsers(request, env) {
+    // Verify admin JWT token (không dùng userId từ X-User-Id vì admin có JWT riêng)
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return json({ error: 'not_authenticated', message: 'Cần đăng nhập admin' }, 401);
+    }
+
+    try {
+        const url = new URL(request.url);
+        const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 100);
+        const offset = Math.max(parseInt(url.searchParams.get('offset') || '0'), 0);
+        const sortBy = url.searchParams.get('sort') || 'created_at';
+        
+        // Lấy danh sách users
+        const users = await env.ban_dong_hanh_db.prepare(
+            'SELECT id, username, created_at, last_login FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?'
+        ).bind(limit, offset).all();
+
+        // Lấy thống kê cho mỗi user
+        const usersWithStats = await Promise.all(
+            users.results.map(async (user) => {
+                const [journalCount, sosCount] = await Promise.all([
+                    env.ban_dong_hanh_db.prepare(
+                        'SELECT COUNT(*) as count FROM journal WHERE user_id = ?'
+                    ).bind(user.id).first().catch(() => ({ count: 0 })),
+                    env.ban_dong_hanh_db.prepare(
+                        'SELECT COUNT(*) as count FROM sos_logs WHERE hashed_user_id LIKE ? OR user_id = ?'
+                    ).bind(`%${user.id}%`, user.id).first().catch(() => ({ count: 0 }))
+                ]);
+
+                // Lấy SOS logs gần đây (7 ngày) để đánh dấu ai cần hỗ trợ
+                // SOS logs có thể có hashed_user_id hoặc user_id
+                const recentSOS = await env.ban_dong_hanh_db.prepare(
+                    `SELECT COUNT(*) as count FROM sos_logs 
+                     WHERE (hashed_user_id LIKE ? OR user_id = ?) 
+                     AND created_at >= datetime('now', '-7 days')`
+                ).bind(`%${user.id}%`, user.id).first().catch(() => ({ count: 0 }));
+
+                // Lấy journal entries gần đây (7 ngày) để biết ai đang tích cực
+                const recentJournal = await env.ban_dong_hanh_db.prepare(
+                    `SELECT COUNT(*) as count FROM journal 
+                     WHERE user_id = ? AND created_at >= datetime('now', '-7 days')`
+                ).bind(user.id).first().catch(() => ({ count: 0 }));
+
+                return {
+                    ...user,
+                    journal_count: journalCount.count || 0,
+                    sos_count: sosCount.count || 0,
+                    recent_sos_count: recentSOS.count || 0,
+                    recent_journal_count: recentJournal.count || 0,
+                    needs_support: (recentSOS.count || 0) > 0 // Có SOS trong 7 ngày qua
+                };
+            })
+        );
+
+        // Sắp xếp theo sortBy
+        if (sortBy === 'sos_count') {
+            usersWithStats.sort((a, b) => b.sos_count - a.sos_count);
+        } else if (sortBy === 'journal_count') {
+            usersWithStats.sort((a, b) => b.journal_count - a.journal_count);
+        } else if (sortBy === 'last_login') {
+            usersWithStats.sort((a, b) => {
+                if (!a.last_login) return 1;
+                if (!b.last_login) return -1;
+                return new Date(b.last_login) - new Date(a.last_login);
+            });
+        }
+
+        // Lấy tổng số users
+        const totalCount = await env.ban_dong_hanh_db.prepare(
+            'SELECT COUNT(*) as count FROM users'
+        ).first().catch(() => ({ count: 0 }));
+
+        return json({
+            items: usersWithStats,
+            total: totalCount.count || 0,
+            limit,
+            offset
+        });
+    } catch (error) {
+        console.error('[Admin] getAllUsers error:', error.message);
+        return json({ error: 'server_error', message: error.message }, 500);
+    }
+}
+
+/**
  * POST /api/forum/report - Báo cáo bài viết hoặc bình luận
  * Body: { target_type: 'post'|'comment', target_id: number, reason: string, details?: string }
  */

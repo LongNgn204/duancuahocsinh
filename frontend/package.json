@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:clean": "vite build && node scripts/cleanup-old-assets.js",
+    "cleanup": "node scripts/cleanup-old-assets.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
