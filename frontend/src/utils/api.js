@@ -127,6 +127,20 @@ export async function login(username) {
 
     if (data.success && data.user) {
         setCurrentUser(data.user);
+
+        // Tự động sync dữ liệu local sau khi đăng nhập
+        // Chạy async để không block login flow
+        setTimeout(async () => {
+            try {
+                const { syncLocalDataToServer } = await import('./api.js');
+                const result = await syncLocalDataToServer();
+                if (result.synced) {
+                    console.log('[Login] Auto-synced local data:', result.imported);
+                }
+            } catch (e) {
+                console.warn('[Login] Auto-sync failed:', e.message);
+            }
+        }, 500);
     }
 
     return data;
@@ -232,6 +246,32 @@ export async function unlockAchievement(achievement_id) {
 }
 
 // =============================================================================
+// DATA API - SLEEP LOGS
+// =============================================================================
+
+export async function getSleepLogs(limit = 50) {
+    return apiRequest(`/api/data/sleep?limit=${limit}`);
+}
+
+export async function saveSleepLog(sleep_time, wake_time, quality = null, notes = '', duration_minutes = null) {
+    return apiRequest('/api/data/sleep', {
+        method: 'POST',
+        body: JSON.stringify({ sleep_time, wake_time, quality, notes, duration_minutes }),
+    });
+}
+
+export async function updateSleepLog(id, sleep_time, wake_time, quality = null, notes = '', duration_minutes = null) {
+    return apiRequest(`/api/data/sleep/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ sleep_time, wake_time, quality, notes, duration_minutes }),
+    });
+}
+
+export async function deleteSleepLog(id) {
+    return apiRequest(`/api/data/sleep/${id}`, { method: 'DELETE' });
+}
+
+// =============================================================================
 // DATA API - STATS & EXPORT
 // =============================================================================
 
@@ -251,43 +291,201 @@ export async function importData(data) {
 }
 
 // =============================================================================
-// SYNC HELPER
+// FORUM API
 // =============================================================================
+
+export async function getForumPosts(page = 1, limit = 20, tag = null) {
+    let url = `/api/forum/posts?page=${page}&limit=${limit}`;
+    if (tag) url += `&tag=${encodeURIComponent(tag)}`;
+    return apiRequest(url);
+}
+
+export async function getForumPost(id) {
+    return apiRequest(`/api/forum/post/${id}`);
+}
+
+export async function createForumPost(content, title = null, tags = [], anonymous = false) {
+    return apiRequest('/api/forum/post', {
+        method: 'POST',
+        body: JSON.stringify({ content, title, tags, anonymous }),
+    });
+}
+
+export async function addForumComment(postId, content, anonymous = false) {
+    return apiRequest(`/api/forum/post/${postId}/comment`, {
+        method: 'POST',
+        body: JSON.stringify({ content, anonymous }),
+    });
+}
+
+export async function upvoteForumPost(postId) {
+    return apiRequest(`/api/forum/post/${postId}/upvote`, { method: 'POST' });
+}
+
+// =============================================================================
+// ADMIN API
+// =============================================================================
+
+export async function getAdminLogs(limit = 50) {
+    return apiRequest(`/api/admin/logs?limit=${limit}`);
+}
+
+export async function getBannedUsers() {
+    return apiRequest('/api/admin/banned-users');
+}
+
+export async function getForumStats() {
+    return apiRequest('/api/admin/forum-stats');
+}
+
+export async function banUser(userId, reason = null, durationDays = null) {
+    return apiRequest('/api/admin/ban-user', {
+        method: 'POST',
+        body: JSON.stringify({ user_id: userId, reason, duration_days: durationDays }),
+    });
+}
+
+export async function unbanUser(userId) {
+    return apiRequest(`/api/admin/ban-user/${userId}`, { method: 'DELETE' });
+}
+
+export async function deleteForumPost(postId, reason = null, permanent = false) {
+    return apiRequest(`/api/forum/post/${postId}`, {
+        method: 'DELETE',
+        body: JSON.stringify({ reason, permanent }),
+    });
+}
+
+export async function toggleLockPost(postId) {
+    return apiRequest(`/api/forum/post/${postId}/lock`, { method: 'POST' });
+}
+
+// =============================================================================
+// SYNC HELPER - Enhanced Auto-Sync
+// =============================================================================
+
+// Các keys localStorage cần sync
+const SYNC_KEYS = [
+    { key: 'gratitude_entries_v1', field: 'gratitude', transform: g => ({ content: g.text || g.content, created_at: g.date || g.created_at }) },
+    { key: 'gratitude', field: 'gratitude', transform: g => ({ content: g.text || g.content, created_at: g.date || g.created_at }) },
+    { key: 'mood_journal_v1', field: 'journal', transform: j => ({ content: j.content, mood: j.mood, tags: j.tags, created_at: j.date || j.created_at }) },
+    { key: 'journal_entries', field: 'journal', transform: j => ({ content: j.content, mood: j.mood, tags: j.tags, created_at: j.date || j.created_at }) },
+    { key: 'focus_sessions', field: 'focus_sessions', transform: f => ({ duration_minutes: f.duration || f.duration_minutes, session_type: f.type || 'focus', created_at: f.date || f.created_at }) },
+    { key: 'focus_stats_v1', field: 'focus_sessions', transform: f => ({ duration_minutes: f.duration || f.duration_minutes, session_type: f.type || 'focus', created_at: f.date || f.created_at }) },
+    { key: 'breathing_sessions_v1', field: 'breathing_sessions', transform: b => ({ exercise_type: b.type || b.exercise_type, duration_seconds: b.duration || b.duration_seconds, created_at: b.date || b.created_at }) },
+    { key: 'breathing_sessions', field: 'breathing_sessions', transform: b => ({ exercise_type: b.type || b.exercise_type, duration_seconds: b.duration || b.duration_seconds, created_at: b.date || b.created_at }) },
+    { key: 'sleep_stats_v1', field: 'sleep_logs', transform: s => ({ sleep_time: s.sleepTime || s.sleep_time, wake_time: s.wakeTime || s.wake_time, quality: s.quality || s.rating, notes: s.notes, duration_minutes: s.duration, created_at: s.date || s.created_at }) },
+    { key: 'sleep_logs_v1', field: 'sleep_logs', transform: s => ({ sleep_time: s.sleepTime || s.sleep_time, wake_time: s.wakeTime || s.wake_time, quality: s.quality || s.rating, notes: s.notes, duration_minutes: s.duration, created_at: s.date || s.created_at }) },
+];
 
 /**
  * Sync local data to server (for migration from localStorage)
+ * Tự động gom dữ liệu từ tất cả các keys localStorage và đẩy lên server
+ * Sau khi sync thành công, xóa dữ liệu local để tránh trùng lặp
  */
 export async function syncLocalDataToServer() {
     if (!isLoggedIn()) return { synced: false, reason: 'not_logged_in' };
 
-    // Get local gratitude
-    const localGratitude = JSON.parse(localStorage.getItem('gratitude') || '[]');
+    const dataToImport = {
+        gratitude: [],
+        journal: [],
+        focus_sessions: [],
+        breathing_sessions: [],
+        sleep_logs: [],
+    };
 
-    // Get local journal (if any)
-    const localJournal = JSON.parse(localStorage.getItem('journal_entries') || '[]');
+    const keysToDelete = [];
 
-    // Get local focus sessions
-    const localFocus = JSON.parse(localStorage.getItem('focus_sessions') || '[]');
+    // Gom dữ liệu từ tất cả các keys
+    for (const { key, field, transform } of SYNC_KEYS) {
+        try {
+            const raw = localStorage.getItem(key);
+            if (!raw) continue;
 
-    // Get local breathing
-    const localBreathing = JSON.parse(localStorage.getItem('breathing_sessions') || '[]');
+            let items = JSON.parse(raw);
 
-    if (localGratitude.length === 0 && localJournal.length === 0 &&
-        localFocus.length === 0 && localBreathing.length === 0) {
+            // Handle cả array và object (cho sleep_stats_v1)
+            if (!Array.isArray(items)) {
+                // Nếu là object có field logs (như sleep_stats_v1)
+                if (items.logs && Array.isArray(items.logs)) {
+                    items = items.logs;
+                } else {
+                    continue;
+                }
+            }
+
+            if (items.length > 0) {
+                const transformed = items.map(transform).filter(x => x && (x.content || x.duration_minutes || x.duration_seconds || x.sleep_time));
+                dataToImport[field].push(...transformed);
+                keysToDelete.push(key);
+            }
+        } catch (e) {
+            console.warn(`[Sync] Error parsing ${key}:`, e);
+        }
+    }
+
+    // Kiểm tra có dữ liệu để sync không
+    const totalItems = Object.values(dataToImport).reduce((sum, arr) => sum + arr.length, 0);
+    if (totalItems === 0) {
         return { synced: false, reason: 'no_local_data' };
     }
 
     try {
-        const result = await importData({
-            gratitude: localGratitude.map(g => ({ content: g.text || g.content, created_at: g.date || g.created_at })),
-            journal: localJournal.map(j => ({ content: j.content, mood: j.mood, tags: j.tags, created_at: j.date || j.created_at })),
-            focus_sessions: localFocus.map(f => ({ duration_minutes: f.duration || f.duration_minutes, session_type: f.type || 'focus', created_at: f.date || f.created_at })),
-            breathing_sessions: localBreathing.map(b => ({ exercise_type: b.type || b.exercise_type, duration_seconds: b.duration || b.duration_seconds, created_at: b.date || b.created_at })),
+        console.log('[Sync] Syncing local data to server:', {
+            gratitude: dataToImport.gratitude.length,
+            journal: dataToImport.journal.length,
+            focus: dataToImport.focus_sessions.length,
+            breathing: dataToImport.breathing_sessions.length,
+            sleep: dataToImport.sleep_logs.length,
         });
 
-        return { synced: true, imported: result.imported };
+        const result = await importData(dataToImport);
+
+        // Xóa dữ liệu local sau khi sync thành công
+        for (const key of keysToDelete) {
+            localStorage.removeItem(key);
+            console.log(`[Sync] Cleared local key: ${key}`);
+        }
+
+        return { synced: true, imported: result.imported, cleared: keysToDelete };
     } catch (error) {
         console.error('[Sync] Error:', error);
         return { synced: false, reason: error.message };
     }
+}
+
+/**
+ * Sync liên tục khi có thay đổi
+ * Gọi hàm này sau mỗi action tạo dữ liệu mới
+ */
+let syncTimer = null;
+export function scheduleSync(delayMs = 5000) {
+    if (!isLoggedIn()) return;
+
+    // Debounce để tránh sync quá nhiều
+    if (syncTimer) clearTimeout(syncTimer);
+    syncTimer = setTimeout(async () => {
+        const result = await syncLocalDataToServer();
+        if (result.synced) {
+            console.log('[AutoSync] Synced successfully:', result.imported);
+        }
+    }, delayMs);
+}
+
+/**
+ * Sync ngay lập tức khi login
+ */
+export async function syncOnLogin() {
+    if (!isLoggedIn()) return;
+
+    console.log('[Sync] Starting sync on login...');
+    const result = await syncLocalDataToServer();
+
+    if (result.synced) {
+        console.log('[Sync] Login sync complete:', result.imported);
+    } else {
+        console.log('[Sync] No data to sync:', result.reason);
+    }
+
+    return result;
 }

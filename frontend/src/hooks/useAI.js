@@ -235,8 +235,25 @@ export function useAI() {
           return;
         }
         if (event === 'done') return;
+        // Đảm bảo chunk luôn là string, không phải object
         let chunk = '';
-        try { chunk = JSON.parse(data); } catch (_) { chunk = data; }
+        if (typeof data === 'string') {
+          try {
+            const parsed = JSON.parse(data);
+            // Nếu parsed là object, lấy text/content/message
+            if (typeof parsed === 'object' && parsed !== null) {
+              chunk = parsed.text || parsed.content || parsed.message || parsed.response || '';
+            } else {
+              chunk = String(parsed);
+            }
+          } catch (_) {
+            chunk = data;
+          }
+        } else if (typeof data === 'object' && data !== null) {
+          chunk = data.text || data.content || data.message || data.response || '';
+        } else {
+          chunk = String(data || '');
+        }
         if (assistantIndex === -1) {
           setThreads((prev) => prev.map((t) => {
             if (t.id !== currentId) return t;

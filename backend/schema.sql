@@ -94,3 +94,95 @@ CREATE TABLE IF NOT EXISTS user_settings (
   updated_at TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- =============================================================================
+-- PHASE 1 ADDITIONS: Sleep Logs, Forum, Admin
+-- =============================================================================
+
+-- Bảng sleep_logs: theo dõi giấc ngủ
+CREATE TABLE IF NOT EXISTS sleep_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  sleep_time TEXT NOT NULL, -- Thời gian đi ngủ (HH:MM hoặc ISO timestamp)
+  wake_time TEXT NOT NULL, -- Thời gian thức dậy
+  duration_minutes INTEGER, -- Tổng thời gian ngủ (phút)
+  quality INTEGER CHECK(quality >= 1 AND quality <= 5), -- Đánh giá 1-5 sao
+  notes TEXT, -- Ghi chú thêm
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_sleep_user ON sleep_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_sleep_date ON sleep_logs(created_at);
+
+-- Bảng forum_posts: bài viết diễn đàn ẩn danh
+CREATE TABLE IF NOT EXISTS forum_posts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER, -- NULL nếu hoàn toàn ẩn danh
+  hashed_user_id TEXT, -- Hash để hiển thị "Người dùng #abc123"
+  title TEXT, -- Tiêu đề bài viết (optional)
+  content TEXT NOT NULL,
+  tags TEXT, -- JSON array: ["học tập", "tâm sự"]
+  upvotes INTEGER DEFAULT 0,
+  comments_count INTEGER DEFAULT 0,
+  is_locked INTEGER DEFAULT 0, -- 1 = khóa không cho comment
+  is_hidden INTEGER DEFAULT 0, -- 1 = ẩn khỏi danh sách công khai
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_forum_posts_date ON forum_posts(created_at);
+CREATE INDEX IF NOT EXISTS idx_forum_posts_user ON forum_posts(user_id);
+
+-- Bảng forum_comments: bình luận bài viết
+CREATE TABLE IF NOT EXISTS forum_comments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  post_id INTEGER NOT NULL,
+  user_id INTEGER, -- NULL nếu ẩn danh
+  hashed_user_id TEXT,
+  content TEXT NOT NULL,
+  is_hidden INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (post_id) REFERENCES forum_posts(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_comments_post ON forum_comments(post_id);
+CREATE INDEX IF NOT EXISTS idx_comments_date ON forum_comments(created_at);
+
+-- Bảng forum_upvotes: theo dõi ai đã upvote (tránh upvote nhiều lần)
+CREATE TABLE IF NOT EXISTS forum_upvotes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  post_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(post_id, user_id),
+  FOREIGN KEY (post_id) REFERENCES forum_posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Bảng admin_logs: lịch sử hành động admin
+CREATE TABLE IF NOT EXISTS admin_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  admin_user_id INTEGER NOT NULL,
+  action_type TEXT NOT NULL, -- 'delete_post', 'hide_comment', 'ban_user'
+  target_type TEXT, -- 'post', 'comment', 'user'
+  target_id INTEGER,
+  reason TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (admin_user_id) REFERENCES users(id)
+);
+
+-- Bảng banned_users: danh sách user bị cấm
+CREATE TABLE IF NOT EXISTS banned_users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL UNIQUE,
+  reason TEXT,
+  banned_by INTEGER,
+  banned_until TEXT, -- NULL = vĩnh viễn
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (banned_by) REFERENCES users(id)
+);
+
+-- Thêm cột is_admin vào users table (nếu chưa có)
+-- ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0;

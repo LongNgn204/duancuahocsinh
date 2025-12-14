@@ -14,9 +14,17 @@ import {
     getJournal, addJournal, deleteJournal,
     getFocusSessions, addFocusSession,
     getBreathingSessions, addBreathingSession,
+    getSleepLogs, addSleepLog, deleteSleepLog, updateSleepLog,
     getAchievements, unlockAchievement,
     getStats, exportData, importData
 } from './data-api.js';
+
+import {
+    getForumPosts, getForumPost, createForumPost,
+    addComment, upvotePost, deletePost, deleteComment,
+    toggleLockPost, banUser, unbanUser,
+    getAdminLogs, getBannedUsers, getForumStats
+} from './forum-api.js';
 
 import { classifyRiskRules, getRedTierResponse } from './risk.js';
 import { sanitizeInput } from './sanitize.js';
@@ -51,7 +59,7 @@ function getAllowedOrigin(request, env) {
 function corsHeaders(origin = '*') {
     return {
         'Access-Control-Allow-Origin': origin,
-        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-User-Id, X-Requested-With',
         'Access-Control-Expose-Headers': 'X-Trace-Id',
     };
@@ -97,6 +105,12 @@ function matchRoute(pathname, method) {
     if (pathname === '/api/data/breathing' && method === 'GET') return 'data:breathing:list';
     if (pathname === '/api/data/breathing' && method === 'POST') return 'data:breathing:add';
 
+    // Data routes - Sleep logs
+    if (pathname === '/api/data/sleep' && method === 'GET') return 'data:sleep:list';
+    if (pathname === '/api/data/sleep' && method === 'POST') return 'data:sleep:add';
+    if (pathname.startsWith('/api/data/sleep/') && method === 'DELETE') return 'data:sleep:delete';
+    if (pathname.startsWith('/api/data/sleep/') && method === 'PUT') return 'data:sleep:update';
+
     // Data routes - Achievements
     if (pathname === '/api/data/achievements' && method === 'GET') return 'data:achievements:list';
     if (pathname === '/api/data/achievements' && method === 'POST') return 'data:achievements:add';
@@ -109,6 +123,26 @@ function matchRoute(pathname, method) {
     // AI Chat (legacy path)
     if (pathname === '/' && method === 'POST') return 'ai:chat';
     if (pathname === '/api/chat' && method === 'POST') return 'ai:chat';
+
+    // Forum routes
+    if (pathname === '/api/forum/posts' && method === 'GET') return 'forum:posts:list';
+    if (pathname === '/api/forum/post' && method === 'POST') return 'forum:post:create';
+    if (pathname.match(/^\/api\/forum\/post\/\d+$/) && method === 'GET') return 'forum:post:get';
+    if (pathname.match(/^\/api\/forum\/post\/\d+$/) && method === 'DELETE') return 'forum:post:delete';
+    if (pathname.match(/^\/api\/forum\/post\/\d+\/comment$/) && method === 'POST') return 'forum:comment:add';
+    if (pathname.match(/^\/api\/forum\/post\/\d+\/upvote$/) && method === 'POST') return 'forum:post:upvote';
+    if (pathname.match(/^\/api\/forum\/post\/\d+\/lock$/) && method === 'POST') return 'forum:post:lock';
+    if (pathname.match(/^\/api\/forum\/comment\/\d+$/) && method === 'DELETE') return 'forum:comment:delete';
+
+    // TTS Proxy route
+    if (pathname === '/api/tts' && method === 'POST') return 'tts:synthesize';
+
+    // Admin routes
+    if (pathname === '/api/admin/ban-user' && method === 'POST') return 'admin:ban';
+    if (pathname.match(/^\/api\/admin\/ban-user\/\d+$/) && method === 'DELETE') return 'admin:unban';
+    if (pathname === '/api/admin/logs' && method === 'GET') return 'admin:logs';
+    if (pathname === '/api/admin/banned-users' && method === 'GET') return 'admin:banned';
+    if (pathname === '/api/admin/forum-stats' && method === 'GET') return 'admin:forum-stats';
 
     return null;
 }
@@ -199,6 +233,20 @@ export default {
                     response = await addBreathingSession(request, env);
                     break;
 
+                // Sleep log endpoints
+                case 'data:sleep:list':
+                    response = await getSleepLogs(request, env);
+                    break;
+                case 'data:sleep:add':
+                    response = await addSleepLog(request, env);
+                    break;
+                case 'data:sleep:delete':
+                    response = await deleteSleepLog(request, env, extractId(url.pathname));
+                    break;
+                case 'data:sleep:update':
+                    response = await updateSleepLog(request, env, extractId(url.pathname));
+                    break;
+
                 // Achievements endpoints
                 case 'data:achievements:list':
                     response = await getAchievements(request, env);
@@ -223,6 +271,136 @@ export default {
                     // Import dynamically to avoid circular dependency issues
                     const aiProxy = await import('./ai-proxy.js');
                     return aiProxy.default.fetch(request, env, ctx);
+
+                // Forum endpoints
+                case 'forum:posts:list':
+                    response = await getForumPosts(request, env);
+                    break;
+                case 'forum:post:create':
+                    response = await createForumPost(request, env);
+                    break;
+                case 'forum:post:get':
+                    response = await getForumPost(request, env, extractId(url.pathname));
+                    break;
+                case 'forum:post:delete':
+                    response = await deletePost(request, env, extractId(url.pathname));
+                    break;
+                case 'forum:comment:add':
+                    // Extract postId từ pathname như /api/forum/post/123/comment
+                    const commentPath = url.pathname.match(/\/api\/forum\/post\/(\d+)\/comment/);
+                    response = await addComment(request, env, commentPath ? commentPath[1] : null);
+                    break;
+                case 'forum:post:upvote':
+                    const upvotePath = url.pathname.match(/\/api\/forum\/post\/(\d+)\/upvote/);
+                    response = await upvotePost(request, env, upvotePath ? upvotePath[1] : null);
+                    break;
+                case 'forum:post:lock':
+                    const lockPath = url.pathname.match(/\/api\/forum\/post\/(\d+)\/lock/);
+                    response = await toggleLockPost(request, env, lockPath ? lockPath[1] : null);
+                    break;
+                case 'forum:comment:delete':
+                    const commentDelPath = url.pathname.match(/\/api\/forum\/comment\/(\d+)/);
+                    response = await deleteComment(request, env, commentDelPath ? commentDelPath[1] : null);
+                    break;
+
+                // Admin endpoints
+                case 'admin:ban':
+                    response = await banUser(request, env);
+                    break;
+                case 'admin:unban':
+                    const unbanPath = url.pathname.match(/\/api\/admin\/ban-user\/(\d+)/);
+                    response = await unbanUser(request, env, unbanPath ? unbanPath[1] : null);
+                    break;
+                case 'admin:logs':
+                    response = await getAdminLogs(request, env);
+                    break;
+                case 'admin:banned':
+                    response = await getBannedUsers(request, env);
+                    break;
+                case 'admin:forum-stats':
+                    response = await getForumStats(request, env);
+                    break;
+
+                // TTS Synthesize via Hugging Face
+                case 'tts:synthesize':
+                    try {
+                        const { text, model = 'facebook/mms-tts-vie' } = await request.json();
+
+                        if (!text || text.trim().length === 0) {
+                            response = json({ error: 'Text is required' }, 400);
+                            break;
+                        }
+
+                        // Try both HF endpoints (new router and legacy)
+                        const endpoints = [
+                            `https://router.huggingface.co/hf-inference/models/${model}`,
+                            `https://api-inference.huggingface.co/models/${model}`
+                        ];
+
+                        let hfResponse = null;
+                        let lastError = null;
+
+                        for (const endpoint of endpoints) {
+                            console.log('[TTS] Trying endpoint:', endpoint);
+                            try {
+                                hfResponse = await fetch(endpoint, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        ...(env.HF_API_TOKEN ? { 'Authorization': `Bearer ${env.HF_API_TOKEN}` } : {})
+                                    },
+                                    body: JSON.stringify({ inputs: text })
+                                });
+
+                                if (hfResponse.ok) {
+                                    console.log('[TTS] Success with endpoint:', endpoint);
+                                    break;
+                                }
+
+                                // Check if model is loading (503) - wait and retry
+                                if (hfResponse.status === 503) {
+                                    const retryData = await hfResponse.json().catch(() => ({}));
+                                    if (retryData.estimated_time) {
+                                        console.log('[TTS] Model loading, waiting...');
+                                        // Return loading message to frontend
+                                        response = json({
+                                            error: 'model_loading',
+                                            message: 'Model đang khởi động, vui lòng thử lại sau ' + Math.ceil(retryData.estimated_time) + ' giây',
+                                            estimated_time: retryData.estimated_time
+                                        }, 503);
+                                        break;
+                                    }
+                                }
+
+                                lastError = await hfResponse.text();
+                            } catch (fetchErr) {
+                                lastError = fetchErr.message;
+                            }
+                        }
+
+                        // If already responded (model loading case)
+                        if (response) break;
+
+                        if (!hfResponse || !hfResponse.ok) {
+                            console.error('[TTS] All endpoints failed:', lastError);
+                            response = json({ error: 'TTS failed', details: lastError }, 500);
+                            break;
+                        }
+
+                        // Return audio directly
+                        const audioBuffer = await hfResponse.arrayBuffer();
+                        response = new Response(audioBuffer, {
+                            status: 200,
+                            headers: {
+                                'Content-Type': 'audio/flac',
+                                'Cache-Control': 'public, max-age=3600'
+                            }
+                        });
+                    } catch (ttsError) {
+                        console.error('[TTS] Error:', ttsError);
+                        response = json({ error: 'TTS processing failed', message: ttsError.message }, 500);
+                    }
+                    break;
 
                 default:
                     response = json({ error: 'not_found', path: url.pathname }, 404);

@@ -1,5 +1,5 @@
 // src/components/gratitude/GratitudeJar.jsx
-// Chú thích: Gratitude v3.0 - Modern UI với 3D jar visual, floating cards, enhanced animations
+// Chú thích: Gratitude v3.1 - Modern UI với server sync, 3D jar visual, floating cards, enhanced animations
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Card from '../ui/Card';
@@ -9,8 +9,9 @@ import GlowOrbs from '../ui/GlowOrbs';
 import { toDayStr, computeStreakFromEntries } from '../../utils/gratitude';
 import {
   Plus, Download, Search, Filter, X, Sparkles,
-  Heart, Calendar, Tag, Flame, ChevronDown
+  Heart, Calendar, Tag, Flame, ChevronDown, Loader2, Cloud
 } from 'lucide-react';
+import { isLoggedIn, getGratitudeList, addGratitude, scheduleSync } from '../../utils/api';
 
 const STORAGE_KEY = 'gratitude';
 const SUGGESTIONS = [
@@ -31,7 +32,7 @@ function Sparkline({ entries, days = 14 }) {
       const d = new Date();
       d.setDate(today.getDate() - i);
       const key = toDayStr(d);
-      const has = entries.some((e) => toDayStr(new Date(e.date)) === key);
+      const has = entries.some((e) => toDayStr(new Date(e.date || e.created_at)) === key);
       arr.push({ day: key, v: has ? 1 : 0 });
     }
     return arr;
@@ -70,7 +71,7 @@ function EntryCard({ entry, style }) {
           <div className="flex items-center justify-between text-xs text-[--muted] mb-3">
             <div className="flex items-center gap-2">
               <Calendar size={12} />
-              {toDayStr(new Date(entry.date))}
+              {toDayStr(new Date(entry.date || entry.created_at))}
             </div>
             {entry.tag && (
               <Badge variant="secondary" size="sm">
@@ -79,7 +80,7 @@ function EntryCard({ entry, style }) {
             )}
           </div>
           <p className="text-[--text] leading-relaxed whitespace-pre-wrap">
-            {entry.text}
+            {entry.text || entry.content}
           </p>
         </div>
       </Card>
@@ -94,39 +95,95 @@ export default function GratitudeJar() {
   const [filter, setFilter] = useState('');
   const [filterTag, setFilterTag] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [source, setSource] = useState('local'); // 'server' | 'local'
 
-  // Load from localStorage
+  // Load entries - prefer server if logged in
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const list = raw ? JSON.parse(raw) : [];
-      setEntries(Array.isArray(list) ? list : []);
-    } catch (_) {
-      setEntries([]);
-    }
+    const loadEntries = async () => {
+      setLoading(true);
+      if (isLoggedIn()) {
+        try {
+          const result = await getGratitudeList(200, 0);
+          // Map server format to component format
+          const serverEntries = (result.items || []).map(item => ({
+            id: item.id,
+            text: item.content,
+            date: item.created_at,
+            tag: undefined // server doesn't store tag yet
+          }));
+          setEntries(serverEntries);
+          setSource('server');
+        } catch (e) {
+          console.warn('[Gratitude] API failed, using local:', e.message);
+          loadFromLocal();
+        }
+      } else {
+        loadFromLocal();
+      }
+      setLoading(false);
+    };
+
+    const loadFromLocal = () => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        setEntries(Array.isArray(list) ? list : []);
+        setSource('local');
+      } catch (_) {
+        setEntries([]);
+      }
+    };
+
+    loadEntries();
   }, []);
 
-  const save = (list) => {
+  // Save to localStorage (always, for offline support)
+  const saveLocal = (list) => {
     setEntries(list);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
     } catch (_) { }
   };
 
-  const addEntry = () => {
+  // Add entry - save to both local and server
+  const addEntry = async () => {
     const t = text.trim();
     if (!t) return;
+
     const newEntry = {
       id: Date.now(),
       text: t,
       tag: tag.trim() || undefined,
       date: new Date().toISOString(),
     };
+
+    // Optimistic update
     const next = [...entries, newEntry];
-    save(next);
+    saveLocal(next);
     setText('');
     setTag('');
     setShowForm(false);
+
+    // Save to server if logged in
+    if (isLoggedIn()) {
+      setSaving(true);
+      try {
+        const result = await addGratitude(t);
+        // Update with server ID
+        if (result.id) {
+          const updated = next.map(e => e.id === newEntry.id ? { ...e, serverId: result.id } : e);
+          saveLocal(updated);
+        }
+        // Schedule sync to clear local data
+        scheduleSync(3000);
+      } catch (e) {
+        console.warn('[Gratitude] Server save failed:', e.message);
+      } finally {
+        setSaving(false);
+      }
+    }
   };
 
   const exportJSON = () => {

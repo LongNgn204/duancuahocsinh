@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Vietnamese TTS - Web Speech API</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        button.stop {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+
+        .status {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.info {
+            background: #e7f3ff;
+            color: #0066cc;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .note {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e7f3ff;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #0066cc;
+        }
+
+        .controls {
+            margin-top: 15px;
+        }
+
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .slider-group label {
+            min-width: 80px;
+            margin-bottom: 0;
+        }
+
+        .slider-group input[type="range"] {
+            flex: 1;
+        }
+
+        .slider-group span {
+            min-width: 40px;
+            text-align: right;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎙️ Test Vietnamese TTS</h1>
+        <p class="subtitle">Web Speech API - Không cần API Key!</p>
+
+        <div class="input-group">
+            <label for="voice">🎤 Chọn giọng nói:</label>
+            <select id="voice"></select>
+        </div>
+
+        <div class="controls">
+            <div class="slider-group">
+                <label>Tốc độ:</label>
+                <input type="range" id="rate" min="0.5" max="2" step="0.1" value="1">
+                <span id="rateValue">1.0</span>
+            </div>
+            <div class="slider-group">
+                <label>Cao độ:</label>
+                <input type="range" id="pitch" min="0.5" max="2" step="0.1" value="1">
+                <span id="pitchValue">1.0</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="text">📝 Nhập văn bản tiếng Việt:</label>
+            <textarea
+                id="text">Xin chào! Tôi là trợ lý ảo của bạn. Hôm nay bạn cảm thấy thế nào? Nếu bạn cần ai đó lắng nghe, tôi luôn ở đây.</textarea>
+        </div>
+
+        <div class="button-group">
+            <button id="speakBtn" onclick="speak()">🔊 Đọc văn bản</button>
+            <button id="stopBtn" class="stop" onclick="stopSpeech()" disabled>⏹️ Dừng</button>
+        </div>
+
+        <div id="status" class="status info">Sẵn sàng</div>
+
+        <div class="note">
+            <strong>💡 Thông tin:</strong><br>
+            ✅ Hoàn toàn miễn phí, không cần API key<br>
+            ✅ Chạy trực tiếp trong trình duyệt<br>
+            ⚠️ Chất lượng giọng phụ thuộc vào hệ điều hành/browser
+        </div>
+    </div>
+
+    <script>
+        let voices = [];
+        let currentVoice = null;
+
+        // Load voices
+        function loadVoices() {
+            voices = speechSynthesis.getVoices();
+            const voiceSelect = document.getElementById('voice');
+            voiceSelect.innerHTML = '';
+
+            // Group by language
+            const viVoices = voices.filter(v => v.lang.includes('vi') || v.lang.includes('VI'));
+            const otherVoices = voices.filter(v => !v.lang.includes('vi') && !v.lang.includes('VI'));
+
+            if (viVoices.length > 0) {
+                const viGroup = document.createElement('optgroup');
+                viGroup.label = '🇻🇳 Tiếng Việt';
+                viVoices.forEach((voice, i) => {
+                    const option = document.createElement('option');
+                    option.value = voices.indexOf(voice);
+                    option.textContent = `${voice.name} (${voice.lang})`;
+                    if (i === 0) option.selected = true;
+                    viGroup.appendChild(option);
+                });
+                voiceSelect.appendChild(viGroup);
+            }
+
+            if (otherVoices.length > 0) {
+                const otherGroup = document.createElement('optgroup');
+                otherGroup.label = '🌍 Ngôn ngữ khác';
+                otherVoices.slice(0, 20).forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voices.indexOf(voice);
+                    option.textContent = `${voice.name} (${voice.lang})`;
+                    otherGroup.appendChild(option);
+                });
+                voiceSelect.appendChild(otherGroup);
+            }
+
+            if (voices.length === 0) {
+                const option = document.createElement('option');
+                option.textContent = 'Không tìm thấy giọng nói';
+                voiceSelect.appendChild(option);
+            }
+        }
+
+        // Initialize voices
+        if ('speechSynthesis' in window) {
+            loadVoices();
+            speechSynthesis.onvoiceschanged = loadVoices;
+        } else {
+            document.getElementById('status').textContent = '❌ Trình duyệt không hỗ trợ Web Speech API';
+            document.getElementById('status').className = 'status warning';
+        }
+
+        // Slider updates
+        document.getElementById('rate').oninput = function () {
+            document.getElementById('rateValue').textContent = this.value;
+        };
+        document.getElementById('pitch').oninput = function () {
+            document.getElementById('pitchValue').textContent = this.value;
+        };
+
+        // Speak function
+        function speak() {
+            const text = document.getElementById('text').value.trim();
+            if (!text) {
+                showStatus('warning', '⚠️ Vui lòng nhập văn bản!');
+                return;
+            }
+
+            speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+
+            const voiceIndex = document.getElementById('voice').value;
+            if (voices[voiceIndex]) {
+                utterance.voice = voices[voiceIndex];
+            }
+
+            utterance.rate = parseFloat(document.getElementById('rate').value);
+            utterance.pitch = parseFloat(document.getElementById('pitch').value);
+            utterance.lang = 'vi-VN';
+
+            utterance.onstart = () => {
+                showStatus('success', '🔊 Đang đọc...');
+                document.getElementById('speakBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+            };
+
+            utterance.onend = () => {
+                showStatus('info', '✅ Hoàn thành!');
+                document.getElementById('speakBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+            };
+
+            utterance.onerror = (e) => {
+                showStatus('warning', '❌ Lỗi: ' + e.error);
+                document.getElementById('speakBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+            };
+
+            speechSynthesis.speak(utterance);
+        }
+
+        function stopSpeech() {
+            speechSynthesis.cancel();
+            showStatus('info', '⏹️ Đã dừng');
+            document.getElementById('speakBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+        }
+
+        function showStatus(type, message) {
+            const status = document.getElementById('status');
+            status.className = 'status ' + type;
+            status.textContent = message;
+        }
+    </script>
+</body>
+
+</html>

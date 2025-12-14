@@ -23,4 +23,6 @@ ALLOW_ORIGIN = "http://localhost:5173,https://duancuahocsinh.pages.dev,*.duancua
 MODEL = "@cf/meta/llama-3.1-8b-instruct"
 # Token limit hàng tháng
 MONTHLY_TOKEN_LIMIT = "500000"
+# Token budget hàng ngày cho AI (kiểm soát chi phí)
+MAX_TOKEN_BUDGET = "50000"
 

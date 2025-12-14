@@ -1,5 +1,5 @@
 // src/components/sleep/SleepHelper.jsx
-// Chú thích: Sleep Helper v2.0 - Âm thanh thư giãn, theo dõi giấc ngủ, và Kể chuyện
+// Chú thích: Sleep Helper v2.1 - Âm thanh thư giãn, theo dõi giấc ngủ với server sync, và Kể chuyện
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Card from '../ui/Card';
@@ -9,8 +9,9 @@ import GlowOrbs from '../ui/GlowOrbs';
 import StoryTeller from '../resources/StoryTeller';
 import {
     Moon, Sun, Play, Pause, Volume2, VolumeX, Clock,
-    CloudRain, Wind, Waves, Flame, Music, Bird, Timer, BookOpen
+    CloudRain, Wind, Waves, Flame, Music, Bird, Timer, BookOpen, Cloud
 } from 'lucide-react';
+import { isLoggedIn, getSleepLogs, saveSleepLog, scheduleSync } from '../../utils/api';
 
 
 // Sleep sounds (would need actual audio files in production)
@@ -29,7 +30,7 @@ const TIMERS = [15, 30, 45, 60, 90, 120];
 // Storage
 const SLEEP_STATS_KEY = 'sleep_stats_v1';
 
-function loadStats() {
+function loadLocalStats() {
     try {
         const raw = localStorage.getItem(SLEEP_STATS_KEY);
         return raw ? JSON.parse(raw) : { logs: [], avgQuality: 0 };
@@ -38,7 +39,7 @@ function loadStats() {
     }
 }
 
-function saveStats(stats) {
+function saveLocalStats(stats) {
     try {
         localStorage.setItem(SLEEP_STATS_KEY, JSON.stringify(stats));
     } catch (_) { }
@@ -53,7 +54,10 @@ export default function SleepHelper() {
     const [timer, setTimer] = useState(null); // minutes
     const [timeLeft, setTimeLeft] = useState(0);
     const [showLog, setShowLog] = useState(false);
-    const [stats, setStats] = useState(loadStats);
+    const [stats, setStats] = useState({ logs: [], avgQuality: 0 });
+    const [source, setSource] = useState('local'); // 'server' | 'local'
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
 
     // Sleep log form
     const [sleepTime, setSleepTime] = useState('22:00');
@@ -62,6 +66,39 @@ export default function SleepHelper() {
 
     const audioRef = useRef(null);
 
+    // Load stats - prefer server if logged in
+    useEffect(() => {
+        const loadStats = async () => {
+            setLoading(true);
+            if (isLoggedIn()) {
+                try {
+                    const result = await getSleepLogs(50);
+                    const serverLogs = (result.items || []).map(item => ({
+                        id: item.id,
+                        date: item.created_at,
+                        sleepTime: item.sleep_time,
+                        wakeTime: item.wake_time,
+                        quality: item.quality || 3,
+                        duration: (item.duration_minutes || 0) / 60,
+                    }));
+                    const avgQ = serverLogs.length > 0
+                        ? serverLogs.reduce((s, l) => s + l.quality, 0) / serverLogs.length
+                        : 0;
+                    setStats({ logs: serverLogs, avgQuality: avgQ });
+                    setSource('server');
+                } catch (e) {
+                    console.warn('[Sleep] API failed, using local:', e.message);
+                    setStats(loadLocalStats());
+                    setSource('local');
+                }
+            } else {
+                setStats(loadLocalStats());
+                setSource('local');
+            }
+            setLoading(false);
+        };
+        loadStats();
+    }, []);
 
     // Timer countdown
     useEffect(() => {
@@ -126,26 +163,6 @@ export default function SleepHelper() {
         }
     };
 
-    // Log sleep
-    const logSleep = () => {
-        const log = {
-            id: Date.now().toString(),
-            date: new Date().toISOString(),
-            sleepTime,
-            wakeTime,
-            quality,
-            duration: calculateDuration(sleepTime, wakeTime),
-        };
-
-        const newLogs = [log, ...stats.logs].slice(0, 30); // Keep last 30 days
-        const avgQuality = newLogs.reduce((sum, l) => sum + l.quality, 0) / newLogs.length;
-
-        const newStats = { logs: newLogs, avgQuality };
-        setStats(newStats);
-        saveStats(newStats);
-        setShowLog(false);
-    };
-
     // Calculate sleep duration
     const calculateDuration = (sleep, wake) => {
         const [sh, sm] = sleep.split(':').map(Number);
@@ -154,6 +171,40 @@ export default function SleepHelper() {
         if (hours < 0) hours += 24;
         const mins = wm - sm;
         return hours + mins / 60;
+    };
+
+    // Log sleep - save to both local and server
+    const logSleep = async () => {
+        const duration = calculateDuration(sleepTime, wakeTime);
+        const log = {
+            id: Date.now().toString(),
+            date: new Date().toISOString(),
+            sleepTime,
+            wakeTime,
+            quality,
+            duration,
+        };
+
+        // Optimistic update
+        const newLogs = [log, ...stats.logs].slice(0, 30);
+        const avgQuality = newLogs.reduce((sum, l) => sum + l.quality, 0) / newLogs.length;
+        const newStats = { logs: newLogs, avgQuality };
+        setStats(newStats);
+        saveLocalStats(newStats);
+        setShowLog(false);
+
+        // Save to server if logged in
+        if (isLoggedIn()) {
+            setSaving(true);
+            try {
+                await saveSleepLog(sleepTime, wakeTime, quality, '', Math.round(duration * 60));
+                scheduleSync(3000);
+            } catch (e) {
+                console.warn('[Sleep] Server save failed:', e.message);
+            } finally {
+                setSaving(false);
+            }
+        }
     };
 
     // Format time

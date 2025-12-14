@@ -1,5 +1,5 @@
 // src/pages/TalkToAI.jsx
-// Chú thích: Trang tâm sự với AI - Voice Chat với Gemini Live API
+// Chú thích: Trang tâm sự với AI - Voice Chat với AI Assistant
 import VoiceChat from '../components/chat/VoiceChat';
 import GlowOrbs from '../components/ui/GlowOrbs';
 import { motion } from 'framer-motion';

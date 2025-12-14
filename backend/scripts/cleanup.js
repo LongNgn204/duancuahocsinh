@@ -10,10 +10,7 @@ import path from 'path';
 // DANH SÁCH FILE DEPRECATED - CẦN XÓA SAU KHI DEPLOY CODE MỚI
 // ============================================================================
 const DEPRECATED_FILES = [
-    // Old Gemini hooks - đã thay bằng useVoiceAgentCF
-    '../frontend/src/hooks/useGeminiVoice.js',
-
-    // Có thể thêm file khác ở đây khi migration
+    // Các file không còn sử dụng
     // '../frontend/src/old-file.js',
 ];
 
@@ -21,9 +18,7 @@ const DEPRECATED_FILES = [
 // DANH SÁCH PATTERN ĐỂ TÌM FILE KHÔNG DÙNG
 // ============================================================================
 const DEPRECATED_PATTERNS = [
-    /useGeminiVoice/,
-    /gemini-live/i,
-    /deepgram.*voice/i,
+    // Patterns để kiểm tra trong codebase
 ];
 
 // ============================================================================

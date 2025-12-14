@@ -299,8 +299,140 @@ export async function addBreathingSession(request, env) {
 }
 
 // =============================================================================
+// SLEEP LOGS ENDPOINTS
+// =============================================================================
+
+/**
+ * GET /api/data/sleep - Lấy lịch sử giấc ngủ
+ * Query params: ?limit=50
+ */
+export async function getSleepLogs(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    const url = new URL(request.url);
+    const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 100);
+
+    try {
+        const result = await env.ban_dong_hanh_db.prepare(
+            'SELECT id, sleep_time, wake_time, duration_minutes, quality, notes, created_at FROM sleep_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ?'
+        ).bind(userId, limit).all();
+
+        return json({ items: result.results, count: result.results.length });
+    } catch (error) {
+        console.error('[Data] getSleepLogs error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+/**
+ * POST /api/data/sleep - Lưu sleep log
+ * Body: { sleep_time: string, wake_time: string, quality?: number, notes?: string }
+ */
+export async function addSleepLog(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    try {
+        const { sleep_time, wake_time, quality, notes, duration_minutes } = await request.json();
+
+        if (!sleep_time || !wake_time) {
+            return json({ error: 'sleep_time và wake_time bắt buộc' }, 400);
+        }
+
+        // Validate quality nếu có
+        const qualityValue = quality ? Math.min(5, Math.max(1, parseInt(quality))) : null;
+
+        // Tính duration nếu không được truyền
+        let durationValue = duration_minutes;
+        if (!durationValue) {
+            // Thử parse thời gian để tính duration
+            try {
+                const sleepParts = sleep_time.split(':').map(Number);
+                const wakeParts = wake_time.split(':').map(Number);
+                const sleepMinutes = sleepParts[0] * 60 + sleepParts[1];
+                let wakeMinutes = wakeParts[0] * 60 + wakeParts[1];
+
+                // Nếu wake < sleep, nghĩa là qua ngày mới
+                if (wakeMinutes < sleepMinutes) {
+                    wakeMinutes += 24 * 60;
+                }
+                durationValue = wakeMinutes - sleepMinutes;
+            } catch {
+                durationValue = null;
+            }
+        }
+
+        const result = await env.ban_dong_hanh_db.prepare(
+            'INSERT INTO sleep_logs (user_id, sleep_time, wake_time, duration_minutes, quality, notes) VALUES (?, ?, ?, ?, ?, ?) RETURNING id, sleep_time, wake_time, duration_minutes, quality, notes, created_at'
+        ).bind(userId, sleep_time, wake_time, durationValue, qualityValue, notes || null).first();
+
+        return json({ success: true, item: result }, 201);
+    } catch (error) {
+        console.error('[Data] addSleepLog error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+/**
+ * DELETE /api/data/sleep/:id - Xóa sleep log
+ */
+export async function deleteSleepLog(request, env, id) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    try {
+        const result = await env.ban_dong_hanh_db.prepare(
+            'DELETE FROM sleep_logs WHERE id = ? AND user_id = ?'
+        ).bind(parseInt(id), userId).run();
+
+        if (result.changes === 0) {
+            return json({ error: 'not_found' }, 404);
+        }
+
+        return json({ success: true });
+    } catch (error) {
+        console.error('[Data] deleteSleepLog error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+/**
+ * PUT /api/data/sleep/:id - Cập nhật sleep log
+ */
+export async function updateSleepLog(request, env, id) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    try {
+        const { sleep_time, wake_time, quality, notes, duration_minutes } = await request.json();
+
+        // Verify ownership
+        const existing = await env.ban_dong_hanh_db.prepare(
+            'SELECT id FROM sleep_logs WHERE id = ? AND user_id = ?'
+        ).bind(parseInt(id), userId).first();
+
+        if (!existing) {
+            return json({ error: 'not_found' }, 404);
+        }
+
+        const qualityValue = quality ? Math.min(5, Math.max(1, parseInt(quality))) : null;
+
+        const result = await env.ban_dong_hanh_db.prepare(
+            'UPDATE sleep_logs SET sleep_time = ?, wake_time = ?, duration_minutes = ?, quality = ?, notes = ? WHERE id = ? AND user_id = ? RETURNING *'
+        ).bind(sleep_time, wake_time, duration_minutes || null, qualityValue, notes || null, parseInt(id), userId).first();
+
+        return json({ success: true, item: result });
+    } catch (error) {
+        console.error('[Data] updateSleepLog error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+// =============================================================================
 // ACHIEVEMENTS ENDPOINTS
 // =============================================================================
+
 
 /**
  * GET /api/data/achievements - Lấy danh sách achievements đã mở khóa
@@ -373,10 +505,14 @@ export async function getStats(request, env) {
             'SELECT COUNT(*) as count FROM gratitude WHERE user_id = ?'
         ).bind(userId).first();
 
-        // Journal count
+        // Journal count và mood distribution
         const journalCount = await env.ban_dong_hanh_db.prepare(
             'SELECT COUNT(*) as count FROM journal WHERE user_id = ?'
         ).bind(userId).first();
+
+        const moodDist = await env.ban_dong_hanh_db.prepare(
+            'SELECT mood, COUNT(*) as count FROM journal WHERE user_id = ? AND mood IS NOT NULL GROUP BY mood'
+        ).bind(userId).all();
 
         // Focus sessions count và total minutes
         const focusStats = await env.ban_dong_hanh_db.prepare(
@@ -386,6 +522,11 @@ export async function getStats(request, env) {
         // Breathing sessions count và total seconds
         const breathingStats = await env.ban_dong_hanh_db.prepare(
             'SELECT COUNT(*) as count, COALESCE(SUM(duration_seconds), 0) as total_seconds FROM breathing_sessions WHERE user_id = ?'
+        ).bind(userId).first();
+
+        // Sleep statistics
+        const sleepStats = await env.ban_dong_hanh_db.prepare(
+            'SELECT COUNT(*) as count, COALESCE(AVG(duration_minutes), 0) as avg_duration, COALESCE(AVG(quality), 0) as avg_quality FROM sleep_logs WHERE user_id = ?'
         ).bind(userId).first();
 
         // Achievements count
@@ -423,11 +564,22 @@ export async function getStats(request, env) {
             }
         }
 
+        // Build mood distribution object
+        const moodDistribution = {};
+        if (moodDist.results) {
+            moodDist.results.forEach(m => { moodDistribution[m.mood] = m.count; });
+        }
+
         return json({
             gratitude: { count: gratitudeCount.count, streak },
-            journal: { count: journalCount.count },
+            journal: { count: journalCount.count, moodDistribution },
             focus: { sessions: focusStats.count, totalMinutes: focusStats.total_minutes },
             breathing: { sessions: breathingStats.count, totalSeconds: breathingStats.total_seconds },
+            sleep: {
+                logs: sleepStats.count,
+                avgMinutes: Math.round(sleepStats.avg_duration || 0),
+                avgQuality: parseFloat((sleepStats.avg_quality || 0).toFixed(1))
+            },
             achievements: { count: achievementsCount.count }
         });
     } catch (error) {
@@ -468,6 +620,10 @@ export async function exportData(request, env) {
             'SELECT exercise_type, duration_seconds, created_at FROM breathing_sessions WHERE user_id = ? ORDER BY created_at'
         ).bind(userId).all();
 
+        const sleepLogs = await env.ban_dong_hanh_db.prepare(
+            'SELECT sleep_time, wake_time, duration_minutes, quality, notes, created_at FROM sleep_logs WHERE user_id = ? ORDER BY created_at'
+        ).bind(userId).all();
+
         const achievements = await env.ban_dong_hanh_db.prepare(
             'SELECT achievement_id, unlocked_at FROM achievements WHERE user_id = ?'
         ).bind(userId).all();
@@ -478,13 +634,14 @@ export async function exportData(request, env) {
 
         return json({
             exportedAt: new Date().toISOString(),
-            version: '1.0',
+            version: '1.1',
             user: { username: user.username, created_at: user.created_at },
             data: {
                 gratitude: gratitude.results,
                 journal: journal.results,
                 focus_sessions: focus.results,
                 breathing_sessions: breathing.results,
+                sleep_logs: sleepLogs.results,
                 achievements: achievements.results,
                 settings: settings || {}
             }
@@ -556,6 +713,26 @@ export async function importData(request, env) {
                         'INSERT INTO breathing_sessions (user_id, exercise_type, duration_seconds, created_at) VALUES (?, ?, ?, ?)'
                     ).bind(userId, item.exercise_type, item.duration_seconds, item.created_at || new Date().toISOString()).run();
                     imported.breathing++;
+                }
+            }
+        }
+
+        // Import sleep logs
+        if (Array.isArray(data.sleep_logs)) {
+            for (const item of data.sleep_logs.slice(0, 500)) {
+                if (item.sleep_time && item.wake_time) {
+                    await env.ban_dong_hanh_db.prepare(
+                        'INSERT INTO sleep_logs (user_id, sleep_time, wake_time, duration_minutes, quality, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+                    ).bind(
+                        userId,
+                        item.sleep_time,
+                        item.wake_time,
+                        item.duration_minutes || null,
+                        item.quality || null,
+                        item.notes || null,
+                        item.created_at || new Date().toISOString()
+                    ).run();
+                    imported.sleep = (imported.sleep || 0) + 1;
                 }
             }
         }

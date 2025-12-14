@@ -4,7 +4,8 @@ import { NavLink } from 'react-router-dom';
 import {
   Home, Heart, MessageCircle, Gamepad2, Sparkles,
   BookOpenCheck, Timer, Library, Settings, Moon,
-  ChevronLeft, ChevronRight, BarChart3, Trophy, Headphones
+  ChevronLeft, ChevronRight, BarChart3, Trophy, Headphones,
+  Users, Shield
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -34,6 +35,13 @@ const sections = [
     items: [
       { icon: Gamepad2, label: 'Trò chơi', path: '/games' },
       { icon: Trophy, label: 'Thành tích', path: '/achievements' },
+    ],
+  },
+  {
+    label: 'Cộng đồng',
+    items: [
+      { icon: Users, label: 'Diễn đàn', path: '/forum', badge: 'Mới' },
+      { icon: Shield, label: 'Quản trị', path: '/admin' },
     ],
   },
   {
