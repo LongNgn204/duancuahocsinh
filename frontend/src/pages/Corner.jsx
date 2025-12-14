@@ -322,6 +322,7 @@ export default function Corner() {
               </div>
             )}
           </Card>
+        </motion.div>
 
         {/* Add Reminder Modal */}
         <AnimatePresence>

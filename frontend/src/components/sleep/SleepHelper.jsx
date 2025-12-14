@@ -503,7 +503,7 @@ export default function SleepHelper() {
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 <div className="w-3 h-3 rounded bg-red-500" />
-                                                <span>Kém (<3★)</span>
+                                                <span>Kém ({'<3★'})</span>
                                             </div>
                                         </div>
                                     </div>
