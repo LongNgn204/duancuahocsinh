@@ -5,7 +5,7 @@ import {
   Home, Heart, Bot, Gamepad2, Sparkles,
   BookOpenCheck, Timer, Library, Settings, Moon,
   ChevronLeft, ChevronRight, BarChart3, Trophy,
-  Shield, Star, Menu, X
+  Shield, Star, Menu, X, Bell
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
