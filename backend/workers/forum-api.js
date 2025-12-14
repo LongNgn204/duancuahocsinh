@@ -133,7 +133,17 @@ export async function getForumPosts(request, env) {
             params.push(`%"${tag}"%`);
         }
 
-        query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+        // Sort by
+        const sortBy = url.searchParams.get('sort') || 'newest';
+        if (sortBy === 'popular') {
+            query += ' ORDER BY upvotes DESC, created_at DESC';
+        } else if (sortBy === 'oldest') {
+            query += ' ORDER BY created_at ASC';
+        } else {
+            query += ' ORDER BY created_at DESC';
+        }
+        
+        query += ' LIMIT ? OFFSET ?';
         params.push(limit, offset);
 
         const result = await env.ban_dong_hanh_db.prepare(query).bind(...params).all();

@@ -9,9 +9,9 @@ import GlowOrbs from '../ui/GlowOrbs';
 import { toDayStr, computeStreakFromEntries } from '../../utils/gratitude';
 import {
   Plus, Download, Search, Filter, X, Sparkles,
-  Heart, Calendar, Tag, Flame, ChevronDown, Loader2, Cloud
+  Heart, Calendar, Tag, Flame, ChevronDown, Loader2, Cloud, ArrowUpDown
 } from 'lucide-react';
-import { isLoggedIn, getGratitudeList, addGratitude, scheduleSync } from '../../utils/api';
+import { isLoggedIn, getGratitudeList, addGratitude, scheduleSync, rewardXP } from '../../utils/api';
 
 const STORAGE_KEY = 'gratitude';
 
@@ -38,6 +38,51 @@ const QUICK_SUGGESTIONS = [
   { label: 'Tự nhiên', emoji: '🌿' },
   { label: 'Âm nhạc', emoji: '🎵' },
 ];
+
+// Gợi ý theo ngày (7 ngày trong tuần, lặp lại)
+const DAILY_SUGGESTIONS = [
+  {
+    day: 0, // Chủ nhật
+    message: 'Hôm nay hãy viết về một người giúp bạn cảm thấy tốt hơn.',
+    prompt: 'Một người giúp bạn cảm thấy tốt hơn',
+  },
+  {
+    day: 1, // Thứ 2
+    message: 'Hôm nay hãy biết ơn về một điều bạn đã học được.',
+    prompt: 'Một điều bạn đã học được',
+  },
+  {
+    day: 2, // Thứ 3
+    message: 'Hôm nay hãy nghĩ về một khoảnh khắc vui vẻ trong ngày.',
+    prompt: 'Một khoảnh khắc vui vẻ',
+  },
+  {
+    day: 3, // Thứ 4
+    message: 'Hôm nay hãy biết ơn về sức khỏe của bạn.',
+    prompt: 'Sức khỏe của bạn',
+  },
+  {
+    day: 4, // Thứ 5
+    message: 'Hôm nay hãy viết về một điều đẹp đẽ bạn nhìn thấy.',
+    prompt: 'Một điều đẹp đẽ bạn nhìn thấy',
+  },
+  {
+    day: 5, // Thứ 6
+    message: 'Hôm nay hãy biết ơn về những người xung quanh bạn.',
+    prompt: 'Những người xung quanh bạn',
+  },
+  {
+    day: 6, // Thứ 7
+    message: 'Hôm nay hãy nghĩ về một thành tựu nhỏ của bạn.',
+    prompt: 'Một thành tựu nhỏ',
+  },
+];
+
+// Lấy gợi ý theo ngày hiện tại
+function getDailySuggestion() {
+  const today = new Date().getDay();
+  return DAILY_SUGGESTIONS[today];
+}
 
 // Enhanced Sparkline component với streak visualization
 function Sparkline({ entries, days = 30, streak = 0 }) {
@@ -150,6 +195,7 @@ export default function GratitudeJar() {
   const [customTag, setCustomTag] = useState('');
   const [filter, setFilter] = useState('');
   const [filterTag, setFilterTag] = useState('');
+  const [sortBy, setSortBy] = useState('newest'); // 'newest' | 'oldest' | 'tag'
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -223,7 +269,7 @@ export default function GratitudeJar() {
     return tagInfo?.suggestions || [];
   }, [selectedTag, entries]);
 
-  // Add entry - save to both local and server
+    // Add entry - save to both local and server
   const addEntry = async () => {
     const t = text.trim();
     if (!t) return;
@@ -252,10 +298,18 @@ export default function GratitudeJar() {
       try {
         const result = await addGratitude(t, finalTag);
         // Update with server ID
-        if (result.id) {
-          const updated = next.map(e => e.id === newEntry.id ? { ...e, serverId: result.id } : e);
+        if (result.item && result.item.id) {
+          const updated = next.map(e => e.id === newEntry.id ? { ...e, id: result.item.id, serverId: result.item.id } : e);
           saveLocal(updated);
         }
+        
+        // Thưởng XP khi thêm entry
+        try {
+          await rewardXP('gratitude_add');
+        } catch (xpError) {
+          console.warn('[Gratitude] XP reward failed:', xpError);
+        }
+        
         // Schedule sync to clear local data
         scheduleSync(3000);
       } catch (e) {
@@ -317,12 +371,38 @@ export default function GratitudeJar() {
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
     const tg = filterTag.trim().toLowerCase();
-    return entries
+    let result = entries
       .filter((e) => (q ? e.text.toLowerCase().includes(q) : true))
-      .filter((e) => (tg ? (e.tag || '').toLowerCase() === tg : true))
-      .slice()
-      .reverse();
-  }, [entries, filter, filterTag]);
+      .filter((e) => (tg ? (e.tag || '').toLowerCase() === tg : true));
+
+    // Sắp xếp
+    if (sortBy === 'newest') {
+      result = result.slice().sort((a, b) => {
+        const dateA = new Date(a.date || a.created_at || 0);
+        const dateB = new Date(b.date || b.created_at || 0);
+        return dateB - dateA;
+      });
+    } else if (sortBy === 'oldest') {
+      result = result.slice().sort((a, b) => {
+        const dateA = new Date(a.date || a.created_at || 0);
+        const dateB = new Date(b.date || b.created_at || 0);
+        return dateA - dateB;
+      });
+    } else if (sortBy === 'tag') {
+      result = result.slice().sort((a, b) => {
+        const tagA = (a.tag || '').toLowerCase();
+        const tagB = (b.tag || '').toLowerCase();
+        if (tagA === tagB) {
+          const dateA = new Date(a.date || a.created_at || 0);
+          const dateB = new Date(b.date || b.created_at || 0);
+          return dateB - dateA;
+        }
+        return tagA.localeCompare(tagB);
+      });
+    }
+
+    return result;
+  }, [entries, filter, filterTag, sortBy]);
 
   // Random rotation for cards
   const getCardStyle = (idx) => ({
@@ -357,6 +437,39 @@ export default function GratitudeJar() {
             </Badge>
           </div>
         </motion.div>
+
+        {/* Daily Suggestion Card */}
+        {!showForm && (() => {
+          const dailySuggestion = getDailySuggestion();
+          return (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Card variant="gradient" className="bg-gradient-to-r from-[--brand]/10 to-[--accent]/10 border-2 border-[--brand]/20">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[--brand] to-[--accent] flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-[--text] mb-1">
+                      {dailySuggestion.message}
+                    </p>
+                    <button
+                      onClick={() => {
+                        setShowForm(true);
+                        setText(`Hôm nay mình biết ơn ${dailySuggestion.prompt.toLowerCase()}. `);
+                      }}
+                      className="text-xs text-[--brand] hover:underline font-medium"
+                    >
+                      Viết ngay →
+                    </button>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          );
+        })()}
 
         {/* Add New Entry */}
         <Card variant="highlight" size="lg">
@@ -401,6 +514,31 @@ export default function GratitudeJar() {
                     <X size={18} />
                   </button>
                 </div>
+
+                {/* Daily Suggestion Button */}
+                {(() => {
+                  const dailySuggestion = getDailySuggestion();
+                  return (
+                    <div className="mb-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const suggestion = `Hôm nay mình biết ơn ${dailySuggestion.prompt.toLowerCase()}. `;
+                          setText(text ? `${text}${suggestion}` : suggestion);
+                        }}
+                        className="w-full p-3 rounded-xl bg-gradient-to-r from-[--brand]/10 to-[--accent]/10 border-2 border-[--brand]/20 hover:border-[--brand]/40 transition-all text-left group"
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <Sparkles size={16} className="text-[--brand]" />
+                          <span className="text-sm font-semibold text-[--text]">Gợi ý hôm nay</span>
+                        </div>
+                        <p className="text-xs text-[--muted] group-hover:text-[--text] transition-colors">
+                          {dailySuggestion.message}
+                        </p>
+                      </button>
+                    </div>
+                  );
+                })()}
 
                 <textarea
                   value={text}
@@ -529,6 +667,22 @@ export default function GratitudeJar() {
                 Xoá lọc
               </Button>
             )}
+
+            {/* Sort dropdown */}
+            <div className="relative">
+              <div className="flex items-center gap-2 glass rounded-xl px-3 py-2 cursor-pointer">
+                <ArrowUpDown size={16} className="text-[--muted]" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="bg-transparent outline-none text-sm text-[--text] cursor-pointer pr-6 appearance-none"
+                >
+                  <option value="newest">Mới nhất</option>
+                  <option value="oldest">Cũ nhất</option>
+                  <option value="tag">Theo tag</option>
+                </select>
+              </div>
+            </div>
 
             {/* Export */}
             <Button variant="outline" size="sm" onClick={exportJSON} icon={<Download size={16} />}>

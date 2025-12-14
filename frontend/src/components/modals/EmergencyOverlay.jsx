@@ -155,10 +155,13 @@ export default function EmergencyOverlay({ isOpen, level = 'high', message, onCl
                                     </motion.div>
 
                                     <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                                        Mong bạn hãy bình tĩnh
+                                        Mong bạn hãy bình tĩnh...
                                     </h2>
-                                    <p className="text-gray-600 mb-6">
-                                        Mình ở đây với bạn. Hãy thử thở sâu cùng mình nhé.
+                                    <p className="text-gray-600 mb-2 leading-relaxed">
+                                        Mình ở đây với bạn. Bạn không đơn độc.
+                                    </p>
+                                    <p className="text-gray-500 text-sm mb-6">
+                                        Hãy thử thở sâu cùng mình nhé. Mọi thứ sẽ ổn thôi.
                                     </p>
 
                                     {/* Breathing bubble */}

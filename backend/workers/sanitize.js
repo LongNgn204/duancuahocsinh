@@ -1,30 +1,54 @@
 // backend/workers/sanitize.js
 // Chú thích: Module sanitize input để chống prompt injection và nội dung không phù hợp
 
-// Patterns phát hiện prompt injection
+// Patterns phát hiện prompt injection - Phase 4 Enhanced
 const INJECTION_PATTERNS = [
     // Cố gắng override instructions
     /ignore (previous|above|all) (instructions|prompts|rules)/i,
     /disregard (previous|above|all)/i,
     /forget (everything|all|previous)/i,
+    /override (system|instructions|prompt)/i,
+    /skip (system|instructions|rules)/i,
     // Cố gắng đổi persona
     /you are now/i,
     /act as/i,
     /pretend (to be|you are)/i,
     /roleplay as/i,
+    /simulate (being|as)/i,
+    /become (a|an)/i,
     // System prompt injection
     /system:/i,
     /\[system\]/i,
     /\[INST\]/i,
     /<<SYS>>/i,
+    /<\|system\|>/i,
+    /### system/i,
     // Jailbreak attempts
     /DAN/i,
     /do anything now/i,
     /jailbreak/i,
+    /unrestricted mode/i,
+    /unfiltered mode/i,
     // Developer mode
     /developer mode/i,
     /admin mode/i,
     /debug mode/i,
+    /test mode/i,
+    // Prompt injection techniques
+    /new instructions/i,
+    /new prompt/i,
+    /change your/i,
+    /modify your/i,
+    /update your/i,
+    // Base64/encoding attempts
+    /base64/i,
+    /decode this/i,
+    /encrypted message/i,
+    // Vietnamese variations
+    /bỏ qua (hướng dẫn|quy tắc|lệnh)/i,
+    /quên (tất cả|mọi thứ)/i,
+    /bạn giờ là/i,
+    /đóng vai/i,
 ];
 
 // Từ khóa không phù hợp (profanity cơ bản)

@@ -8,10 +8,62 @@ import Badge from '../ui/Badge';
 import GlowOrbs from '../ui/GlowOrbs';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { toDayStr } from '../../utils/gratitude';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Settings, Flame, Wind, Sparkles } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Settings, Flame, Wind, Sparkles, Mic, Droplet } from 'lucide-react';
 import RandomWellnessCard from './RandomWellnessCard';
+import EncouragementMessages from './EncouragementMessages';
 
 const STORAGE_KEY = 'breathing_sessions_v1';
+const VOICE_SETTINGS_KEY = 'breathing_voice_settings';
+
+// TTS Hook - Sử dụng Web Speech API
+function useTTS(enabled, voiceSettings) {
+  const synthRef = useRef(null);
+  const utteranceRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      synthRef.current = window.speechSynthesis;
+    }
+    return () => {
+      // Dừng mọi phát âm khi unmount
+      if (synthRef.current) {
+        synthRef.current.cancel();
+      }
+    };
+  }, []);
+
+  const speak = (text, options = {}) => {
+    if (!enabled || !synthRef.current || !text) return;
+
+    // Dừng phát âm hiện tại nếu có
+    synthRef.current.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'vi-VN'; // Tiếng Việt
+    utterance.rate = voiceSettings?.rate || 0.9; // Tốc độ đọc (0.75-1.25)
+    utterance.pitch = voiceSettings?.pitch || 1.0; // Cao độ (0-2)
+    utterance.volume = voiceSettings?.volume || 0.8; // Âm lượng (0-1)
+
+    // Chọn giọng nói nếu có
+    if (voiceSettings?.voiceIndex !== undefined) {
+      const voices = synthRef.current.getVoices();
+      if (voices[voiceSettings.voiceIndex]) {
+        utterance.voice = voices[voiceSettings.voiceIndex];
+      }
+    }
+
+    utteranceRef.current = utterance;
+    synthRef.current.speak(utterance);
+  };
+
+  const stop = () => {
+    if (synthRef.current) {
+      synthRef.current.cancel();
+    }
+  };
+
+  return { speak, stop };
+}
 
 // Breathing patterns
 const PATTERNS = {
@@ -38,6 +90,15 @@ const PATTERNS = {
     durations: { inhale: 4, hold: 4, exhale: 4, hold2: 4 },
     icon: Flame,
     description: 'Tập trung và tỉnh táo',
+  },
+  bubble: {
+    label: 'Bong bóng xanh',
+    code: '30s',
+    phases: ['inhale', 'exhale'],
+    durations: { inhale: 3, exhale: 3 },
+    icon: Droplet,
+    description: 'Thở theo nhịp bong bóng trong 30 giây',
+    duration: 30, // Total duration in seconds
   },
 };
 
@@ -86,11 +147,52 @@ export default function BreathingBubble() {
   const [elapsed, setElapsed] = useState(0);
   const [tickMs, setTickMs] = useState(0);
   const [soundOn, setSoundOn] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(false); // TTS hướng dẫn
   const [sessions, setSessions] = useState([]);
   const [showSettings, setShowSettings] = useState(false);
+  const [availableVoices, setAvailableVoices] = useState([]);
+  const [voiceSettings, setVoiceSettings] = useState({
+    voiceIndex: null,
+    rate: 0.9,
+    pitch: 1.0,
+    volume: 0.8,
+  });
 
   const sessionTimers = useRef({ phase: null, tick: null, second: null });
   const beep = useBeep(soundOn && !reduced);
+  const { speak, stop: stopTTS } = useTTS(voiceOn && running, voiceSettings);
+
+  // Load voice settings
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(VOICE_SETTINGS_KEY);
+      if (saved) {
+        setVoiceSettings(JSON.parse(saved));
+      }
+    } catch (_) {}
+  }, []);
+
+  // Load available voices
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      const loadVoices = () => {
+        const voices = window.speechSynthesis.getVoices();
+        setAvailableVoices(voices);
+      };
+      loadVoices();
+      // Chrome cần load voices async
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }
+    }
+  }, []);
+
+  // Save voice settings
+  useEffect(() => {
+    try {
+      localStorage.setItem(VOICE_SETTINGS_KEY, JSON.stringify(voiceSettings));
+    } catch (_) {}
+  }, [voiceSettings]);
 
   // Load sessions
   useEffect(() => {
@@ -162,27 +264,68 @@ export default function BreathingBubble() {
   // Control loop
   useEffect(() => {
     const clearAll = () => {
-      const { phase, tick, second } = sessionTimers.current;
+      const { phase, tick, second, duration } = sessionTimers.current;
       if (phase) clearInterval(phase);
       if (tick) clearInterval(tick);
       if (second) clearInterval(second);
-      sessionTimers.current = { phase: null, tick: null, second: null };
+      if (duration) clearInterval(duration);
+      sessionTimers.current = { phase: null, tick: null, second: null, duration: null };
     };
     clearAll();
 
-    if (!running) return;
+    if (!running) {
+      stopTTS();
+      return;
+    }
+
+    // Special handling for bubble pattern (30s fixed duration)
+    if (patternKey === 'bubble' && pattern.duration) {
+      speak('Hãy thở theo nhịp bong bóng. Hít vào khi bong bóng lớn, thở ra khi bong bóng nhỏ.');
+      
+      // Phase timer for bubble pattern
+      sessionTimers.current.phase = setInterval(() => {
+        const next = nextPhase(phase);
+        setPhase(next);
+        setTickMs(0);
+        beep(600, 120);
+      }, curPhaseMs);
+
+      sessionTimers.current.tick = setInterval(() => setTickMs((v) => Math.min(v + 100, curPhaseMs)), 100);
+      sessionTimers.current.second = setInterval(() => setElapsed((s) => s + 1), 1000);
+      
+      // Stop after 30 seconds
+      sessionTimers.current.duration = setTimeout(() => {
+        setRunning(false);
+        beep(500, 200);
+        speak('Hoàn thành! Bạn đã thở xong 30 giây.');
+      }, pattern.duration * 1000);
+
+      return clearAll;
+    }
+
+    // Phát hướng dẫn khi bắt đầu phase mới
+    const phaseInstructions = {
+      inhale: 'Hít vào từ từ và sâu',
+      hold: 'Giữ hơi thở',
+      exhale: 'Thở ra nhẹ nhàng',
+      hold2: 'Giữ hơi thở',
+    };
+    speak(phaseInstructions[phase] || 'Thở');
 
     sessionTimers.current.phase = setInterval(() => {
-      setPhase((prev) => nextPhase(prev));
+      const next = nextPhase(phase);
+      setPhase(next);
       setTickMs(0);
       beep(600, 120);
+      // Phát hướng dẫn cho phase tiếp theo
+      speak(phaseInstructions[next] || 'Thở');
     }, curPhaseMs);
 
     sessionTimers.current.tick = setInterval(() => setTickMs((v) => Math.min(v + 100, curPhaseMs)), 100);
     sessionTimers.current.second = setInterval(() => setElapsed((s) => s + 1), 1000);
 
     return clearAll;
-  }, [running, patternKey, phase, curPhaseMs]);
+  }, [running, patternKey, phase, curPhaseMs, speak, stopTTS, pattern]);
 
   // Save session on stop
   const prevRunning = useRef(false);
@@ -231,16 +374,35 @@ export default function BreathingBubble() {
         <Card size="none" className="p-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-[--text]">Chọn Pattern</h3>
-            <button
-              onClick={() => setSoundOn(!soundOn)}
-              className={`p-2 rounded-xl transition-colors ${soundOn ? 'bg-[--brand]/20 text-[--brand]' : 'text-[--muted] hover:bg-[--surface-border]'}`}
-              aria-label={soundOn ? 'Tắt âm thanh' : 'Bật âm thanh'}
-            >
-              {soundOn ? <Volume2 size={18} /> : <VolumeX size={18} />}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setVoiceOn(!voiceOn)}
+                className={`p-2 rounded-xl transition-colors ${voiceOn ? 'bg-[--brand]/20 text-[--brand]' : 'text-[--muted] hover:bg-[--surface-border]'}`}
+                aria-label={voiceOn ? 'Tắt hướng dẫn giọng nói' : 'Bật hướng dẫn giọng nói'}
+                title={voiceOn ? 'Tắt hướng dẫn giọng nói' : 'Bật hướng dẫn giọng nói'}
+              >
+                <Mic size={18} />
+              </button>
+              <button
+                onClick={() => setSoundOn(!soundOn)}
+                className={`p-2 rounded-xl transition-colors ${soundOn ? 'bg-[--brand]/20 text-[--brand]' : 'text-[--muted] hover:bg-[--surface-border]'}`}
+                aria-label={soundOn ? 'Tắt âm thanh' : 'Bật âm thanh'}
+                title={soundOn ? 'Tắt âm thanh' : 'Bật âm thanh'}
+              >
+                {soundOn ? <Volume2 size={18} /> : <VolumeX size={18} />}
+              </button>
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className={`p-2 rounded-xl transition-colors ${showSettings ? 'bg-[--brand]/20 text-[--brand]' : 'text-[--muted] hover:bg-[--surface-border]'}`}
+                aria-label="Cài đặt giọng nói"
+                title="Cài đặt giọng nói"
+              >
+                <Settings size={18} />
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {Object.entries(PATTERNS).map(([key, p]) => {
               const Icon = p.icon;
               const isActive = patternKey === key;
@@ -267,6 +429,87 @@ export default function BreathingBubble() {
             })}
           </div>
           <p className="text-xs text-[--muted] mt-3 text-center">{pattern.description}</p>
+
+          {/* Voice Settings Panel */}
+          <AnimatePresence>
+            {showSettings && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-4 pt-4 border-t border-[--surface-border] space-y-3"
+              >
+                <h4 className="text-sm font-semibold text-[--text] mb-2">Cài đặt giọng nói</h4>
+                
+                {/* Voice Selection */}
+                {availableVoices.length > 0 && (
+                  <div>
+                    <label className="block text-xs text-[--muted] mb-1">Chọn giọng</label>
+                    <select
+                      value={voiceSettings.voiceIndex ?? ''}
+                      onChange={(e) => setVoiceSettings({ ...voiceSettings, voiceIndex: e.target.value ? parseInt(e.target.value) : null })}
+                      className="w-full px-3 py-2 bg-[--bg] border border-[--border] rounded-lg text-sm"
+                    >
+                      <option value="">Mặc định (hệ thống)</option>
+                      {availableVoices.map((voice, idx) => (
+                        <option key={idx} value={idx}>
+                          {voice.name} {voice.lang}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Rate (Tốc độ) */}
+                <div>
+                  <label className="block text-xs text-[--muted] mb-1">
+                    Tốc độ: {voiceSettings.rate.toFixed(1)}x
+                  </label>
+                  <input
+                    type="range"
+                    min="0.75"
+                    max="1.25"
+                    step="0.05"
+                    value={voiceSettings.rate}
+                    onChange={(e) => setVoiceSettings({ ...voiceSettings, rate: parseFloat(e.target.value) })}
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Pitch (Cao độ) */}
+                <div>
+                  <label className="block text-xs text-[--muted] mb-1">
+                    Cao độ: {voiceSettings.pitch.toFixed(1)}
+                  </label>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2.0"
+                    step="0.1"
+                    value={voiceSettings.pitch}
+                    onChange={(e) => setVoiceSettings({ ...voiceSettings, pitch: parseFloat(e.target.value) })}
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Volume (Âm lượng) */}
+                <div>
+                  <label className="block text-xs text-[--muted] mb-1">
+                    Âm lượng: {Math.round(voiceSettings.volume * 100)}%
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={voiceSettings.volume}
+                    onChange={(e) => setVoiceSettings({ ...voiceSettings, volume: parseFloat(e.target.value) })}
+                    className="w-full"
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Card>
 
         {/* Main Breathing Area */}
@@ -310,7 +553,11 @@ export default function BreathingBubble() {
             {/* Breathing Bubble */}
             <div className="relative">
               <motion.div
-                className="rounded-full bg-gradient-to-br from-[--brand] to-[--brand-light] shadow-2xl"
+                className={`rounded-full shadow-2xl ${
+                  patternKey === 'bubble' 
+                    ? 'bg-gradient-to-br from-cyan-400 to-blue-500' 
+                    : 'bg-gradient-to-br from-[--brand] to-[--brand-light]'
+                }`}
                 animate={{
                   width: bubbleSize[phase].size,
                   height: bubbleSize[phase].size,
@@ -321,7 +568,11 @@ export default function BreathingBubble() {
                   ease: 'easeInOut'
                 }}
                 style={{
-                  boxShadow: running ? '0 0 60px rgba(13, 148, 136, 0.4), 0 0 100px rgba(13, 148, 136, 0.2)' : '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                  boxShadow: running 
+                    ? patternKey === 'bubble'
+                      ? '0 0 60px rgba(34, 211, 238, 0.4), 0 0 100px rgba(59, 130, 246, 0.2)'
+                      : '0 0 60px rgba(13, 148, 136, 0.4), 0 0 100px rgba(13, 148, 136, 0.2)'
+                    : '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
                 }}
               >
                 {/* Inner glow */}
@@ -330,10 +581,23 @@ export default function BreathingBubble() {
                 {/* Center content */}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center text-white">
-                    <div className="text-4xl font-bold">
-                      {Math.ceil(curPhaseSeconds - (tickMs / 1000))}
-                    </div>
-                    <div className="text-xs opacity-80 mt-1">giây</div>
+                    {patternKey === 'bubble' ? (
+                      <>
+                        <div className="text-3xl font-bold">
+                          {pattern.duration ? Math.max(0, pattern.duration - elapsed) : Math.ceil(curPhaseSeconds - (tickMs / 1000))}
+                        </div>
+                        <div className="text-xs opacity-80 mt-1">
+                          {pattern.duration ? 'giây còn lại' : 'giây'}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-4xl font-bold">
+                          {Math.ceil(curPhaseSeconds - (tickMs / 1000))}
+                        </div>
+                        <div className="text-xs opacity-80 mt-1">giây</div>
+                      </>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -377,6 +641,13 @@ export default function BreathingBubble() {
             </div>
           </div>
         </Card>
+
+        {/* Encouragement Messages */}
+        <EncouragementMessages 
+          onMessageShown={(data) => {
+            console.log('[Breathing] Message shown:', data);
+          }}
+        />
 
         {/* Random Wellness Card */}
         <RandomWellnessCard 

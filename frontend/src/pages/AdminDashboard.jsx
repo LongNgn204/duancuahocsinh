@@ -7,7 +7,7 @@ import {
     Shield, AlertTriangle, Users, MessageSquare, Ban,
     Lock, Unlock, Eye, EyeOff, Trash2, Clock, ChevronDown,
     BarChart3, Activity, RefreshCw, Home, Settings, LogOut,
-    FileText, Flag, Database, Menu, X, KeyRound
+    FileText, Flag, Database, Menu, X, KeyRound, Download
 } from 'lucide-react';
 import {
     getForumStats, getAdminLogs, getBannedUsers, getForumPosts,
@@ -152,6 +152,60 @@ function StatCard({ icon: Icon, label, value, color, trend }) {
 // =============================================================================
 
 function OverviewTab({ stats, logs, sosStats }) {
+    // Export CSV function
+    const exportToCSV = (data, filename) => {
+        if (!data || data.length === 0) {
+            alert('Không có dữ liệu để xuất');
+            return;
+        }
+
+        // Convert to CSV
+        const headers = Object.keys(data[0]);
+        const csvRows = [
+            headers.join(','),
+            ...data.map(row => 
+                headers.map(header => {
+                    const value = row[header];
+                    // Escape commas and quotes
+                    if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+                        return `"${value.replace(/"/g, '""')}"`;
+                    }
+                    return value ?? '';
+                }).join(',')
+            )
+        ];
+
+        const csvContent = csvRows.join('\n');
+        const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' }); // BOM for Excel
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
+    const handleExportLogs = () => {
+        exportToCSV(logs, 'admin_logs');
+    };
+
+    const handleExportSOS = () => {
+        if (!sosStats) {
+            alert('Không có dữ liệu SOS để xuất');
+            return;
+        }
+        // Create SOS summary data
+        const sosData = [{
+            'Tổng số sự kiện (7 ngày)': sosStats.total || 0,
+            'Critical Risk': sosStats.critical || 0,
+            'Unique Users': sosStats.unique_users || 0,
+            'Ngày xuất': new Date().toLocaleDateString('vi-VN')
+        }];
+        exportToCSV(sosData, 'sos_summary');
+    };
+
     return (
         <div className="space-y-6">
             {/* Stats Grid */}
@@ -164,34 +218,62 @@ function OverviewTab({ stats, logs, sosStats }) {
 
             {/* SOS Stats */}
             {sosStats && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <StatCard 
-                        icon={AlertTriangle} 
-                        label="SOS Events (7 ngày)" 
-                        value={sosStats.total || 0} 
-                        color="bg-red-500" 
-                    />
-                    <StatCard 
-                        icon={AlertTriangle} 
-                        label="Critical Risk" 
-                        value={sosStats.critical || 0} 
-                        color="bg-red-600" 
-                    />
-                    <StatCard 
-                        icon={Users} 
-                        label="Unique Users" 
-                        value={sosStats.unique_users || 0} 
-                        color="bg-purple-500" 
-                    />
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="font-semibold text-lg flex items-center gap-2">
+                            <AlertTriangle className="w-5 h-5 text-red-500" />
+                            Thống kê SOS (7 ngày)
+                        </h3>
+                        <button
+                            onClick={handleExportSOS}
+                            className="flex items-center gap-2 px-4 py-2 text-sm bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                            title="Xuất CSV"
+                        >
+                            <Download size={16} />
+                            Xuất CSV
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <StatCard 
+                            icon={AlertTriangle} 
+                            label="SOS Events (7 ngày)" 
+                            value={sosStats.total || 0} 
+                            color="bg-red-500" 
+                        />
+                        <StatCard 
+                            icon={AlertTriangle} 
+                            label="Critical Risk" 
+                            value={sosStats.critical || 0} 
+                            color="bg-red-600" 
+                        />
+                        <StatCard 
+                            icon={Users} 
+                            label="Unique Users" 
+                            value={sosStats.unique_users || 0} 
+                            color="bg-purple-500" 
+                        />
+                    </div>
                 </div>
             )}
 
             {/* Recent Activity */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
-                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-blue-500" />
-                    Hoạt động gần đây
-                </h3>
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                        <Activity className="w-5 h-5 text-blue-500" />
+                        Hoạt động gần đây
+                    </h3>
+                    {logs.length > 0 && (
+                        <button
+                            onClick={handleExportLogs}
+                            className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                            title="Xuất CSV"
+                        >
+                            <Download size={16} />
+                            Xuất CSV
+                        </button>
+                    )}
+                </div>
                 {logs.length === 0 ? (
                     <p className="text-gray-500 text-center py-8">Chưa có hoạt động nào</p>
                 ) : (

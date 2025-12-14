@@ -290,12 +290,22 @@ export async function importData(data) {
     });
 }
 
+/**
+ * Xóa tài khoản và tất cả dữ liệu
+ * @returns {Promise<Object>}
+ */
+export async function deleteAccount() {
+    return apiRequest('/api/auth/account', {
+        method: 'DELETE',
+    });
+}
+
 // =============================================================================
 // FORUM API
 // =============================================================================
 
-export async function getForumPosts(page = 1, limit = 20, tag = null) {
-    let url = `/api/forum/posts?page=${page}&limit=${limit}`;
+export async function getForumPosts(page = 1, limit = 20, tag = null, sort = 'newest') {
+    let url = `/api/forum/posts?page=${page}&limit=${limit}&sort=${sort}`;
     if (tag) url += `&tag=${encodeURIComponent(tag)}`;
     return apiRequest(url);
 }

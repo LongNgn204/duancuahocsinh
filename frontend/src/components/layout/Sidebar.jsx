@@ -5,9 +5,9 @@ import {
   Home, Heart, Bot, Gamepad2, Sparkles,
   BookOpenCheck, Timer, Library, Settings, Moon,
   ChevronLeft, ChevronRight, BarChart3, Trophy,
-  Users, Shield, Star
+  Shield, Star, Menu, X
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const sections = [
   {
@@ -35,13 +35,7 @@ const sections = [
       { icon: Gamepad2, label: 'Trò chơi', path: '/games' },
       { icon: Trophy, label: 'Thành tích', path: '/achievements' },
       { icon: Star, label: 'Hành trình', path: '/journey', badge: 'Mới' },
-    ],
-  },
-  {
-    label: 'Cộng đồng',
-    items: [
-      { icon: Users, label: 'Diễn đàn', path: '/forum', badge: 'Mới' },
-      // Admin: truy cập trực tiếp qua URL /admin (chỉ admin mới vào được)
+      { icon: Bell, label: 'Góc Nhỏ', path: '/corner' },
     ],
   },
   {
@@ -54,27 +48,66 @@ const sections = [
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Close mobile sidebar when route changes
+  useEffect(() => {
+    const handleRouteChange = () => {
+      setMobileOpen(false);
+    };
+    window.addEventListener('popstate', handleRouteChange);
+    return () => window.removeEventListener('popstate', handleRouteChange);
+  }, []);
 
   return (
+    <>
+      {/* Mobile Toggle Button */}
+      <button
+        onClick={() => setMobileOpen(!mobileOpen)}
+        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-xl bg-[--surface] border border-[--surface-border] shadow-lg hover:shadow-xl transition-all"
+        aria-label={mobileOpen ? 'Đóng sidebar' : 'Mở sidebar'}
+      >
+        {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+      </button>
+
+      {/* Mobile Overlay */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
     <aside
       className={`
-        hidden md:flex flex-col
-        ${collapsed ? 'w-20' : 'w-56 lg:w-64'}
+          flex flex-col
+          ${collapsed ? 'w-20' : 'w-64 md:w-56 lg:w-64'}
         shrink-0 
         glass-strong
         border-r border-[--surface-border]
-        md:h-screen md:sticky md:top-16
+          h-screen fixed md:sticky md:top-16 top-0
         transition-all duration-300 ease-out
+          z-40
+          ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}
     >
-      {/* Collapse Toggle */}
+        {/* Collapse Toggle - Desktop only */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-6 z-10 p-1.5 rounded-full bg-[--surface] border border-[--surface-border] shadow-sm hover:shadow-md transition-all"
+          className="hidden md:block absolute -right-3 top-6 z-10 p-1.5 rounded-full bg-[--surface] border border-[--surface-border] shadow-sm hover:shadow-md transition-all"
         aria-label={collapsed ? 'Mở rộng sidebar' : 'Thu gọn sidebar'}
       >
         {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
       </button>
+
+        {/* Mobile Close Button */}
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="md:hidden absolute top-4 right-4 p-2 rounded-xl hover:bg-[--surface-border] transition-colors"
+          aria-label="Đóng sidebar"
+        >
+          <X size={20} />
+        </button>
 
       <div className="flex-1 overflow-y-auto py-6 px-3">
         {/* Brand - Only show when not collapsed */}
@@ -103,6 +136,7 @@ export default function Sidebar() {
                   key={path}
                   to={path}
                   title={collapsed ? label : undefined}
+                  onClick={() => setMobileOpen(false)}
                   className={({ isActive }) => `
                     flex items-center gap-3 
                     ${collapsed ? 'justify-center px-3' : 'px-3'} 
@@ -156,6 +190,7 @@ export default function Sidebar() {
         <NavLink
           to="/settings"
           title={collapsed ? 'Cài đặt' : undefined}
+          onClick={() => setMobileOpen(false)}
           className={({ isActive }) => `
             flex items-center gap-3 
             ${collapsed ? 'justify-center' : ''} 
@@ -172,5 +207,6 @@ export default function Sidebar() {
         </NavLink>
       </div>
     </aside>
+    </>
   );
 }

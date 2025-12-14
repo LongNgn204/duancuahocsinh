@@ -1,13 +1,57 @@
 // src/components/breathing/RandomWellnessCard.jsx
 // Chú thích: Thẻ An Yên ngẫu nhiên - Gợi ý hoạt động wellness mỗi khi mở trang
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
 import { 
     Sparkles, Coffee, Music, BookOpen, Heart, 
-    Sun, Moon, Wind, Flower2, Waves, X, CheckCircle2
+    Sun, Moon, Wind, Flower2, Waves, X, CheckCircle2, Star
 } from 'lucide-react';
-import { saveRandomCardView, getRandomCardsHistory } from '../../utils/api';
-import { isLoggedIn } from '../../utils/api';
+import { saveRandomCardView, getRandomCardsHistory, rewardXP, isLoggedIn } from '../../utils/api';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// 3 loại thẻ An Yên đặc biệt
+const SPECIAL_CARDS = {
+  binhYen: {
+    id: 'binh-yen',
+    type: 'binh-yen',
+    title: 'Bình Yên',
+    message: 'Hít một hơi để thấy mình bình yên hơn nhé.',
+    icon: Heart,
+    color: 'from-blue-400 to-cyan-400',
+    suggestions: [
+      'Thở sâu 5 lần',
+      'Nghe nhạc nhẹ',
+      'Uống nước',
+      'Ngắm cảnh',
+    ],
+  },
+  viecLamNho: {
+    id: 'viec-lam-nho',
+    type: 'viec-lam-nho',
+    title: 'Việc làm nhỏ',
+    message: 'Hôm nay chúng ta cùng thử bài tập quan sát nha',
+    icon: Sparkles,
+    color: 'from-purple-400 to-pink-400',
+    suggestions: [
+      'Quan sát 5 điều xung quanh',
+      'Liệt kê 3 âm thanh bạn nghe thấy',
+      'Chạm vào 3 vật thể khác nhau',
+      'Nếm một món ăn và mô tả',
+    ],
+  },
+  nhanNhu: {
+    id: 'nhan-nhu',
+    type: 'nhan-nhu',
+    title: 'Nhắn nhủ',
+    message: 'Hôm nay bạn đã làm tốt lắm, yêu bản thân hơn nha',
+    icon: Star,
+    color: 'from-pink-400 to-rose-400',
+    suggestions: [
+      'Viết 3 điều bạn tự hào về bản thân',
+      'Nghĩ về 1 thành tựu nhỏ hôm nay',
+      'Tự khen mình',
+    ],
+  },
+};
 
 // Danh sách thẻ wellness với các hoạt động gợi ý
 const WELLNESS_CARDS = [
@@ -112,11 +156,62 @@ function getRandomCard(viewedIds = []) {
     return pool[Math.floor(Math.random() * pool.length)];
 }
 
+// Hook tạo âm thanh chúc mừng
+function useCelebrationSound() {
+    const audioContextRef = useRef(null);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext)) {
+            audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        return () => {
+            try {
+                audioContextRef.current?.close();
+            } catch (_) {}
+        };
+    }, []);
+
+    const playSuccess = () => {
+        if (!audioContextRef.current) return;
+
+        try {
+            const ctx = audioContextRef.current;
+            const now = ctx.currentTime;
+
+            // Tạo chuỗi nốt nhạc vui vẻ (C-E-G-C)
+            const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+
+            notes.forEach((freq, i) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0, now + i * 0.1);
+                gain.gain.linearRampToValueAtTime(0.2, now + i * 0.1 + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.2);
+
+                osc.connect(gain).connect(ctx.destination);
+                osc.start(now + i * 0.1);
+                osc.stop(now + i * 0.1 + 0.2);
+            });
+        } catch (e) {
+            console.warn('[Celebration] Sound error:', e);
+        }
+    };
+
+    return { playSuccess };
+}
+
 export default function RandomWellnessCard({ onActionTaken }) {
     const [card, setCard] = useState(null);
     const [viewed, setViewed] = useState(false);
     const [actionTaken, setActionTaken] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [xpEarned, setXpEarned] = useState(null);
+    const [showXpNotification, setShowXpNotification] = useState(false);
+    const [selectedSpecialCard, setSelectedSpecialCard] = useState(null);
+    const { playSuccess } = useCelebrationSound();
 
     useEffect(() => {
         loadCard();
@@ -165,12 +260,28 @@ export default function RandomWellnessCard({ onActionTaken }) {
         if (actionTaken || !card) return;
         setActionTaken(true);
 
-        // Lưu lịch sử với action_taken = true
+        // Phát âm thanh chúc mừng
+        playSuccess();
+
+        // Thưởng XP nếu đã đăng nhập
         if (isLoggedIn()) {
             try {
+                // Lưu lịch sử với action_taken = true
                 await saveRandomCardView(card.id, true);
+
+                // Thưởng XP
+                const result = await rewardXP('random_card_action');
+                if (result && result.xp_added) {
+                    setXpEarned(result.xp_added);
+                    setShowXpNotification(true);
+                    
+                    // Ẩn notification sau 3 giây
+                    setTimeout(() => {
+                        setShowXpNotification(false);
+                    }, 3000);
+                }
             } catch (e) {
-                console.warn('[WellnessCard] Failed to save action:', e);
+                console.warn('[WellnessCard] Failed to save action or reward XP:', e);
             }
         }
 
@@ -182,13 +293,230 @@ export default function RandomWellnessCard({ onActionTaken }) {
 
     const handleDismiss = () => {
         setCard(null);
+        setSelectedSpecialCard(null);
     };
 
-    if (loading || !card) {
-        return null;
+    const handleSelectSpecialCard = (cardType) => {
+        const specialCard = SPECIAL_CARDS[cardType];
+        if (specialCard) {
+            setSelectedSpecialCard(specialCard);
+            setCard(null); // Hide random card
+        }
+    };
+
+    const handleSpecialCardAction = () => {
+        playSuccess();
+        setActionTaken(true);
+        if (onActionTaken && selectedSpecialCard) {
+            onActionTaken(selectedSpecialCard);
+        }
+    };
+
+    // Show special card selector or special card
+    if (selectedSpecialCard) {
+        const Icon = selectedSpecialCard.icon;
+        return (
+            <AnimatePresence>
+                <motion.div
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="relative"
+                >
+                    <motion.div
+                        className={`bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-200/50 dark:border-gray-700/50 relative overflow-hidden bg-gradient-to-br ${selectedSpecialCard.color}`}
+                    >
+                        <button
+                            onClick={handleDismiss}
+                            className="absolute top-4 right-4 p-1.5 hover:bg-white/20 rounded-lg transition-colors z-10"
+                            aria-label="Đóng thẻ"
+                        >
+                            <X className="w-4 h-4 text-white" />
+                        </button>
+
+                        <div className="relative z-10">
+                            <div className="flex items-start gap-4 mb-4">
+                                <div className={`w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0`}>
+                                    <Icon className="w-6 h-6 text-white" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="font-semibold text-lg text-white mb-2">
+                                        {selectedSpecialCard.title}
+                                    </h3>
+                                    <p className="text-white/90 text-sm mb-4">
+                                        {selectedSpecialCard.message}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Suggestions */}
+                            <div className="mb-4">
+                                <p className="text-white/80 text-xs mb-2">Gợi ý hoạt động:</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {selectedSpecialCard.suggestions.map((suggestion, idx) => (
+                                        <span
+                                            key={idx}
+                                            className="px-3 py-1.5 bg-white/20 rounded-lg text-white text-xs"
+                                        >
+                                            {suggestion}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={handleSpecialCardAction}
+                                disabled={actionTaken}
+                                className={`
+                                    w-full py-3 rounded-xl font-medium transition-all
+                                    ${actionTaken
+                                        ? 'bg-white/30 text-white'
+                                        : 'bg-white text-gray-800 hover:shadow-lg'
+                                    }
+                                `}
+                            >
+                                {actionTaken ? 'Đã thực hiện!' : 'Bắt đầu'}
+                            </motion.button>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            </AnimatePresence>
+        );
     }
 
-    const Icon = card.icon;
+    // Show selector for special cards
+    return (
+        <div className="space-y-4">
+            {/* Special Cards Selector */}
+            <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-gray-200/50 dark:border-gray-700/50">
+                <h3 className="font-semibold text-sm text-gray-800 dark:text-white mb-3 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    Bộ thẻ An Yên
+                </h3>
+                <div className="grid grid-cols-3 gap-2">
+                    {Object.values(SPECIAL_CARDS).map((specialCard) => {
+                        const Icon = specialCard.icon;
+                        return (
+                            <motion.button
+                                key={specialCard.id}
+                                onClick={() => handleSelectSpecialCard(specialCard.type)}
+                                className="p-3 rounded-xl text-center transition-all glass hover:bg-white/50"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${specialCard.color} flex items-center justify-center mx-auto mb-2`}>
+                                    <Icon className="w-5 h-5 text-white" />
+                                </div>
+                                <div className="text-xs font-medium text-gray-800 dark:text-white">
+                                    {specialCard.title}
+                                </div>
+                            </motion.button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Random Wellness Card */}
+            {loading || !card ? null : (
+                <AnimatePresence>
+                    {card && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="relative"
+                        >
+                            <motion.div
+                                className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-200/50 dark:border-gray-700/50 relative overflow-hidden"
+                                onViewportEnter={handleView}
+                            >
+                                {/* Background gradient */}
+                                <div className={`absolute inset-0 bg-gradient-to-br ${card.color} opacity-10`} />
+
+                                {/* Close button */}
+                                <button
+                                    onClick={handleDismiss}
+                                    className="absolute top-4 right-4 p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors z-10"
+                                    aria-label="Đóng thẻ"
+                                >
+                                    <X className="w-4 h-4 text-gray-500" />
+                                </button>
+
+                                <div className="relative z-10">
+                                    {/* Icon và Title */}
+                                    <div className="flex items-start gap-4 mb-4">
+                                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center flex-shrink-0`}>
+                                            <card.icon className="w-6 h-6 text-white" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h3 className="font-semibold text-lg text-gray-800 dark:text-white mb-1">
+                                                {card.title}
+                                            </h3>
+                                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                                                {card.description}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Action button */}
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={handleAction}
+                                        disabled={actionTaken}
+                                        className={`
+                                            w-full py-3 rounded-xl font-medium transition-all relative
+                                            ${actionTaken
+                                                ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                                                : `bg-gradient-to-r ${card.color} text-white hover:shadow-lg`
+                                            }
+                                        `}
+                                    >
+                                        {actionTaken ? (
+                                            <span className="flex items-center justify-center gap-2">
+                                                <CheckCircle2 className="w-5 h-5" />
+                                                Đã thực hiện!
+                                            </span>
+                                        ) : (
+                                            card.action
+                                        )}
+                                    </motion.button>
+
+                                    {/* XP Notification */}
+                                    <AnimatePresence>
+                                        {showXpNotification && xpEarned && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10, scale: 0.8 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: -10, scale: 0.8 }}
+                                                className="absolute -top-16 left-1/2 -translate-x-1/2 z-20"
+                                            >
+                                                <motion.div
+                                                    className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 font-semibold"
+                                                    animate={{
+                                                        scale: [1, 1.1, 1],
+                                                    }}
+                                                    transition={{
+                                                        duration: 0.5,
+                                                        repeat: 2,
+                                                    }}
+                                                >
+                                                    <Star className="w-5 h-5 fill-current" />
+                                                    <span>+{xpEarned} XP</span>
+                                                </motion.div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            )}
+        </div>
+    );
 
     return (
         <AnimatePresence>
@@ -238,7 +566,7 @@ export default function RandomWellnessCard({ onActionTaken }) {
                                 onClick={handleAction}
                                 disabled={actionTaken}
                                 className={`
-                                    w-full py-3 rounded-xl font-medium transition-all
+                                    w-full py-3 rounded-xl font-medium transition-all relative
                                     ${actionTaken
                                         ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
                                         : `bg-gradient-to-r ${card.color} text-white hover:shadow-lg`
@@ -254,6 +582,32 @@ export default function RandomWellnessCard({ onActionTaken }) {
                                     card.action
                                 )}
                             </motion.button>
+
+                            {/* XP Notification */}
+                            <AnimatePresence>
+                                {showXpNotification && xpEarned && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10, scale: 0.8 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: -10, scale: 0.8 }}
+                                        className="absolute -top-16 left-1/2 -translate-x-1/2 z-20"
+                                    >
+                                        <motion.div
+                                            className="bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 font-semibold"
+                                            animate={{
+                                                scale: [1, 1.1, 1],
+                                            }}
+                                            transition={{
+                                                duration: 0.5,
+                                                repeat: 2,
+                                            }}
+                                        >
+                                            <Star className="w-5 h-5 fill-current" />
+                                            <span>+{xpEarned} XP</span>
+                                        </motion.div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </motion.div>
                 </motion.div>

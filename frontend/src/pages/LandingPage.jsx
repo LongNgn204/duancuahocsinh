@@ -5,7 +5,9 @@ import { motion } from 'framer-motion';
 import {
     Bot, Heart, Sparkles, Gamepad2, Brain, Shield,
     Users, Clock, Award, ArrowRight, CheckCircle, Star,
-    BookOpen, Palette, Zap, MessageCircle
+    BookOpen, Palette, Zap, MessageCircle, Globe, Code,
+    TrendingUp, Lock, Smartphone, Mail, Phone, ExternalLink,
+    Database, Cloud, Sparkles as SparklesIcon
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
@@ -26,39 +28,66 @@ const stagger = {
 const features = [
     {
         icon: Bot,
-        title: 'Tâm sự An toàn',
-        description: 'Chat với AI thấu hiểu, không phán xét. Chia sẻ mọi lo âu trong không gian riêng tư.',
+        title: 'AI Mentor tâm lý',
+        description: 'Chat với AI thấu cảm, không phán xét, hỗ trợ 24/7. Text-to-Speech và Voice Chat real-time.',
         color: 'from-teal-500 to-cyan-500',
+        status: '✅',
     },
     {
         icon: Heart,
         title: 'Góc An Yên',
-        description: 'Bài tập thở khoa học giúp giảm stress, lo âu. Lấy lại bình tĩnh chỉ trong vài phút.',
+        description: 'Bài tập thở khoa học với animation, âm thanh hướng dẫn. Giảm stress, lo âu hiệu quả.',
         color: 'from-pink-500 to-rose-500',
+        status: '✅',
     },
     {
         icon: Sparkles,
         title: 'Lọ Biết Ơn',
-        description: 'Ghi lại những điều tốt đẹp mỗi ngày. Xây dựng thói quen tích cực, cải thiện tâm trạng.',
+        description: 'Hệ thống tag, gợi ý nội dung, streak tracking. Xây dựng thói quen tích cực mỗi ngày.',
         color: 'from-amber-500 to-orange-500',
-    },
-    {
-        icon: Gamepad2,
-        title: 'Giải trí Thư giãn',
-        description: 'Mini games vui nhộn giúp thư giãn đầu óc. Nghỉ ngơi hiệu quả giữa giờ học.',
-        color: 'from-purple-500 to-indigo-500',
+        status: '✅',
     },
     {
         icon: BookOpen,
-        title: 'Tài nguyên Học tập',
-        description: 'Kho tài liệu về sức khỏe tâm thần, kỹ năng sống được biên soạn riêng cho học sinh.',
-        color: 'from-emerald-500 to-green-500',
+        title: 'Nhật ký',
+        description: 'Viết nhật ký cảm xúc, theo dõi tâm trạng. Phân tích xu hướng tâm lý theo thời gian.',
+        color: 'from-blue-500 to-indigo-500',
+        status: '✅',
+    },
+    {
+        icon: Gamepad2,
+        title: 'Mini Games',
+        description: '5 trò chơi thư giãn, luyện phản xạ. Nghỉ ngơi hiệu quả giữa giờ học.',
+        color: 'from-purple-500 to-indigo-500',
+        status: '✅',
+    },
+    {
+        icon: MessageCircle,
+        title: 'Diễn đàn',
+        description: 'Kết nối với cộng đồng, chia sẻ ẩn danh an toàn. Moderation tự động và thủ công.',
+        color: 'from-green-500 to-emerald-500',
+        status: '✅',
     },
     {
         icon: Shield,
-        title: 'Hỗ trợ Khẩn cấp',
-        description: 'Hệ thống phát hiện SOS tự động. Kết nối ngay với chuyên gia khi cần.',
+        title: 'SOS Detection',
+        description: 'Phát hiện nguy cơ tâm lý với 50+ patterns, Gen-Z vocabulary. Kết nối hotline 1800 599 920.',
         color: 'from-red-500 to-pink-500',
+        status: '✅',
+    },
+    {
+        icon: Brain,
+        title: 'Context-Aware AI',
+        description: 'Memory summarization, lưu ngữ cảnh dài hạn. AI hiểu bạn hơn qua từng cuộc trò chuyện.',
+        color: 'from-violet-500 to-purple-500',
+        status: '✅',
+    },
+    {
+        icon: Award,
+        title: 'Achievements',
+        description: 'Hệ thống thành tích, XP, levels. Theo dõi hành trình phát triển bản thân.',
+        color: 'from-yellow-500 to-orange-500',
+        status: '✅',
     },
 ];
 
@@ -68,6 +97,58 @@ const stats = [
     { value: '50,000+', label: 'Cuộc trò chuyện', icon: Bot },
     { value: '95%', label: 'Phản hồi tích cực', icon: Star },
     { value: '24/7', label: 'Luôn sẵn sàng', icon: Clock },
+];
+
+// Tech stack data
+const techStack = [
+    { name: 'React 18.x', icon: Code, color: 'text-cyan-400' },
+    { name: 'Vite 5.x', icon: Zap, color: 'text-yellow-400' },
+    { name: 'Cloudflare', icon: Cloud, color: 'text-orange-400' },
+    { name: 'Workers AI', icon: SparklesIcon, color: 'text-purple-400' },
+    { name: 'D1 Database', icon: Database, color: 'text-blue-400' },
+    { name: 'Tailwind CSS', icon: Palette, color: 'text-teal-400' },
+];
+
+// Advanced features
+const advancedFeatures = [
+    {
+        title: 'SOS Detection',
+        description: 'Phát hiện nguy cơ tâm lý với 50+ patterns, Gen-Z vocabulary',
+        icon: Shield,
+    },
+    {
+        title: 'Context-Aware AI',
+        description: 'Memory summarization, lưu ngữ cảnh dài hạn',
+        icon: Brain,
+    },
+    {
+        title: 'Real-time Sync',
+        description: 'Đồng bộ dữ liệu với Cloudflare D1',
+        icon: Cloud,
+    },
+    {
+        title: 'Token Cost Control',
+        description: 'Giới hạn 500k tokens/tháng, cảnh báo khi gần ngưỡng',
+        icon: TrendingUp,
+    },
+    {
+        title: 'Prompt Injection Guard',
+        description: 'Bảo vệ chống prompt injection',
+        icon: Lock,
+    },
+    {
+        title: 'AI Safety Net',
+        description: 'Không chẩn đoán bệnh, không kê thuốc',
+        icon: Shield,
+    },
+];
+
+// Performance metrics
+const performanceMetrics = [
+    { label: 'Performance', value: '>85', icon: TrendingUp },
+    { label: 'Accessibility', value: '>90', icon: Star },
+    { label: 'Best Practices', value: '>90', icon: CheckCircle },
+    { label: 'SEO', value: '>80', icon: Globe },
 ];
 
 // Benefits data
@@ -109,10 +190,22 @@ export default function LandingPage() {
 
                 <div className="relative z-10 max-w-6xl mx-auto text-center">
                     <motion.div {...fadeInUp}>
-                        {/* Badge */}
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8">
-                            <Zap className="w-4 h-4 text-[--accent]" />
-                            <span className="text-sm font-medium">Giải pháp Hỗ trợ Tâm lý Học đường</span>
+                        {/* Badges */}
+                        <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass">
+                                <Zap className="w-4 h-4 text-[--accent]" />
+                                <span className="text-sm font-medium">Giải pháp Hỗ trợ Tâm lý Học đường</span>
+                            </div>
+                            <a 
+                                href="https://ban-dong-hanh.pages.dev" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass hover:bg-[--brand]/10 transition-colors"
+                            >
+                                <Globe className="w-4 h-4 text-[--brand]" />
+                                <span className="text-sm font-medium">Đã triển khai trên Cloudflare</span>
+                                <ExternalLink className="w-3 h-3" />
+                            </a>
                         </div>
 
                         {/* Main Heading */}
@@ -195,6 +288,40 @@ export default function LandingPage() {
                 </motion.div>
             </section>
 
+            {/* ===== DEPLOYMENT LINKS SECTION ===== */}
+            <section className="py-12 px-4 border-b border-[--surface-border]">
+                <div className="max-w-6xl mx-auto">
+                    <div className="flex flex-wrap items-center justify-center gap-4">
+                        <a
+                            href="https://ban-dong-hanh.pages.dev"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl glass hover:bg-[--brand]/10 transition-all group"
+                        >
+                            <Globe className="w-5 h-5 text-[--brand] group-hover:scale-110 transition-transform" />
+                            <div className="text-left">
+                                <div className="text-xs text-[--muted]">Production</div>
+                                <div className="text-sm font-semibold text-[--text]">ban-dong-hanh.pages.dev</div>
+                            </div>
+                            <ExternalLink className="w-4 h-4 text-[--muted] group-hover:text-[--brand] transition-colors" />
+                        </a>
+                        <a
+                            href="https://ban-dong-hanh-worker.stu725114073.workers.dev"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl glass hover:bg-[--brand]/10 transition-all group"
+                        >
+                            <Cloud className="w-5 h-5 text-[--brand] group-hover:scale-110 transition-transform" />
+                            <div className="text-left">
+                                <div className="text-xs text-[--muted]">API Endpoint</div>
+                                <div className="text-sm font-semibold text-[--text]">Cloudflare Workers</div>
+                            </div>
+                            <ExternalLink className="w-4 h-4 text-[--muted] group-hover:text-[--brand] transition-colors" />
+                        </a>
+                    </div>
+                </div>
+            </section>
+
             {/* ===== STATS SECTION ===== */}
             <section className="py-20 px-4 bg-gradient-to-b from-transparent to-[--surface]/50">
                 <div className="max-w-6xl mx-auto">
@@ -251,8 +378,15 @@ export default function LandingPage() {
                                 viewport={{ once: true }}
                             >
                                 <Card variant="interactive" className="h-full">
-                                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 shadow-lg`}>
-                                        <feature.icon className="w-6 h-6 text-white" />
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center shadow-lg`}>
+                                            <feature.icon className="w-6 h-6 text-white" />
+                                        </div>
+                                        {feature.status && (
+                                            <span className="text-xs font-medium text-green-500 bg-green-500/10 px-2 py-1 rounded-full">
+                                                {feature.status}
+                                            </span>
+                                        )}
                                     </div>
                                     <h3 className="text-lg font-semibold text-[--text] mb-2">
                                         {feature.title}
@@ -334,8 +468,130 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* ===== TESTIMONIALS SECTION ===== */}
+            {/* ===== TECH STACK SECTION ===== */}
+            <section className="py-20 px-4 bg-gradient-to-b from-[--surface]/50 to-transparent">
+                <div className="max-w-6xl mx-auto">
+                    <motion.div
+                        className="text-center mb-12"
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                    >
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                            Công nghệ <span className="gradient-text">Hiện đại</span>
+                        </h2>
+                        <p className="text-[--text-secondary] max-w-2xl mx-auto">
+                            Được xây dựng với công nghệ tiên tiến, đảm bảo hiệu suất cao và trải nghiệm mượt mà
+                        </p>
+                    </motion.div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        {techStack.map((tech, idx) => (
+                            <motion.div
+                                key={tech.name}
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: idx * 0.1 }}
+                                viewport={{ once: true }}
+                            >
+                                <Card variant="interactive" className="p-6 text-center h-full">
+                                    <tech.icon className={`w-8 h-8 mx-auto mb-3 ${tech.color}`} />
+                                    <div className="text-sm font-semibold text-[--text]">{tech.name}</div>
+                                </Card>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* ===== ADVANCED FEATURES SECTION ===== */}
+            <section className="py-20 px-4">
+                <div className="max-w-6xl mx-auto">
+                    <motion.div
+                        className="text-center mb-12"
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                    >
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                            Tính năng <span className="gradient-text">Nâng cao</span>
+                        </h2>
+                        <p className="text-[--text-secondary] max-w-2xl mx-auto">
+                            Công nghệ AI tiên tiến và hệ thống bảo mật đa lớp
+                        </p>
+                    </motion.div>
+
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {advancedFeatures.map((feature, idx) => (
+                            <motion.div
+                                key={feature.title}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.1 }}
+                                viewport={{ once: true }}
+                            >
+                                <Card variant="interactive" className="h-full">
+                                    <div className="flex items-start gap-4">
+                                        <div className="shrink-0 w-12 h-12 rounded-xl bg-[--brand]/10 flex items-center justify-center">
+                                            <feature.icon className="w-6 h-6 text-[--brand]" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-[--text] mb-2">
+                                                {feature.title}
+                                            </h3>
+                                            <p className="text-sm text-[--text-secondary]">
+                                                {feature.description}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </Card>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* ===== PERFORMANCE SECTION ===== */}
             <section className="py-20 px-4 bg-[--surface]/50">
+                <div className="max-w-6xl mx-auto">
+                    <motion.div
+                        className="text-center mb-12"
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                    >
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                            Hiệu suất <span className="gradient-text">Tối ưu</span>
+                        </h2>
+                        <p className="text-[--text-secondary] max-w-2xl mx-auto">
+                            Đạt chuẩn Lighthouse với tối ưu hóa toàn diện
+                        </p>
+                    </motion.div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        {performanceMetrics.map((metric, idx) => (
+                            <motion.div
+                                key={metric.label}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.1 }}
+                                viewport={{ once: true }}
+                            >
+                                <Card className="text-center p-6">
+                                    <metric.icon className="w-8 h-8 mx-auto mb-3 text-[--brand]" />
+                                    <div className="text-3xl font-bold gradient-text mb-2">
+                                        {metric.value}
+                                    </div>
+                                    <div className="text-sm text-[--muted]">{metric.label}</div>
+                                </Card>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* ===== TESTIMONIALS SECTION ===== */}
+            <section className="py-20 px-4">
                 <div className="max-w-6xl mx-auto">
                     <motion.div
                         className="text-center mb-12"
@@ -440,30 +696,73 @@ export default function LandingPage() {
                         <div>
                             <h4 className="font-semibold text-[--text] mb-4">Tính năng</h4>
                             <ul className="space-y-2 text-sm text-[--text-secondary]">
-                                <li><Link to="/chat" className="hover:text-[--brand]">Chat AI</Link></li>
-                                <li><Link to="/breathing" className="hover:text-[--brand]">Góc An Yên</Link></li>
-                                <li><Link to="/gratitude" className="hover:text-[--brand]">Lọ Biết Ơn</Link></li>
-                                <li><Link to="/games" className="hover:text-[--brand]">Mini Games</Link></li>
+                                <li><Link to="/app/chat" className="hover:text-[--brand] transition-colors">Chat AI</Link></li>
+                                <li><Link to="/app/breathing" className="hover:text-[--brand] transition-colors">Góc An Yên</Link></li>
+                                <li><Link to="/app/gratitude" className="hover:text-[--brand] transition-colors">Lọ Biết Ơn</Link></li>
+                                <li><Link to="/app/games" className="hover:text-[--brand] transition-colors">Mini Games</Link></li>
+                                <li><Link to="/app/journal" className="hover:text-[--brand] transition-colors">Nhật ký</Link></li>
                             </ul>
                         </div>
 
                         <div>
-                            <h4 className="font-semibold text-[--text] mb-4">Hỗ trợ</h4>
+                            <h4 className="font-semibold text-[--text] mb-4">Liên hệ & Hỗ trợ</h4>
                             <ul className="space-y-2 text-sm text-[--text-secondary]">
-                                <li><a href="#" className="hover:text-[--brand]">Hướng dẫn sử dụng</a></li>
-                                <li><a href="#" className="hover:text-[--brand]">Câu hỏi thường gặp</a></li>
-                                <li><a href="#" className="hover:text-[--brand]">Liên hệ</a></li>
-                                <li><a href="#" className="hover:text-[--brand]">Đường dây nóng</a></li>
+                                <li className="flex items-center gap-2">
+                                    <Mail className="w-4 h-4" />
+                                    <a href="mailto:stu725114073@hnue.edu.vn" className="hover:text-[--brand] transition-colors">
+                                        stu725114073@hnue.edu.vn
+                                    </a>
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <Phone className="w-4 h-4" />
+                                    <a href="tel:0896636181" className="hover:text-[--brand] transition-colors">
+                                        Long Nguyễn
+                                    </a>
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <Shield className="w-4 h-4" />
+                                    <a href="tel:1800599920" className="hover:text-[--brand] transition-colors">
+                                        Hotline: 1800 599 920
+                                    </a>
+                                </li>
+                                <li className="flex items-center gap-2">
+                                    <Globe className="w-4 h-4" />
+                                    <a 
+                                        href="https://ban-dong-hanh.pages.dev" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="hover:text-[--brand] transition-colors flex items-center gap-1"
+                                    >
+                                        Website
+                                        <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                </li>
                             </ul>
                         </div>
                     </div>
 
                     {/* Copyright */}
-                    <div className="pt-8 border-t border-[--surface-border] flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-[--muted]">
-                        <div>© 2024 Bạn Đồng Hành. Được phát triển với ❤️ cho học sinh Việt Nam.</div>
-                        <div className="flex items-center gap-4">
-                            <a href="#" className="hover:text-[--brand]">Chính sách bảo mật</a>
-                            <a href="#" className="hover:text-[--brand]">Điều khoản sử dụng</a>
+                    <div className="pt-8 border-t border-[--surface-border]">
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-[--muted] mb-4">
+                            <div>© 2025 Bạn Đồng Hành. Được phát triển với tình yêu quý dành cho tất cả học sinh Việt Nam.</div>
+                            <div className="flex items-center gap-4">
+                                <a href="#" className="hover:text-[--brand] transition-colors">Chính sách bảo mật</a>
+                                <a href="#" className="hover:text-[--brand] transition-colors">Điều khoản sử dụng</a>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-[--muted]">
+                            <div className="flex items-center gap-2">
+                                <Cloud className="w-4 h-4" />
+                                <span>Deployed on Cloudflare Pages</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Code className="w-4 h-4" />
+                                <span>Powered by React 18.x + Vite 5.x</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Brain className="w-4 h-4" />
+                                <span>AI: Workers AI (Llama 3.1)</span>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -227,5 +227,70 @@ function createJsonResponse(data, status = 200) {
     });
 }
 
+/**
+ * Handler xóa tài khoản và tất cả dữ liệu
+ * DELETE /api/auth/account
+ * Header: X-User-Id: <userId>
+ */
+export async function handleDeleteAccount(request, env) {
+    try {
+        const userId = request.headers.get('X-User-Id');
+        if (!userId) {
+            return createJsonResponse({ error: 'not_authenticated' }, 401);
+        }
+
+        const userIdInt = parseInt(userId);
+        if (isNaN(userIdInt)) {
+            return createJsonResponse({ error: 'invalid_user_id' }, 400);
+        }
+
+        // Xóa tất cả dữ liệu liên quan (cascade delete)
+        // Lưu ý: SQLite không hỗ trợ CASCADE DELETE, phải xóa thủ công
+        const tables = [
+            'gratitude',
+            'journal',
+            'focus_sessions',
+            'breathing_sessions',
+            'sleep_logs',
+            'achievements',
+            'game_scores',
+            'user_stats',
+            'notification_settings',
+            'user_settings',
+            'random_cards_history',
+            // Forum data
+            'forum_upvotes',
+            'forum_comments',
+            'forum_posts',
+            // SOS logs - chỉ xóa metadata, giữ hashed_user_id để thống kê
+        ];
+
+        // Xóa dữ liệu từ các bảng
+        for (const table of tables) {
+            try {
+                await env.ban_dong_hanh_db.prepare(
+                    `DELETE FROM ${table} WHERE user_id = ?`
+                ).bind(userIdInt).run();
+            } catch (e) {
+                console.warn(`[DeleteAccount] Failed to delete from ${table}:`, e.message);
+            }
+        }
+
+        // Xóa user
+        await env.ban_dong_hanh_db.prepare(
+            'DELETE FROM users WHERE id = ?'
+        ).bind(userIdInt).run();
+
+        return createJsonResponse({
+            success: true,
+            message: 'Tài khoản và tất cả dữ liệu đã được xóa thành công'
+        });
+
+    } catch (error) {
+        console.error('[Auth] DeleteAccount error:', error.message);
+        return createJsonResponse({ error: 'server_error', message: error.message }, 500);
+    }
+}
+
 // Export cho testing
 export { validateUsername, generateUsernameSuggestions };

@@ -2,7 +2,6 @@
 // Chú thích: Header với logo, notification, user auth button
 import { Link } from 'react-router-dom';
 import { Bell, User, LogOut } from 'lucide-react';
-import ThemeToggle from './ThemeToggle';
 import { useAuth } from '../../hooks/useAuth';
 
 export default function AppHeader() {
@@ -64,9 +63,6 @@ export default function AppHeader() {
               {/* Notification dot */}
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[--accent] rounded-full" />
             </button>
-
-            {/* Theme Toggle */}
-            <ThemeToggle variant="inline" />
           </div>
         </div>
       </div>

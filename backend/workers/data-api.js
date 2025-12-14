@@ -39,7 +39,7 @@ export async function getGratitude(request, env) {
 
     try {
         const result = await env.ban_dong_hanh_db.prepare(
-            'SELECT id, content, created_at FROM gratitude WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
+            'SELECT id, content, tag, created_at FROM gratitude WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
         ).bind(userId, limit, offset).all();
 
         return json({ items: result.results, count: result.results.length });
@@ -51,14 +51,14 @@ export async function getGratitude(request, env) {
 
 /**
  * POST /api/data/gratitude - Thêm gratitude mới
- * Body: { content: string }
+ * Body: { content: string, tag?: string }
  */
 export async function addGratitude(request, env) {
     const userId = getUserId(request);
     if (!userId) return json({ error: 'not_authenticated' }, 401);
 
     try {
-        const { content } = await request.json();
+        const { content, tag } = await request.json();
 
         if (!content || typeof content !== 'string' || content.trim().length === 0) {
             return json({ error: 'Nội dung không được để trống' }, 400);
@@ -69,10 +69,10 @@ export async function addGratitude(request, env) {
         }
 
         const result = await env.ban_dong_hanh_db.prepare(
-            'INSERT INTO gratitude (user_id, content) VALUES (?, ?) RETURNING id, content, created_at'
-        ).bind(userId, content.trim()).first();
+            'INSERT INTO gratitude (user_id, content, tag) VALUES (?, ?, ?) RETURNING id, content, tag, created_at'
+        ).bind(userId, content.trim(), tag || null).first();
 
-        return json({ success: true, item: result }, 201);
+        return json({ success: true, item: result, id: result.id }, 201);
     } catch (error) {
         console.error('[Data] addGratitude error:', error.message);
         return json({ error: 'server_error' }, 500);
@@ -821,7 +821,7 @@ export async function addGameScore(request, env) {
             return json({ error: 'score phải là số không âm' }, 400);
         }
 
-        const validGames = ['space_control', 'bee_game', 'bubble_pop', 'color_match', 'doodle', 'reflex'];
+        const validGames = ['space_control', 'space_pilot', 'bee_game', 'bubble_pop', 'color_match', 'doodle', 'reflex'];
         if (!validGames.includes(game_type)) {
             return json({ error: 'game_type không hợp lệ' }, 400);
         }

@@ -1,5 +1,5 @@
 // backend/workers/ai-proxy.js
-// Chú thích: Cloudflare Worker proxy - Workers AI @cf/openai/gpt-oss-120b
+// Chú thích: Cloudflare Workers AI Proxy - Sử dụng @cf/meta/llama-3.1-8b-instruct
 // Hỗ trợ: SSE streaming, structured JSON output, 2-pass accuracy check,
 // SOS 3 tầng (rules-first), memory compression, observability light tier
 
@@ -346,7 +346,7 @@ export default {
       type: 'request',
       traceId,
       riskLevel,
-      model: env.MODEL || '@cf/openai/gpt-oss-120b',
+      model: env.MODEL || '@cf/meta/llama-3.1-8b-instruct',
       historyCount: history.length,
     }));
 
@@ -422,9 +422,6 @@ export default {
     const estimatedTokens = estimateTokens(
       JSON.stringify(messages) + sanitizedMessage
     );
-    
-    // Store for later use in streaming handler
-    const tokenCheckRef = { ...tokenCheck };
 
     // ========================================================================
     // CHECK IF STREAMING REQUESTED
@@ -493,7 +490,7 @@ export default {
 
               // Update token usage (estimate từ full text)
               const responseTokens = estimateTokens(fullText);
-              const totalTokens = estimatedTokensRef + responseTokens;
+              const totalTokens = estimatedTokens + responseTokens;
               await addTokenUsage(env, totalTokens);
 
               // Log completion
@@ -503,7 +500,7 @@ export default {
                 riskLevel,
                 latencyMs: Date.now() - startTime,
                 tokens: totalTokens,
-                tokenUsage: tokenCheckRef.tokens + totalTokens,
+                tokenUsage: tokenCheck.tokens + totalTokens,
                 status: 200,
                 stream: true,
               }));

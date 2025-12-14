@@ -149,6 +149,35 @@ const ACHIEVEMENTS = [
         condition: (stats) => stats.gratitude?.entries >= 1,
         rarity: 'common',
     },
+    {
+        id: 'gratitude_streak_30',
+        name: 'Tinh thần thép',
+        description: 'Streak 30 ngày liên tiếp với Lọ Biết Ơn',
+        icon: Flame,
+        category: 'gratitude',
+        condition: (stats) => stats.gratitude?.streak >= 30,
+        rarity: 'legendary',
+    },
+
+    // Social achievements
+    {
+        id: 'friend_helper',
+        name: 'Người bạn tốt',
+        description: 'Giúp đỡ 10 người trên diễn đàn',
+        icon: Heart,
+        category: 'social',
+        condition: (stats) => stats.forum?.helpfulPosts >= 10,
+        rarity: 'epic',
+    },
+    {
+        id: 'community_builder',
+        name: 'Xây dựng cộng đồng',
+        description: 'Đăng 50 bài viết trên diễn đàn',
+        icon: Sparkles,
+        category: 'social',
+        condition: (stats) => stats.forum?.posts >= 50,
+        rarity: 'rare',
+    },
 ];
 
 const RARITY_COLORS = {

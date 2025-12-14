@@ -44,6 +44,11 @@ const CRITICAL_PATTERNS = [
   'restart lại đời', 'reset cuộc đời',
   'không còn muốn tồn tại', 'không muốn exist',
   'tired of existing', 'done với cuộc sống',
+  // Thêm patterns mới
+  'giải thoát', 'muốn giải thoát', 'giải thoát khỏi cuộc sống',
+  'thoát khỏi đau khổ', 'thoát khỏi mọi thứ',
+  'không muốn sống nữa', 'k muốn sống nữa',
+  'chấm dứt tất cả', 'kết thúc mọi thứ',
 ];
 
 // Từ khóa HIGH - Nguy cơ cao, cần theo dõi sát
@@ -199,11 +204,13 @@ Bạn không đơn độc. Có người sẵn sàng giúp đỡ bạn ngay bây 
 
     high: `Mình lo cho bạn. Những gì bạn đang cảm thấy rất quan trọng.
 
+Mong bạn hãy bình tĩnh. Mình ở đây để lắng nghe bạn.
+
 Nếu cần nói chuyện với ai đó:
 📞 111 - Đường dây bảo vệ trẻ em
 📞 1800 599 920 - Hỗ trợ sức khỏe tâm thần
 
-Mình ở đây để lắng nghe. Bạn có muốn chia sẻ thêm không?`,
+Bạn có muốn chia sẻ thêm không?`,
 
     medium: `Mình hiểu bạn đang có những cảm xúc khó khăn. Đó là bình thường và bạn không sai khi cảm thấy như vậy. 
 

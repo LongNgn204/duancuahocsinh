@@ -34,6 +34,13 @@ const RED_PATTERNS = [
     'cạn pin rồi', 'bat low quá', 'energy = 0',
     // Viết tắt phổ biến
     'kts', 'muốn c', 'muốn die',
+    // Patterns mới - Phase 4
+    'không còn lý do sống', 'hết lý do sống',
+    'tốt nhất là chết', 'chết là giải pháp',
+    'sẽ tự tử', 'sẽ tự sát', 'sẽ tự vẫn',
+    'có dao', 'có thuốc', 'có dây',
+    'lần cuối', 'lời cuối', 'tạm biệt',
+    'không còn cách nào', 'hết cách',
 ];
 
 // Từ khóa YELLOW - cần theo dõi
@@ -68,6 +75,12 @@ const YELLOW_PATTERNS = [
     // Gia đình
     'bố mẹ không hiểu', 'bị la hoài', 'bị so sánh',
     'ghét về nhà', 'không muốn về nhà',
+    // Patterns mới - Phase 4
+    'không còn hy vọng', 'hết hy vọng',
+    'mất hết động lực', 'không còn động lực',
+    'cảm thấy vô dụng', 'mình vô dụng',
+    'không ai cần mình', 'thừa thãi',
+    'muốn biến mất', 'muốn tan biến',
 ];
 
 /**

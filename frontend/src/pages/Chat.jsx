@@ -125,48 +125,49 @@ function Bubble({ role, children, onCopy, onPlayTTS, onPauseTTS, onResumeTTS, on
                       <button
                         type="button"
                         onClick={onResumeTTS}
-                        className="flex items-center gap-1 hover:text-[--text] transition-colors"
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[--brand]/20 text-[--brand] hover:bg-[--brand]/30 transition-colors"
                         title="Tiếp tục đọc"
                       >
-                        <Play size={12} /> Tiếp tục
+                        <Play size={14} /> <span className="text-xs">Tiếp tục</span>
                       </button>
                     ) : (
                       <button
                         type="button"
                         onClick={onPauseTTS}
-                        className="flex items-center gap-1 hover:text-[--text] transition-colors"
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[--brand]/20 text-[--brand] hover:bg-[--brand]/30 transition-colors animate-pulse"
                         title="Tạm dừng"
                       >
-                        <Pause size={12} /> Tạm dừng
+                        <Pause size={14} /> <span className="text-xs">Tạm dừng</span>
                       </button>
                     )}
                     <button
                       type="button"
                       onClick={onStopTTS}
-                      className="flex items-center gap-1 hover:text-[--text] transition-colors"
+                      className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[--surface-border] transition-colors"
                       title="Dừng đọc"
                     >
-                      <VolumeX size={12} /> Dừng
+                      <VolumeX size={14} /> <span className="text-xs">Dừng</span>
                     </button>
                   </>
                 ) : (
                   <button
                     type="button"
                     onClick={onPlayTTS}
-                    className="flex items-center gap-1 hover:text-[--text] transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[--brand]/10 text-[--brand] hover:bg-[--brand]/20 transition-colors font-medium"
                     title="Đọc tin nhắn"
                   >
-                    <Volume2 size={12} /> Đọc
+                    <Volume2 size={16} className="animate-pulse" />
+                    <span className="text-xs font-semibold">Đọc</span>
                   </button>
                 )}
                 {onTtsSettings && (
                   <button
                     type="button"
                     onClick={onTtsSettings}
-                    className="p-1 hover:text-[--text] transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-[--surface-border] transition-colors"
                     title="Cài đặt TTS"
                   >
-                    <Settings size={12} />
+                    <Settings size={14} />
                   </button>
                 )}
               </div>
@@ -295,30 +296,32 @@ export default function Chat() {
   return (
     <div className="min-h-[70vh] space-y-4" role="main">
       {/* Mode Tabs */}
-      <Card size="sm">
+      <Card className="p-2">
         <div className="flex items-center gap-2">
-          <div className="flex-1 flex gap-2 p-1 bg-[--surface-border] rounded-xl">
+          <div className="flex-1 flex gap-1.5 p-1 bg-[--surface-border] rounded-xl">
             <button
               onClick={() => setChatMode('text')}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg transition-all relative ${
                 chatMode === 'text'
-                  ? 'bg-white dark:bg-gray-800 text-[--brand] shadow-sm font-medium'
+                  ? 'bg-[--surface] text-[--brand] shadow-sm font-medium'
                   : 'text-[--muted] hover:text-[--text]'
               }`}
             >
               <MessageCircle size={18} />
-              <span className="text-sm">Chat văn bản</span>
+              <span className="text-sm hidden sm:inline">Chat văn bản</span>
+              <span className="text-sm sm:hidden">Văn bản</span>
             </button>
             <button
               onClick={() => setChatMode('voice')}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-all ${
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg transition-all relative ${
                 chatMode === 'voice'
-                  ? 'bg-white dark:bg-gray-800 text-[--brand] shadow-sm font-medium'
+                  ? 'bg-[--surface] text-[--brand] shadow-sm font-medium'
                   : 'text-[--muted] hover:text-[--text]'
               }`}
             >
               <Headphones size={18} />
-              <span className="text-sm">Nói chuyện</span>
+              <span className="text-sm hidden sm:inline">Nói chuyện</span>
+              <span className="text-sm sm:hidden">Nói</span>
             </button>
           </div>
         </div>
@@ -341,15 +344,20 @@ export default function Chat() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 10 }}
-          className="h-[calc(100vh-20rem)] md:h-[calc(100vh-18rem)] flex flex-col md:grid md:grid-cols-[280px_1fr] gap-4"
+          className="h-[calc(100vh-20rem)] md:h-[calc(100vh-18rem)] flex flex-col lg:grid lg:grid-cols-[320px_1fr] gap-4"
         >
       {/* A11y live region */}
       <div aria-live="polite" aria-atomic="false" className="sr-only" ref={liveRegionRef} />
 
       {/* Left: Conversation List */}
-      <div className="hidden md:block">
-        <Card className="h-full overflow-hidden">
-          <div className="p-4 border-b border-[--surface-border]">
+      <div className="hidden lg:block">
+        <Card className="h-full flex flex-col overflow-hidden">
+          {/* Header */}
+          <div className="p-4 border-b border-[--surface-border] bg-gradient-to-r from-[--brand]/5 to-transparent">
+            <h3 className="font-semibold text-[--text] mb-3 flex items-center gap-2">
+              <MessageCircle size={18} className="text-[--brand]" />
+              Hội thoại
+            </h3>
             <Button
               onClick={() => { newChat(); setText(''); setImages([]); }}
               variant="primary"
@@ -359,7 +367,9 @@ export default function Chat() {
               Chat mới
             </Button>
           </div>
-          <div className="p-2 overflow-y-auto max-h-[calc(100%-5rem)]">
+          
+          {/* List */}
+          <div className="flex-1 overflow-y-auto p-2">
             <ChatList
               threads={threads}
               currentId={currentId}
@@ -376,35 +386,53 @@ export default function Chat() {
       {/* Right: Chat Thread */}
       <Card className="flex flex-col h-full overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[--surface-border]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[--brand] to-[--brand-light] flex items-center justify-center shadow-lg">
+        <div className="flex items-center justify-between p-4 border-b border-[--surface-border] bg-gradient-to-r from-[--brand]/5 to-transparent">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[--brand] to-[--brand-light] flex items-center justify-center shadow-lg shrink-0">
               <Bot className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <h2 className="font-semibold text-[--text]">{currentThread?.title || 'Cuộc trò chuyện'}</h2>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-semibold text-[--text] truncate">{currentThread?.title || 'Cuộc trò chuyện mới'}</h2>
               <p className="text-xs text-[--muted]">{messages.length} tin nhắn</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon-sm" onClick={clearChat} aria-label="Xoá hội thoại">
+          <div className="flex items-center gap-2 shrink-0">
+            <Button variant="ghost" size="icon-sm" onClick={clearChat} aria-label="Xoá hội thoại" title="Xóa hội thoại">
               <Trash2 size={16} />
             </Button>
           </div>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4" role="list" aria-label="Tin nhắn">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-gradient-to-b from-transparent to-[--surface]/30" role="list" aria-label="Tin nhắn">
           {messages.length === 0 && (
-            <div className="h-full flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[--brand]/20 to-[--secondary]/20 flex items-center justify-center mb-4">
-                <Bot className="w-8 h-8 text-[--brand]" />
-              </div>
-              <h3 className="font-semibold text-lg text-[--text] mb-2">Xin chào! 👋</h3>
-              <p className="text-[--muted] max-w-sm">
-                Mình là Bạn Đồng Hành, luôn sẵn sàng lắng nghe bạn.
+            <div className="h-full flex flex-col items-center justify-center text-center px-4">
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[--brand]/20 to-[--secondary]/20 flex items-center justify-center mb-6 shadow-lg"
+              >
+                <Bot className="w-10 h-10 text-[--brand]" />
+              </motion.div>
+              <motion.h3
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="font-semibold text-xl text-[--text] mb-3"
+              >
+                Xin chào! 👋
+              </motion.h3>
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-[--text-secondary] max-w-md leading-relaxed"
+              >
+                Mình là <span className="font-semibold text-[--brand]">Bạn Đồng Hành</span>, luôn sẵn sàng lắng nghe bạn.
+                <br />
                 Hãy chia sẻ bất cứ điều gì bạn đang nghĩ nhé!
-              </p>
+              </motion.p>
             </div>
           )}
 
@@ -515,9 +543,9 @@ export default function Chat() {
         </AnimatePresence>
 
         {/* Input */}
-        <div className="p-4 border-t border-[--surface-border]">
+        <div className="p-4 border-t border-[--surface-border] bg-[--surface]/50 backdrop-blur-sm">
           <form onSubmit={onSubmit} className="flex items-end gap-2">
-            <div className="flex-1 glass rounded-2xl p-2 flex items-end gap-2">
+            <div className="flex-1 glass rounded-2xl p-3 flex items-end gap-2 border border-[--surface-border]">
               {/* Mic visualizer */}
               {speech.supported && speech.listening && (
                 <div className="mb-1">
@@ -537,26 +565,27 @@ export default function Chat() {
                 }}
                 placeholder="Chia sẻ điều bạn đang nghĩ..."
                 rows={1}
-                className="flex-1 bg-transparent resize-none outline-none text-[--text] placeholder:text-[--muted] py-2 px-3 min-h-[40px] max-h-24"
+                className="flex-1 bg-transparent resize-none outline-none text-[--text] placeholder:text-[--muted] py-2 px-3 min-h-[44px] max-h-32 text-sm leading-relaxed"
                 aria-label="Ô nhập tin nhắn"
               />
 
               {/* Action buttons */}
               <div className="flex items-center gap-1 mb-1">
-                <label className="p-2 rounded-xl cursor-pointer text-[--muted] hover:text-[--text] hover:bg-[--surface-border] transition-colors">
+                <label className="p-2 rounded-xl cursor-pointer text-[--muted] hover:text-[--text] hover:bg-[--surface-border] transition-colors touch-target" title="Thêm ảnh">
                   <Image size={18} />
-                  <input type="file" accept="image/*" onChange={onPickImages} className="hidden" />
+                  <input type="file" accept="image/*" onChange={onPickImages} className="hidden" multiple />
                 </label>
 
                 {speech.supported && (
                   <button
                     type="button"
                     onClick={speech.listening ? speech.stop : speech.start}
-                    className={`p-2 rounded-xl transition-colors ${speech.listening
-                      ? 'bg-red-500 text-white'
+                    className={`p-2 rounded-xl transition-colors touch-target ${speech.listening
+                      ? 'bg-red-500 text-white shadow-lg'
                       : 'text-[--muted] hover:text-[--text] hover:bg-[--surface-border]'
                       }`}
                     aria-label={speech.listening ? 'Dừng ghi âm' : 'Ghi âm'}
+                    title={speech.listening ? 'Dừng ghi âm' : 'Ghi âm'}
                   >
                     {speech.listening ? <MicOff size={18} /> : <Mic size={18} />}
                   </button>
@@ -570,30 +599,31 @@ export default function Chat() {
               size="icon"
               disabled={loading || (!text.trim() && images.length === 0)}
               aria-label="Gửi"
+              className="w-12 h-12 shrink-0"
             >
               <Send size={18} />
             </Button>
           </form>
 
           {/* Quick actions */}
-          <div className="mt-2 flex items-center gap-2 text-xs">
-            <button
-              type="button"
-              onClick={onResendLast}
-              disabled={!lastUserText}
-              className="flex items-center gap-1 text-[--muted] hover:text-[--text] disabled:opacity-50"
-            >
-              <RotateCcw size={12} /> Gửi lại
-            </button>
-            <button
-              type="button"
-              onClick={() => { if (lastUserText) { setText(lastUserText); inputRef.current?.focus(); } }}
-              disabled={!lastUserText}
-              className="flex items-center gap-1 text-[--muted] hover:text-[--text] disabled:opacity-50"
-            >
-              <Edit3 size={12} /> Sửa
-            </button>
-          </div>
+          {lastUserText && (
+            <div className="mt-3 flex items-center gap-3 text-xs">
+              <button
+                type="button"
+                onClick={onResendLast}
+                className="flex items-center gap-1.5 text-[--muted] hover:text-[--text] transition-colors px-2 py-1 rounded-lg hover:bg-[--surface-border]"
+              >
+                <RotateCcw size={12} /> Gửi lại
+              </button>
+              <button
+                type="button"
+                onClick={() => { if (lastUserText) { setText(lastUserText); inputRef.current?.focus(); } }}
+                className="flex items-center gap-1.5 text-[--muted] hover:text-[--text] transition-colors px-2 py-1 rounded-lg hover:bg-[--surface-border]"
+              >
+                <Edit3 size={12} /> Sửa
+              </button>
+            </div>
+          )}
         </div>
       </Card>
 

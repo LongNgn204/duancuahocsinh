@@ -8,10 +8,12 @@ import Badge from '../ui/Badge';
 import GlowOrbs from '../ui/GlowOrbs';
 import {
     Calendar, BookOpen, Heart, Sparkles, ChevronLeft, ChevronRight,
-    Plus, Edit3, Trash2, Search, Filter, Download, TrendingUp, Cloud, CloudOff
+    Plus, Edit3, Trash2, Search, Filter, Download, TrendingUp, Cloud, CloudOff,
+    Zap, Lightbulb, BarChart3, Clock
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { getJournalList, addJournalEntry, deleteJournalEntry } from '../../utils/api';
+import { getJournalList, addJournalEntry, deleteJournalEntry, rewardXP } from '../../utils/api';
+import { analyzeSentiment, classifySentiment, getSentimentColor } from '../../utils/sentiment';
 
 // Mood options
 const MOODS = [
@@ -101,7 +103,8 @@ export default function MoodJournal() {
     const [showEditor, setShowEditor] = useState(false);
     const [editingEntry, setEditingEntry] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [view, setView] = useState('calendar'); // 'calendar' | 'list'
+    const [view, setView] = useState('calendar'); // 'calendar' | 'list' | 'chart'
+    const [chartPeriod, setChartPeriod] = useState('week'); // 'week' | 'month'
     const [syncing, setSyncing] = useState(false);
     const [syncError, setSyncError] = useState(null);
 
@@ -185,6 +188,151 @@ export default function MoodJournal() {
     // Get today's entry
     const todayEntry = useMemo(() => getEntryForDate(new Date()), [entries]);
 
+    // Quick check-in - save mood without content
+    const handleQuickCheckIn = async (moodId) => {
+        if (!moodId) return;
+
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        
+        // Check if already has entry
+        const existing = entries.find(e => {
+            const entryDate = e.date ? new Date(e.date).toISOString().split('T')[0] : null;
+            return entryDate === todayStr;
+        });
+
+        if (existing) {
+            // Update existing
+            const updated = entries.map(e => {
+                const entryDate = e.date ? new Date(e.date).toISOString().split('T')[0] : null;
+                if (entryDate === todayStr) {
+                    return { ...e, mood: moodId };
+                }
+                return e;
+            });
+            saveLocalEntries(updated);
+
+            // Sync to server
+            if (isLoggedIn) {
+                try {
+                    const backendMood = MOOD_MAP[moodId] || moodId;
+                    await addJournalEntry(existing.content || '', backendMood, []);
+                } catch (e) {
+                    console.warn('[MoodJournal] Quick check-in sync failed:', e);
+                }
+            }
+        } else {
+            // Create new entry
+            const newEntry = {
+                id: Date.now().toString(),
+                content: '',
+                mood: moodId,
+                date: today.toISOString(),
+            };
+            const updated = [...entries, newEntry];
+            saveLocalEntries(updated);
+
+            // Sync to server
+            if (isLoggedIn) {
+                try {
+                    const backendMood = MOOD_MAP[moodId] || moodId;
+                    await addJournalEntry('', backendMood, []);
+                } catch (e) {
+                    console.warn('[MoodJournal] Quick check-in sync failed:', e);
+                }
+            }
+        }
+
+        // Reload entries
+        loadEntries();
+    };
+
+    // Insights
+    const insights = useMemo(() => {
+        const last7Days = entries.filter(e => {
+            const entryDate = e.date ? new Date(e.date) : null;
+            if (!entryDate) return false;
+            const daysDiff = (new Date() - entryDate) / (1000 * 60 * 60 * 24);
+            return daysDiff <= 7;
+        });
+
+        const last30Days = entries.filter(e => {
+            const entryDate = e.date ? new Date(e.date) : null;
+            if (!entryDate) return false;
+            const daysDiff = (new Date() - entryDate) / (1000 * 60 * 60 * 24);
+            return daysDiff <= 30;
+        });
+
+        // Most common mood
+        const moodCounts = {};
+        last7Days.forEach(e => {
+            if (e.mood) moodCounts[e.mood] = (moodCounts[e.mood] || 0) + 1;
+        });
+        const mostCommonMood = Object.entries(moodCounts).sort((a, b) => b[1] - a[1])[0];
+        const mostCommonMoodData = mostCommonMood ? MOODS.find(m => m.id === mostCommonMood[0]) : null;
+
+        // Trend (comparing last 7 days vs previous 7 days)
+        const last14Days = entries.filter(e => {
+            const entryDate = e.date ? new Date(e.date) : null;
+            if (!entryDate) return false;
+            const daysDiff = (new Date() - entryDate) / (1000 * 60 * 60 * 24);
+            return daysDiff <= 14;
+        });
+        const recent7 = last14Days.slice(0, 7);
+        const previous7 = last14Days.slice(7, 14);
+        
+        const recentAvg = recent7.length > 0 
+            ? recent7.reduce((sum, e) => {
+                const idx = MOODS.findIndex(m => m.id === e.mood);
+                return sum + (idx >= 0 ? idx : 2.5);
+            }, 0) / recent7.length
+            : null;
+        
+        const previousAvg = previous7.length > 0
+            ? previous7.reduce((sum, e) => {
+                const idx = MOODS.findIndex(m => m.id === e.mood);
+                return sum + (idx >= 0 ? idx : 2.5);
+            }, 0) / previous7.length
+            : null;
+
+        let trend = 'stable';
+        let trendMessage = 'Cảm xúc của bạn ổn định';
+        if (recentAvg !== null && previousAvg !== null) {
+            if (recentAvg < previousAvg - 0.5) {
+                trend = 'improving';
+                trendMessage = 'Cảm xúc của bạn đang cải thiện! 🎉';
+            } else if (recentAvg > previousAvg + 0.5) {
+                trend = 'declining';
+                trendMessage = 'Cảm xúc có vẻ đang đi xuống. Hãy chăm sóc bản thân nhé 💙';
+            }
+        }
+
+        // Streak
+        let streak = 0;
+        const today = new Date();
+        for (let i = 0; i < 30; i++) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - i);
+            const entry = getEntryForDate(date);
+            if (entry) {
+                streak++;
+            } else {
+                break;
+            }
+        }
+
+        return {
+            mostCommonMood: mostCommonMoodData,
+            trend,
+            trendMessage,
+            streak,
+            last7DaysCount: last7Days.length,
+            last30DaysCount: last30Days.length,
+        };
+    }, [entries, getEntryForDate]);
+
+    const [showQuickCheckInSuccess, setShowQuickCheckInSuccess] = useState(false);
+
     // Filtered entries for list view
     const filteredEntries = useMemo(() => {
         let filtered = [...entries].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -215,15 +363,59 @@ export default function MoodJournal() {
         return { total: monthEntries.length, moods: stats };
     }, [entries, viewMonth]);
 
+    // Weekly mood chart data (7 ngày gần nhất)
+    const weeklyChartData = useMemo(() => {
+        const today = new Date();
+        const data = [];
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - i);
+            const entry = getEntryForDate(date);
+            const moodValue = entry ? MOODS.findIndex(m => m.id === entry.mood) : -1;
+            data.push({
+                date: date.toISOString().split('T')[0],
+                mood: entry?.mood || null,
+                moodValue: moodValue >= 0 ? moodValue : null,
+                sentimentScore: entry?.sentimentScore || null,
+            });
+        }
+        return data;
+    }, [entries]);
+
+    // Monthly mood chart data (30 ngày gần nhất)
+    const monthlyChartData = useMemo(() => {
+        const today = new Date();
+        const data = [];
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - i);
+            const entry = getEntryForDate(date);
+            const moodValue = entry ? MOODS.findIndex(m => m.id === entry.mood) : -1;
+            data.push({
+                date: date.toISOString().split('T')[0],
+                mood: entry?.mood || null,
+                moodValue: moodValue >= 0 ? moodValue : null,
+                sentimentScore: entry?.sentimentScore || null,
+            });
+        }
+        return data;
+    }, [entries]);
+
     // Save entry
     const saveEntry = async () => {
         if (!mood) return;
+
+        // Phân tích sentiment
+        const sentimentScore = analyzeSentiment(content);
+        const sentimentLabel = classifySentiment(sentimentScore);
 
         const entry = {
             id: editingEntry?.id || Date.now().toString(),
             date: selectedDate.toISOString(),
             mood,
             content,
+            sentimentScore,
+            sentimentLabel,
             createdAt: editingEntry?.createdAt || new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             synced: false,
@@ -248,6 +440,14 @@ export default function MoodJournal() {
             try {
                 const backendMood = MOOD_MAP[mood] || mood;
                 await addJournalEntry(content, backendMood, []);
+                
+                // Thưởng XP khi thêm entry
+                try {
+                    await rewardXP('journal_add');
+                } catch (xpError) {
+                    console.warn('[Journal] XP reward failed:', xpError);
+                }
+                
                 // Mark as synced
                 entry.synced = true;
                 const syncedUpdated = updated.map(e => e.id === entry.id ? entry : e);
@@ -360,6 +560,14 @@ export default function MoodJournal() {
                             Danh sách
                         </Button>
                         <Button
+                            variant={view === 'chart' ? 'primary' : 'ghost'}
+                            size="sm"
+                            icon={<TrendingUp size={16} />}
+                            onClick={() => setView('chart')}
+                        >
+                            Biểu đồ
+                        </Button>
+                        <Button
                             variant="ghost"
                             size="icon-sm"
                             onClick={exportEntries}
@@ -369,6 +577,244 @@ export default function MoodJournal() {
                         </Button>
                     </div>
                 </motion.div>
+
+                {/* Quick Check-in */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                >
+                    <Card variant="highlight" className="relative">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Zap size={18} className="text-[--brand]" />
+                            <h3 className="font-semibold text-[--text]">Quick Check-in</h3>
+                        </div>
+                        <p className="text-sm text-[--muted] mb-4">
+                            Chọn nhanh cảm xúc hôm nay (không cần viết nhật ký)
+                        </p>
+                        <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                            {MOODS.map(m => {
+                                const isSelected = todayEntry?.mood === m.id;
+                                return (
+                                    <motion.button
+                                        key={m.id}
+                                        onClick={() => handleQuickCheckIn(m.id)}
+                                        className={`
+                                            p-3 rounded-xl text-center transition-all
+                                            ${isSelected
+                                                ? `bg-gradient-to-br ${m.color.replace('bg-', 'from-').replace('-500', '-400')} to-${m.color.replace('bg-', '').replace('-500', '-600')} text-white shadow-lg`
+                                                : 'glass hover:bg-white/50'
+                                            }
+                                        `}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        title={m.label}
+                                    >
+                                        <div className="text-2xl mb-1">{m.emoji}</div>
+                                        <div className={`text-xs font-medium ${isSelected ? 'text-white' : 'text-[--text]'}`}>
+                                            {m.label}
+                                        </div>
+                                    </motion.button>
+                                );
+                            })}
+                        </div>
+                        {showQuickCheckInSuccess && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium shadow-lg"
+                            >
+                                ✓ Đã lưu!
+                            </motion.div>
+                        )}
+                    </Card>
+                </motion.div>
+
+                {/* Insights */}
+                {insights.last7DaysCount > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        <Card>
+                            <div className="flex items-center gap-2 mb-4">
+                                <Lightbulb size={18} className="text-[--accent]" />
+                                <h3 className="font-semibold text-[--text]">Insights</h3>
+                            </div>
+                            <div className="grid md:grid-cols-2 gap-4">
+                                {/* Trend */}
+                                <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <TrendingUp size={16} className="text-blue-600" />
+                                        <span className="text-sm font-medium text-blue-900">Xu hướng</span>
+                                    </div>
+                                    <p className={`text-sm ${insights.trend === 'improving' ? 'text-green-700' : insights.trend === 'declining' ? 'text-orange-700' : 'text-blue-700'}`}>
+                                        {insights.trendMessage}
+                                    </p>
+                                </div>
+
+                                {/* Most Common Mood */}
+                                {insights.mostCommonMood && (
+                                    <div className="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <BarChart3 size={16} className="text-purple-600" />
+                                            <span className="text-sm font-medium text-purple-900">Cảm xúc thường gặp</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-2xl">{insights.mostCommonMood.emoji}</span>
+                                            <span className="text-sm text-purple-700">{insights.mostCommonMood.label}</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Streak */}
+                                {insights.streak > 0 && (
+                                    <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Clock size={16} className="text-amber-600" />
+                                            <span className="text-sm font-medium text-amber-900">Chuỗi ngày</span>
+                                        </div>
+                                        <p className="text-2xl font-bold text-amber-700">{insights.streak} ngày</p>
+                                        <p className="text-xs text-amber-600">liên tiếp ghi nhật ký</p>
+                                    </div>
+                                )}
+
+                                {/* Stats */}
+                                <div className="p-4 rounded-xl bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-200">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Heart size={16} className="text-teal-600" />
+                                        <span className="text-sm font-medium text-teal-900">Thống kê</span>
+                                    </div>
+                                    <p className="text-sm text-teal-700">
+                                        {insights.last7DaysCount} ngày trong 7 ngày qua
+                                        <br />
+                                        {insights.last30DaysCount} ngày trong 30 ngày qua
+                                    </p>
+                                </div>
+                            </div>
+                        </Card>
+                    </motion.div>
+                )}
+
+                {/* Quick Check-in */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                >
+                    <Card variant="highlight" className="relative">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Zap size={18} className="text-[--brand]" />
+                            <h3 className="font-semibold text-[--text]">Quick Check-in</h3>
+                        </div>
+                        <p className="text-sm text-[--muted] mb-4">
+                            Chọn nhanh cảm xúc hôm nay (không cần viết nhật ký)
+                        </p>
+                        <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                            {MOODS.map(m => {
+                                const isSelected = todayEntry?.mood === m.id;
+                                return (
+                                    <motion.button
+                                        key={m.id}
+                                        onClick={() => handleQuickCheckIn(m.id)}
+                                        className={`
+                                            p-3 rounded-xl text-center transition-all
+                                            ${isSelected
+                                                ? `bg-gradient-to-br from-${m.color.replace('bg-', '').replace('-500', '-400')} to-${m.color.replace('bg-', '').replace('-500', '-600')} text-white shadow-lg`
+                                                : 'glass hover:bg-white/50'
+                                            }
+                                        `}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        title={m.label}
+                                    >
+                                        <div className="text-2xl mb-1">{m.emoji}</div>
+                                        <div className={`text-xs font-medium ${isSelected ? 'text-white' : 'text-[--text]'}`}>
+                                            {m.label}
+                                        </div>
+                                    </motion.button>
+                                );
+                            })}
+                        </div>
+                        <AnimatePresence>
+                            {showQuickCheckInSuccess && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="absolute top-4 right-4 bg-green-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium shadow-lg"
+                                >
+                                    ✓ Đã lưu!
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </Card>
+                </motion.div>
+
+                {/* Insights */}
+                {insights.last7DaysCount > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        <Card>
+                            <div className="flex items-center gap-2 mb-4">
+                                <Lightbulb size={18} className="text-[--accent]" />
+                                <h3 className="font-semibold text-[--text]">Insights</h3>
+                            </div>
+                            <div className="grid md:grid-cols-2 gap-4">
+                                {/* Trend */}
+                                <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <TrendingUp size={16} className="text-blue-600" />
+                                        <span className="text-sm font-medium text-blue-900">Xu hướng</span>
+                                    </div>
+                                    <p className={`text-sm ${insights.trend === 'improving' ? 'text-green-700' : insights.trend === 'declining' ? 'text-orange-700' : 'text-blue-700'}`}>
+                                        {insights.trendMessage}
+                                    </p>
+                                </div>
+
+                                {/* Most Common Mood */}
+                                {insights.mostCommonMood && (
+                                    <div className="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <BarChart3 size={16} className="text-purple-600" />
+                                            <span className="text-sm font-medium text-purple-900">Cảm xúc thường gặp</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-2xl">{insights.mostCommonMood.emoji}</span>
+                                            <span className="text-sm text-purple-700">{insights.mostCommonMood.label}</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Streak */}
+                                {insights.streak > 0 && (
+                                    <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Clock size={16} className="text-amber-600" />
+                                            <span className="text-sm font-medium text-amber-900">Chuỗi ngày</span>
+                                        </div>
+                                        <p className="text-2xl font-bold text-amber-700">{insights.streak} ngày</p>
+                                        <p className="text-xs text-amber-600">liên tiếp ghi nhật ký</p>
+                                    </div>
+                                )}
+
+                                {/* Stats */}
+                                <div className="p-4 rounded-xl bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-200">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Heart size={16} className="text-teal-600" />
+                                        <span className="text-sm font-medium text-teal-900">Thống kê</span>
+                                    </div>
+                                    <p className="text-sm text-teal-700">
+                                        {insights.last7DaysCount} ngày trong 7 ngày qua
+                                        <br />
+                                        {insights.last30DaysCount} ngày trong 30 ngày qua
+                                    </p>
+                                </div>
+                            </div>
+                        </Card>
+                    </motion.div>
+                )}
 
                 {/* Today's mood quick add */}
                 {!todayEntry && (
@@ -530,6 +976,124 @@ export default function MoodJournal() {
                                 })}
                             </div>
                         )}
+                    </motion.div>
+                )}
+
+                {/* Chart View */}
+                {view === 'chart' && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="space-y-4"
+                    >
+                        {/* Period selector */}
+                        <Card size="sm">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm text-[--muted]">Khoảng thời gian:</span>
+                                <Button
+                                    variant={chartPeriod === 'week' ? 'primary' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => setChartPeriod('week')}
+                                >
+                                    7 ngày
+                                </Button>
+                                <Button
+                                    variant={chartPeriod === 'month' ? 'primary' : 'ghost'}
+                                    size="sm"
+                                    onClick={() => setChartPeriod('month')}
+                                >
+                                    30 ngày
+                                </Button>
+                            </div>
+                        </Card>
+
+                        {/* Mood Chart */}
+                        <Card>
+                            <h3 className="font-semibold mb-4">Xu hướng cảm xúc</h3>
+                            <div className="h-48 flex items-end gap-1">
+                                {(chartPeriod === 'week' ? weeklyChartData : monthlyChartData).map((d, i) => {
+                                    const hasEntry = d.moodValue !== null;
+                                    const height = hasEntry ? ((d.moodValue + 1) / MOODS.length) * 100 : 10;
+                                    const moodData = d.mood ? MOODS.find(m => m.id === d.mood) : null;
+                                    
+                                    return (
+                                        <div key={d.date} className="flex-1 flex flex-col items-center group relative">
+                                            <motion.div
+                                                className={`w-full rounded-t transition-all ${
+                                                    hasEntry 
+                                                        ? moodData?.color || 'bg-gray-400'
+                                                        : 'bg-[--surface-border]'
+                                                }`}
+                                                initial={{ height: 0 }}
+                                                animate={{ height: `${height}%` }}
+                                                transition={{ delay: i * 0.05 }}
+                                                title={hasEntry ? `${d.date}: ${moodData?.label || d.mood}` : d.date}
+                                            />
+                                            <span className="text-xs text-[--muted] mt-1 hidden sm:block">
+                                                {new Date(d.date).getDate()}/{new Date(d.date).getMonth() + 1}
+                                            </span>
+                                            {/* Tooltip */}
+                                            <div className="absolute bottom-full mb-2 hidden group-hover:block z-10 px-2 py-1 text-xs bg-[--text] text-white rounded-lg whitespace-nowrap">
+                                                {d.date}: {hasEntry ? (moodData?.label || d.mood) : 'Chưa có'}
+                                                {d.sentimentScore !== null && (
+                                                    <span className={`ml-2 ${getSentimentColor(d.sentimentScore)}`}>
+                                                        ({Math.round(d.sentimentScore * 100)}%)
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <div className="mt-4 flex items-center justify-center gap-4 text-xs text-[--muted]">
+                                {MOODS.map((m, idx) => (
+                                    <div key={m.id} className="flex items-center gap-1">
+                                        <div className={`w-3 h-3 rounded ${m.color}`} />
+                                        <span>{m.label}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </Card>
+
+                        {/* Sentiment Chart */}
+                        <Card>
+                            <h3 className="font-semibold mb-4">Phân tích cảm xúc (Sentiment)</h3>
+                            <div className="h-32 flex items-end gap-1">
+                                {(chartPeriod === 'week' ? weeklyChartData : monthlyChartData).map((d, i) => {
+                                    const score = d.sentimentScore;
+                                    const height = score !== null ? score * 100 : 5;
+                                    const color = score !== null 
+                                        ? (score >= 0.6 ? 'bg-emerald-500' : score <= 0.4 ? 'bg-red-500' : 'bg-amber-500')
+                                        : 'bg-[--surface-border]';
+                                    
+                                    return (
+                                        <div key={d.date} className="flex-1 flex flex-col items-center group relative">
+                                            <motion.div
+                                                className={`w-full rounded-t ${color} transition-all`}
+                                                initial={{ height: 0 }}
+                                                animate={{ height: `${height}%` }}
+                                                transition={{ delay: i * 0.05 }}
+                                                title={score !== null ? `${d.date}: ${Math.round(score * 100)}%` : d.date}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <div className="mt-4 flex items-center justify-center gap-4 text-xs">
+                                <div className="flex items-center gap-1">
+                                    <div className="w-3 h-3 rounded bg-emerald-500" />
+                                    <span className="text-[--muted]">Tích cực</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <div className="w-3 h-3 rounded bg-amber-500" />
+                                    <span className="text-[--muted]">Trung tính</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <div className="w-3 h-3 rounded bg-red-500" />
+                                    <span className="text-[--muted]">Tiêu cực</span>
+                                </div>
+                            </div>
+                        </Card>
                     </motion.div>
                 )}
             </div>

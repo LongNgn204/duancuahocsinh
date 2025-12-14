@@ -9,9 +9,9 @@ import GlowOrbs from '../ui/GlowOrbs';
 import StoryTeller from '../resources/StoryTeller';
 import {
     Moon, Sun, Play, Pause, Volume2, VolumeX, Clock,
-    CloudRain, Wind, Waves, Flame, Music, Bird, Timer, BookOpen, Cloud
+    CloudRain, Wind, Waves, Flame, Music, Bird, Timer, BookOpen, Cloud, TrendingUp, BarChart3
 } from 'lucide-react';
-import { isLoggedIn, getSleepLogs, saveSleepLog, scheduleSync } from '../../utils/api';
+import { isLoggedIn, getSleepLogs, saveSleepLog, scheduleSync, rewardXP } from '../../utils/api';
 
 
 // Sleep sounds (would need actual audio files in production)
@@ -198,6 +198,14 @@ export default function SleepHelper() {
             setSaving(true);
             try {
                 await saveSleepLog(sleepTime, wakeTime, quality, '', Math.round(duration * 60));
+                
+                // Thưởng XP khi log sleep
+                try {
+                    await rewardXP('sleep_log');
+                } catch (xpError) {
+                    console.warn('[Sleep] XP reward failed:', xpError);
+                }
+                
                 scheduleSync(3000);
             } catch (e) {
                 console.warn('[Sleep] Server save failed:', e.message);
@@ -430,6 +438,76 @@ export default function SleepHelper() {
                                         <div className="text-xs text-[--muted]">Đêm ghi nhận</div>
                                     </div>
                                 </div>
+
+                                {/* Sleep Chart - 7 ngày gần nhất */}
+                                {stats.logs.length > 0 && (
+                                    <div className="mt-4 pt-4 border-t border-[--surface-border]">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <BarChart3 size={16} className="text-[--muted]" />
+                                            <p className="text-sm font-medium text-[--text]">Xu hướng 7 ngày gần nhất</p>
+                                        </div>
+                                        <div className="h-32 flex items-end gap-1">
+                                            {(() => {
+                                                const today = new Date();
+                                                const weekData = [];
+                                                for (let i = 6; i >= 0; i--) {
+                                                    const date = new Date(today);
+                                                    date.setDate(today.getDate() - i);
+                                                    const dateStr = date.toISOString().split('T')[0];
+                                                    const log = stats.logs.find(l => 
+                                                        new Date(l.date).toISOString().split('T')[0] === dateStr
+                                                    );
+                                                    weekData.push({
+                                                        date: dateStr,
+                                                        duration: log?.duration || 0,
+                                                        quality: log?.quality || 0,
+                                                    });
+                                                }
+                                                const maxDuration = Math.max(...weekData.map(d => d.duration), 8);
+                                                return weekData.map((d, i) => {
+                                                    const height = d.duration > 0 ? (d.duration / maxDuration) * 100 : 5;
+                                                    return (
+                                                        <div key={d.date} className="flex-1 flex flex-col items-center group relative">
+                                                            <motion.div
+                                                                className={`w-full rounded-t transition-all ${
+                                                                    d.duration > 0 
+                                                                        ? d.quality >= 4 ? 'bg-emerald-500' 
+                                                                          : d.quality >= 3 ? 'bg-amber-500' 
+                                                                          : 'bg-red-500'
+                                                                        : 'bg-[--surface-border]'
+                                                                }`}
+                                                                initial={{ height: 0 }}
+                                                                animate={{ height: `${height}%` }}
+                                                                transition={{ delay: i * 0.05 }}
+                                                                title={d.duration > 0 
+                                                                    ? `${d.date}: ${d.duration.toFixed(1)}h (${d.quality}/5)` 
+                                                                    : d.date
+                                                                }
+                                                            />
+                                                            <span className="text-xs text-[--muted] mt-1 hidden sm:block">
+                                                                {new Date(d.date).getDate()}/{new Date(d.date).getMonth() + 1}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                });
+                                            })()}
+                                        </div>
+                                        <div className="mt-2 flex items-center justify-center gap-4 text-xs text-[--muted]">
+                                            <div className="flex items-center gap-1">
+                                                <div className="w-3 h-3 rounded bg-emerald-500" />
+                                                <span>Tốt (≥4★)</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <div className="w-3 h-3 rounded bg-amber-500" />
+                                                <span>Trung bình (3★)</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <div className="w-3 h-3 rounded bg-red-500" />
+                                                <span>Kém (<3★)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Recent logs */}
                                 {stats.logs.length > 0 && (

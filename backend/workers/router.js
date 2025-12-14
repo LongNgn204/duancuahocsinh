@@ -6,7 +6,8 @@ import {
     handleRegister,
     handleLogin,
     handleCheckUsername,
-    handleGetMe
+    handleGetMe,
+    handleDeleteAccount
 } from './auth.js';
 
 import {
@@ -93,6 +94,7 @@ function matchRoute(pathname, method) {
     if (pathname === '/api/auth/login' && method === 'POST') return 'auth:login';
     if (pathname === '/api/auth/check' && method === 'GET') return 'auth:check';
     if (pathname === '/api/auth/me' && method === 'GET') return 'auth:me';
+    if (pathname === '/api/auth/account' && method === 'DELETE') return 'auth:delete';
 
     // Data routes - Gratitude
     if (pathname === '/api/data/gratitude' && method === 'GET') return 'data:gratitude:list';
@@ -223,6 +225,9 @@ export default {
                     break;
                 case 'auth:me':
                     response = await handleGetMe(request, env);
+                    break;
+                case 'auth:delete':
+                    response = await handleDeleteAccount(request, env);
                     break;
 
                 // Gratitude endpoints

@@ -305,6 +305,27 @@ npx wrangler d1 execute ban-dong-hanh-db --file=./schema.sql --remote
 
 ## 🧪 Testing
 
+Xem [docs/TESTING.md](docs/TESTING.md) để biết chi tiết về testing.
+
+### Chạy Tests
+
+```bash
+# Backend tests (Vitest)
+cd backend && npm test
+
+# Frontend tests (Vitest)
+cd frontend && npm test
+
+# E2E tests (Playwright)
+cd frontend && npm run e2e:install && npm run e2e
+```
+
+### Test Coverage
+
+- ✅ **Unit Tests**: sosDetector, sanitizeInput, XP/Level calculation, Streak calculation
+- ✅ **Integration Tests**: API endpoints (Auth, Data, Forum, SOS, Admin)
+- ✅ **E2E Tests**: User flows (Onboarding, Chat, Gratitude, Journal, Games, Settings, Forum)
+
 ### Unit Tests
 
 ```bash

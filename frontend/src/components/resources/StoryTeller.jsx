@@ -229,25 +229,29 @@ Câu chuyện này dạy: Đừng lừa dối người khác, dù là để có 
 // Chế độ tốc độ đọc
 const SPEED_MODES = {
     slow: {
-        label: '0.75x',
+        label: 'Kể chậm',
+        subLabel: '0.75x',
         icon: Turtle,
         rate: 0.75,
         description: 'Chậm - Dễ theo dõi, thư giãn'
     },
     normal: {
-        label: '1.0x',
+        label: 'Kể bình thường',
+        subLabel: '1.0x',
         icon: Gauge,
         rate: 1.0,
         description: 'Bình thường - Tốc độ vừa phải'
     },
     fast: {
-        label: '1.25x',
+        label: 'Kể nhanh',
+        subLabel: '1.25x',
         icon: Rabbit,
         rate: 1.25,
         description: 'Nhanh - Tiết kiệm thời gian'
     },
     veryFast: {
-        label: '1.5x',
+        label: 'Kể rất nhanh',
+        subLabel: '1.5x',
         icon: Rabbit,
         rate: 1.5,
         description: 'Rất nhanh - Đọc nhanh nhất'
@@ -546,26 +550,40 @@ Và họ sống hạnh phúc mãi mãi.`;
 
             {/* Speed Mode Selector */}
             <Card size="sm">
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                    <span className="text-sm font-medium text-[--text]">Tốc độ kể:</span>
-                    <div className="flex gap-2">
+                <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                        <Gauge size={18} className="text-[--brand]" />
+                        <span className="text-sm font-semibold text-[--text]">Tốc độ kể:</span>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                         {Object.entries(SPEED_MODES).map(([key, mode]) => (
-                            <button
+                            <motion.button
                                 key={key}
                                 onClick={() => setSpeedMode(key)}
                                 className={`
-                  flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all
-                  ${speedMode === key
+                                    flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl text-sm transition-all
+                                    ${speedMode === key
                                         ? 'bg-[--brand] text-white shadow-lg'
                                         : 'glass hover:bg-white/50'
                                     }
-                `}
+                                `}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                title={mode.description}
                             >
-                                <mode.icon size={16} />
-                                {mode.label}
-                            </button>
+                                <mode.icon size={18} />
+                                <div className="flex flex-col items-center">
+                                    <span className="font-medium">{mode.label}</span>
+                                    <span className={`text-xs ${speedMode === key ? 'text-white/80' : 'text-[--muted]'}`}>
+                                        {mode.subLabel}
+                                    </span>
+                                </div>
+                            </motion.button>
                         ))}
                     </div>
+                    <p className="text-xs text-[--muted] text-center">
+                        {SPEED_MODES[speedMode].description}
+                    </p>
                 </div>
             </Card>
 
@@ -632,7 +650,7 @@ Và họ sống hạnh phúc mãi mãi.`;
                                     <div>
                                         <h3 className="font-bold text-lg text-[--text]">{selectedStory.title}</h3>
                                         <p className="text-sm text-[--muted]">
-                                            Tốc độ: {SPEED_MODES[speedMode].label} ({SPEED_MODES[speedMode].rate}x)
+                                            Tốc độ: {SPEED_MODES[speedMode].label} {SPEED_MODES[speedMode].subLabel}
                                         </p>
                                     </div>
                                 </div>

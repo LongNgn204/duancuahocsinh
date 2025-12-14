@@ -106,7 +106,7 @@
 
 /* ===== DARK THEME ===== */
 [data-theme="dark"] {
-  /* Brand colors - slightly brighter for dark bg */
+  /* Brand colors - Teal/Cyan (dễ nhìn trên nền tối) */
   --brand: #2dd4bf;
   --brand-light: #5eead4;
   --brand-dark: #14b8a6;
@@ -118,37 +118,37 @@
   --secondary: #f0abfc;
   --secondary-foreground: #faf5ff;
 
-  /* Surfaces */
-  --bg: #0c1222;
-  --bg-gradient-start: #0c1222;
-  --bg-gradient-end: #1a2744;
+  /* Surfaces - Gradient đẹp hơn với màu xanh đậm */
+  --bg: #0a0e1a;
+  --bg-gradient-start: #0a0e1a;
+  --bg-gradient-end: #1a1f3a;
   --text: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --surface: #162032;
-  --surface-elevated: #1e293b;
-  --surface-border: rgba(255, 255, 255, 0.1);
+  --text-secondary: #cbd5e1;
+  --surface: rgba(30, 41, 59, 0.8);
+  --surface-elevated: rgba(30, 41, 59, 0.95);
+  --surface-border: rgba(45, 212, 191, 0.15);
   --muted: #94a3b8;
 
-  /* Glassmorphism */
-  --glass-bg: rgba(22, 32, 50, 0.8);
-  --glass-bg-strong: rgba(22, 32, 50, 0.95);
-  --glass-border: rgba(255, 255, 255, 0.1);
-  --glass-shadow: rgba(0, 0, 0, 0.3);
+  /* Glassmorphism - Tăng độ trong suốt và đẹp hơn */
+  --glass-bg: rgba(30, 41, 59, 0.7);
+  --glass-bg-strong: rgba(30, 41, 59, 0.92);
+  --glass-border: rgba(45, 212, 191, 0.2);
+  --glass-shadow: rgba(0, 0, 0, 0.4);
 
   /* Focus & Interactive */
   --ring: #2dd4bf;
-  --ring-offset: #0c1222;
+  --ring-offset: #0a0e1a;
 
-  /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #14b8a6 0%, #22d3ee 100%);
-  --gradient-accent: linear-gradient(135deg, #fcd34d 0%, #fb923c 100%);
-  --gradient-hero: linear-gradient(135deg, #1a2744 0%, #162032 50%, #1e1b4b 100%);
-  --gradient-warm: linear-gradient(135deg, #422006 0%, #4a1d3f 100%);
+  /* Gradients - Cải thiện với màu sắc hài hòa hơn */
+  --gradient-primary: linear-gradient(135deg, #14b8a6 0%, #2dd4bf 50%, #5eead4 100%);
+  --gradient-accent: linear-gradient(135deg, #fcd34d 0%, #fbbf24 50%, #fb923c 100%);
+  --gradient-hero: linear-gradient(135deg, #0f172a 0%, #1e293b 30%, #334155 60%, #1e1b4b 100%);
+  --gradient-warm: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
 
-  /* Orb colors */
-  --orb-1: rgba(45, 212, 191, 0.1);
-  --orb-2: rgba(252, 211, 77, 0.08);
-  --orb-3: rgba(240, 171, 252, 0.08);
+  /* Orb colors - Tăng độ sáng và đẹp hơn */
+  --orb-1: rgba(45, 212, 191, 0.15);
+  --orb-2: rgba(252, 211, 77, 0.12);
+  --orb-3: rgba(240, 171, 252, 0.12);
 
   --fs-scale: 1;
 }
@@ -166,6 +166,57 @@ html {
   font-size: 16px;
 }
 
+/* ===== RESPONSIVE DESIGN - Phase 5 ===== */
+/* Touch targets - Minimum 48x48px for accessibility */
+.touch-target {
+  min-width: 48px;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Keyboard navigation */
+*:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Skip to main content link (accessibility) */
+.skip-to-main {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--brand);
+  color: white;
+  padding: 8px 16px;
+  z-index: 100;
+  text-decoration: none;
+}
+
+.skip-to-main:focus {
+  top: 0;
+}
+
+/* Responsive breakpoints */
+@media (max-width: 1440px) {
+  .container-xl {
+    max-width: 1280px;
+  }
+}
+
+@media (max-width: 1280px) {
+  .container-lg {
+    max-width: 1024px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .container-md {
+    max-width: 768px;
+  }
+}
+
 @media (max-width: 768px) {
   html {
     font-size: 15px;
@@ -180,7 +231,13 @@ html {
 
 body {
   background: var(--bg);
-  background-image: linear-gradient(to bottom, var(--bg-gradient-start), var(--bg-gradient-end));
+  background-image: 
+    radial-gradient(at 0% 0%, var(--orb-1) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, var(--orb-2) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, var(--orb-3) 0px, transparent 50%),
+    radial-gradient(at 0% 100%, var(--orb-1) 0px, transparent 50%),
+    linear-gradient(to bottom, var(--bg-gradient-start), var(--bg-gradient-end));
+  background-attachment: fixed;
   min-height: 100vh;
   color: var(--text);
   font-family: var(--font-sans);
@@ -188,6 +245,29 @@ body {
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.65;
   font-size: calc(1rem * var(--fs-scale, 1));
+  position: relative;
+}
+
+/* Dark mode background pattern overlay */
+[data-theme="dark"] body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(45, 212, 191, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(252, 211, 77, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(240, 171, 252, 0.04) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure content is above background */
+#root {
+  position: relative;
+  z-index: 1;
 }
 
 /* ===== TYPOGRAPHY ===== */
@@ -614,6 +694,34 @@ a:focus-visible {
 }
 
 /* ===== REDUCED MOTION ===== */
+/* Mobile small - 320px+ */
+@media (max-width: 480px) {
+  /* Ensure touch targets are at least 48px on mobile */
+  button, a, [role="button"] {
+    min-height: 48px;
+    min-width: 48px;
+  }
+  
+  /* Adjust spacing for small screens */
+  .space-y-6 > * + * {
+    margin-top: 1rem;
+  }
+  
+  /* Larger text on mobile for readability */
+  body {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}
+
+/* Extra small - 320px */
+@media (max-width: 320px) {
+  .container-sm {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+/* Reduced motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
 
   *,

@@ -12,7 +12,7 @@ import {
     Clock, Flame, CheckCircle, Cloud
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { saveFocusSession, getFocusSessions } from '../../utils/api';
+import { saveFocusSession, getFocusSessions, rewardXP } from '../../utils/api';
 
 // Timer presets
 const PRESETS = {
@@ -22,14 +22,16 @@ const PRESETS = {
     custom: { work: 30, break: 5, label: 'Tuỳ chỉnh' },
 };
 
-// Ambient sounds
+// Ambient sounds với URLs (sử dụng free ambient sound sources)
 const SOUNDS = [
-    { id: 'none', label: 'Tắt', emoji: '🔇' },
-    { id: 'rain', label: 'Mưa', emoji: '🌧️' },
-    { id: 'forest', label: 'Rừng', emoji: '🌲' },
-    { id: 'coffee', label: 'Cafe', emoji: '☕' },
-    { id: 'waves', label: 'Sóng biển', emoji: '🌊' },
-    { id: 'fire', label: 'Lửa', emoji: '🔥' },
+    { id: 'none', label: 'Tắt', emoji: '🔇', url: null },
+    { id: 'rain', label: 'Mưa', emoji: '🌧️', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' }, // Placeholder - cần thay bằng file thực
+    { id: 'forest', label: 'Rừng', emoji: '🌲', url: null },
+    { id: 'coffee', label: 'Cafe', emoji: '☕', url: null },
+    { id: 'waves', label: 'Sóng biển', emoji: '🌊', url: null },
+    { id: 'fire', label: 'Lửa', emoji: '🔥', url: null },
+    { id: 'white-noise', label: 'White Noise', emoji: '📻', url: null },
+    { id: 'nature', label: 'Thiên nhiên', emoji: '🌿', url: null },
 ];
 
 // Storage keys
@@ -153,6 +155,13 @@ export default function FocusTimer() {
                 try {
                     setSyncing(true);
                     await saveFocusSession(minutes, 'focus', true);
+                    
+                    // Thưởng XP khi hoàn thành session
+                    try {
+                        await rewardXP('focus_complete');
+                    } catch (xpError) {
+                        console.warn('[FocusTimer] XP reward failed:', xpError);
+                    }
                 } catch (err) {
                     console.error('[FocusTimer] Sync error:', err);
                 } finally {
@@ -189,26 +198,74 @@ export default function FocusTimer() {
     const totalSeconds = getMinutes() * 60;
     const progress = ((totalSeconds - timeLeft) / totalSeconds) * 100;
 
-    // Play ambient sound
+    // Play ambient sound với Web Audio API (tạo tone nếu không có file)
     useEffect(() => {
         if (sound === 'none' || !isRunning) {
             if (audioRef.current) {
-                audioRef.current.pause();
+                if (audioRef.current.pause) audioRef.current.pause();
                 audioRef.current = null;
             }
             return;
         }
 
-        // Would need actual audio files in production
-        // For now, this is a placeholder
-        // audioRef.current = new Audio(`/sounds/${sound}.mp3`);
-        // audioRef.current.loop = true;
-        // audioRef.current.volume = 0.3;
-        // audioRef.current.play().catch(() => {});
+        const soundConfig = SOUNDS.find(s => s.id === sound);
+        if (!soundConfig) return;
+
+        // Nếu có URL, load file audio
+        if (soundConfig.url) {
+            try {
+                const audio = new Audio(soundConfig.url);
+                audio.loop = true;
+                audio.volume = 0.3;
+                audio.play().catch(() => {});
+                audioRef.current = audio;
+            } catch (e) {
+                console.warn('[FocusTimer] Audio load failed:', e);
+            }
+        } else {
+            // Tạo ambient tone với Web Audio API
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                
+                // Tùy chỉnh theo loại sound
+                if (sound === 'rain') {
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.value = 200;
+                } else if (sound === 'waves') {
+                    oscillator.type = 'sine';
+                    oscillator.frequency.value = 150;
+                } else if (sound === 'white-noise') {
+                    // White noise cần buffer source, đơn giản hóa
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.value = 100;
+                } else {
+                    oscillator.type = 'sine';
+                    oscillator.frequency.value = 180;
+                }
+                
+                gainNode.gain.value = 0.1;
+                oscillator.connect(gainNode).connect(ctx.destination);
+                oscillator.start();
+                
+                audioRef.current = { stop: () => {
+                    oscillator.stop();
+                    ctx.close();
+                }};
+            } catch (e) {
+                console.warn('[FocusTimer] Web Audio failed:', e);
+            }
+        }
 
         return () => {
             if (audioRef.current) {
-                audioRef.current.pause();
+                if (audioRef.current.pause) {
+                    audioRef.current.pause();
+                } else if (audioRef.current.stop) {
+                    audioRef.current.stop();
+                }
+                audioRef.current = null;
             }
         };
     }, [sound, isRunning]);
@@ -333,13 +390,17 @@ export default function FocusTimer() {
                                 {isRunning ? 'Tạm dừng' : 'Bắt đầu'}
                             </Button>
 
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={skipToBreak}
-                            >
-                                {mode === 'work' ? <Coffee size={22} /> : <BookOpen size={22} />}
-                            </Button>
+                            {mode === 'work' && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={skipToBreak}
+                                    icon={<Coffee size={18} />}
+                                    title="Bỏ qua và nghỉ ngơi"
+                                >
+                                    <span className="hidden sm:inline">Bỏ qua</span>
+                                </Button>
+                            )}
                         </div>
 
                         {/* Ambient sound selector */}

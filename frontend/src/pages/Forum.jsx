@@ -1,10 +1,10 @@
 // src/pages/Forum.jsx
 // Chú thích: Diễn đàn ẩn danh - Nơi chia sẻ tâm sự an toàn
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     MessageCircle, Heart, Clock, Tag, Plus, Send, ArrowLeft,
-    Lock, AlertTriangle, Users, X, ChevronUp, Loader2, Flag
+    Lock, AlertTriangle, Users, X, ChevronUp, Loader2, Flag, Search, Filter, TrendingUp
 } from 'lucide-react';
 import GlowOrbs from '../components/ui/GlowOrbs';
 import {
@@ -662,29 +662,82 @@ function PostDetail({ postId, onBack }) {
 export default function Forum() {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
     const [selectedTag, setSelectedTag] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortBy, setSortBy] = useState('newest'); // 'newest' | 'popular' | 'oldest'
     const [showNewPost, setShowNewPost] = useState(false);
     const [viewingPostId, setViewingPostId] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
     const [reportingPostId, setReportingPostId] = useState(null);
+    const observerTarget = useRef(null);
 
     useEffect(() => {
-        loadPosts();
-    }, [page, selectedTag]);
+        // Reset khi filter thay đổi
+        setPosts([]);
+        setPage(1);
+        setHasMore(true);
+        loadPosts(true);
+    }, [selectedTag, sortBy, searchQuery]);
 
-    const loadPosts = async () => {
-        setLoading(true);
+    useEffect(() => {
+        // Infinite scroll observer
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+                    loadMorePosts();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        if (observerTarget.current) {
+            observer.observe(observerTarget.current);
+        }
+
+        return () => {
+            if (observerTarget.current) {
+                observer.unobserve(observerTarget.current);
+            }
+        };
+    }, [hasMore, loading, loadingMore]);
+
+    const loadPosts = async (reset = false) => {
+        if (reset) {
+            setLoading(true);
+            setPage(1);
+        } else {
+            setLoadingMore(true);
+        }
         try {
-            const data = await getForumPosts(page, 20, selectedTag);
-            setPosts(data.items || []);
-            setTotalPages(data.pagination?.totalPages || 1);
+            const currentPage = reset ? 1 : page;
+            const data = await getForumPosts(currentPage, 20, selectedTag, sortBy);
+            const newPosts = data.items || [];
+            
+            if (reset) {
+                setPosts(newPosts);
+            } else {
+                setPosts(prev => [...prev, ...newPosts]);
+            }
+            
+            setHasMore(newPosts.length === 20 && (data.pagination?.totalPages || 0) > currentPage);
+            if (!reset) setPage(prev => prev + 1);
         } catch (e) {
             console.error('Load posts error:', e);
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
+    };
+
+    const loadMorePosts = () => {
+        if (!hasMore || loadingMore) return;
+        setPage(prev => {
+            loadPosts(false);
+            return prev + 1;
+        });
     };
 
     const handleCreatePost = async (postData) => {
@@ -722,29 +775,58 @@ export default function Forum() {
                     </p>
                 </div>
 
-                {/* Tags Filter */}
-                <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide">
-                    <button
-                        onClick={() => { setSelectedTag(null); setPage(1); }}
-                        className={`px-4 py-2 rounded-full whitespace-nowrap transition-all ${!selectedTag
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-white/60 dark:bg-gray-800/60 text-gray-600 dark:text-gray-300'
-                            }`}
-                    >
-                        Tất cả
-                    </button>
-                    {POPULAR_TAGS.map(tag => (
+                {/* Search & Filters */}
+                <div className="space-y-4 mb-6">
+                    {/* Search Bar */}
+                    <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Tìm kiếm bài viết..."
+                            className="w-full pl-12 pr-4 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
+                        />
+                    </div>
+
+                    {/* Tags Filter */}
+                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                         <button
-                            key={tag.id}
-                            onClick={() => { setSelectedTag(tag.id); setPage(1); }}
-                            className={`px-4 py-2 rounded-full whitespace-nowrap transition-all ${selectedTag === tag.id
+                            onClick={() => setSelectedTag(null)}
+                            className={`px-4 py-2 rounded-full whitespace-nowrap transition-all ${!selectedTag
                                     ? 'bg-blue-500 text-white'
-                                    : 'bg-white/60 dark:bg-gray-800/60 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700'
+                                    : 'bg-white/60 dark:bg-gray-800/60 text-gray-600 dark:text-gray-300'
                                 }`}
                         >
-                            {tag.emoji} {tag.label}
+                            Tất cả
                         </button>
-                    ))}
+                        {POPULAR_TAGS.map(tag => (
+                            <button
+                                key={tag.id}
+                                onClick={() => setSelectedTag(tag.id)}
+                                className={`px-4 py-2 rounded-full whitespace-nowrap transition-all ${selectedTag === tag.id
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-white/60 dark:bg-gray-800/60 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700'
+                                    }`}
+                            >
+                                {tag.emoji} {tag.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Sort Filter */}
+                    <div className="flex items-center gap-2">
+                        <Filter className="w-4 h-4 text-gray-400" />
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            className="px-4 py-2 bg-white/80 dark:bg-gray-800/80 rounded-xl border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                        >
+                            <option value="newest">Mới nhất</option>
+                            <option value="popular">Phổ biến</option>
+                            <option value="oldest">Cũ nhất</option>
+                        </select>
+                    </div>
                 </div>
 
                 {/* New Post Button */}
@@ -775,42 +857,48 @@ export default function Forum() {
                         </button>
                     </div>
                 ) : (
-                    <div className="space-y-4">
-                        <AnimatePresence>
-                            {posts.map(post => (
-                                <PostCard
-                                    key={post.id}
-                                    post={post}
-                                    onClick={setViewingPostId}
-                                    onReport={(postId) => {
-                                        setReportingPostId(postId);
-                                        setShowReportModal(true);
-                                    }}
-                                />
-                            ))}
-                        </AnimatePresence>
-                    </div>
-                )}
+                    <>
+                        <div className="space-y-4">
+                            <AnimatePresence>
+                                {posts
+                                    .filter(post => {
+                                        if (!searchQuery) return true;
+                                        const query = searchQuery.toLowerCase();
+                                        return (
+                                            post.title?.toLowerCase().includes(query) ||
+                                            post.content?.toLowerCase().includes(query) ||
+                                            post.tags?.some(tag => tag.toLowerCase().includes(query))
+                                        );
+                                    })
+                                    .map(post => (
+                                        <PostCard
+                                            key={post.id}
+                                            post={post}
+                                            onClick={setViewingPostId}
+                                            onReport={(postId) => {
+                                                setReportingPostId(postId);
+                                                setShowReportModal(true);
+                                            }}
+                                        />
+                                    ))}
+                            </AnimatePresence>
+                        </div>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                    <div className="flex justify-center gap-2 mt-8">
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).slice(
-                            Math.max(0, page - 3),
-                            Math.min(totalPages, page + 2)
-                        ).map(p => (
-                            <button
-                                key={p}
-                                onClick={() => setPage(p)}
-                                className={`w-10 h-10 rounded-full ${p === page
-                                        ? 'bg-blue-500 text-white'
-                                        : 'bg-white/60 dark:bg-gray-800/60 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700'
-                                    }`}
-                            >
-                                {p}
-                            </button>
-                        ))}
-                    </div>
+                        {/* Infinite Scroll Trigger */}
+                        {hasMore && (
+                            <div ref={observerTarget} className="flex justify-center py-8">
+                                {loadingMore && (
+                                    <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                                )}
+                            </div>
+                        )}
+
+                        {!hasMore && posts.length > 0 && (
+                            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                                <p>Đã hiển thị tất cả bài viết</p>
+                            </div>
+                        )}
+                    </>
                 )}
 
                 {/* Warning Notice */}
