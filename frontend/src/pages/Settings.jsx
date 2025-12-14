@@ -1,15 +1,16 @@
 // src/pages/Settings.jsx
-// Chú thích: Settings v3.0 - Modern grouped settings với toggles, cards
+// Chú thích: Settings v3.1 - Thêm Replay Tour
 import { motion } from 'framer-motion';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import { useSettings } from '../hooks/useSettings';
 import { useTheme } from '../hooks/useTheme';
+import { useTourStatus } from '../components/tour/TourGuide';
 import {
   Settings as SettingsIcon, Type, Globe, Sun, Moon,
   Bell, Shield, Info, Heart, Sparkles, RotateCcw,
-  ChevronRight, ExternalLink
+  ChevronRight, ExternalLink, HelpCircle
 } from 'lucide-react';
 
 function SettingRow({ icon: Icon, title, description, children }) {
@@ -54,6 +55,7 @@ function Toggle({ checked, onChange }) {
 export default function Settings() {
   const { settings, setFontScale, setLang, setNotifications, setSoundEffects } = useSettings();
   const { theme, toggle: toggleTheme } = useTheme();
+  const { resetTour } = useTourStatus();
 
   const resetAll = () => {
     if (confirm('Bạn có chắc muốn khôi phục tất cả cài đặt về mặc định?')) {
@@ -241,6 +243,9 @@ export default function Settings() {
             </div>
 
             <div className="pt-4 flex flex-wrap gap-2">
+              <Button variant="ghost" size="sm" icon={<HelpCircle size={14} />} onClick={resetTour}>
+                Xem lại hướng dẫn
+              </Button>
               <Button variant="ghost" size="sm" icon={<ExternalLink size={14} />}>
                 Website
               </Button>

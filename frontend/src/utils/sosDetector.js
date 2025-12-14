@@ -27,10 +27,18 @@ const CRITICAL_PATTERNS = [
   'tự đánh mình', 'tự hurt',
   'uống thuốc ngủ', 'overdose',
 
-  // Tiếng lóng/viết tắt gen Z
-  'mún đi luôn', 'muốn đi luôn',
-  'đi khỏi thế giới', 'rời khỏi thế giới',
-  'end game', 'game over đời',
+  // ===== GEN Z VOCABULARY =====
+  // Tiếng lóng "muốn chết"
+  'mún đi luôn', 'muốn đi luôn', 'đi luôn cho rồi',
+  'ngủ luôn', 'ngủ mãi', 'sleep forever',
+  'đi khỏi thế giới', 'rời khỏi thế giới', 'rời khỏi thế giới này',
+  'end game', 'game over đời', 'gg đi',
+  'bái bai thế giới', 'bye bye cuộc đời',
+  // Mạng xã hội style
+  'ko thể tiếp tục nữa', 'hết năng lượng sống',
+  'cạn pin rồi', 'bat low quá', 'energy = 0',
+  // Viết tắt phổ biến
+  'kts', 'muốn c', 'muốn die',
 ];
 
 // Từ khóa HIGH - Nguy cơ cao, cần theo dõi sát
@@ -65,9 +73,23 @@ const MEDIUM_PATTERNS = [
   'buồn quá', 'buồn lắm', 'buồn muốn khóc',
   'khóc hoài', 'khóc mỗi ngày', 'khóc suốt',
   'không vui được', 'không còn vui',
-  'chán nản', 'chán đời', 'chán lắm rồi',
+  'chán nản', 'chán lắm rồi',
   'mệt mỏi lắm', 'kiệt sức rồi',
   'không ngủ được', 'mất ngủ',
+
+  // ===== GEN Z VOCABULARY =====
+  // Tiếng lóng chán/buồn (MEDIUM level)
+  'chán đời', 'chán vl', 'chán real', 'chán thật sự',
+  'toang', 'toang rồi', 'toang real', 'toang thật sự',
+  'emo quá', 'đang emo', 'emo nặng',
+  'xuống tinh thần', 'mood đi xuống',
+  // Mạng xã hội style
+  'không ai care', 'no one cares', 'ai mà hiểu',
+  'cô đơn vl', 'lonely af', 'một mình hoài',
+  'áp lực quá trời', 'stress vl', 'burn out rồi',
+  // Tự ti
+  'fail đủ thứ', 'mình dở quá', 'mình tệ quá',
+  'không làm được gì cả', 'useless real',
 
   // Lo âu
   'lo lắng quá', 'lo nhiều lắm',
@@ -79,6 +101,8 @@ const MEDIUM_PATTERNS = [
   'bị bố đánh', 'bị mẹ đánh', 'bị cha mẹ đánh',
   'ghét bố', 'ghét mẹ', 'ghét gia đình',
   'muốn bỏ nhà', 'muốn chạy trốn',
+  'bố mẹ không hiểu', 'bị la hoài', 'bị so sánh',
+  'ghét về nhà', 'không muốn về nhà',
 
   // Học tập
   'thi trượt', 'học dốt', 'bị phạt',

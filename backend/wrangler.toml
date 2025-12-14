@@ -26,3 +26,8 @@ MONTHLY_TOKEN_LIMIT = "500000"
 # Token budget hàng ngày cho AI (kiểm soát chi phí)
 MAX_TOKEN_BUDGET = "50000"
 
+# Admin Authentication (standalone - không cần database)
+# Đổi password này thành password riêng của bạn!
+ADMIN_PASSWORD = "BanDongHanh2024@Admin"
+# JWT Secret - đổi thành chuỗi ngẫu nhiên riêng!
+JWT_SECRET = "ban-dong-hanh-secret-key-change-me-in-production"

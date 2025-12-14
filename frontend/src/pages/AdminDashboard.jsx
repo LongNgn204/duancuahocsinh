@@ -1,5 +1,5 @@
 // src/pages/AdminDashboard.jsx
-// Chú thích: Admin Dashboard v2.0 - Standalone layout riêng biệt, không dùng app layout
+// Chú thích: Admin Dashboard v3.0 - JWT Authentication độc lập
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
@@ -7,12 +7,12 @@ import {
     Shield, AlertTriangle, Users, MessageSquare, Ban,
     Lock, Unlock, Eye, EyeOff, Trash2, Clock, ChevronDown,
     BarChart3, Activity, RefreshCw, Home, Settings, LogOut,
-    FileText, Flag, Database, Menu, X
+    FileText, Flag, Database, Menu, X, KeyRound
 } from 'lucide-react';
 import {
     getForumStats, getAdminLogs, getBannedUsers, getForumPosts,
     deleteForumPost, toggleLockPost, banUser, unbanUser,
-    isLoggedIn, getCurrentUser, logout
+    adminLogin, isAdminLoggedIn, adminLogout
 } from '../utils/api';
 
 // =============================================================================
@@ -34,7 +34,6 @@ function formatDate(dateStr) {
 
 function AdminSidebar({ activeTab, setActiveTab, collapsed, setCollapsed }) {
     const navigate = useNavigate();
-    const user = getCurrentUser();
 
     const menuItems = [
         { id: 'overview', label: 'Tổng quan', icon: BarChart3 },
@@ -44,7 +43,7 @@ function AdminSidebar({ activeTab, setActiveTab, collapsed, setCollapsed }) {
     ];
 
     const handleLogout = () => {
-        logout();
+        adminLogout();
         navigate('/');
     };
 
@@ -70,11 +69,13 @@ function AdminSidebar({ activeTab, setActiveTab, collapsed, setCollapsed }) {
                 </button>
             </div>
 
-            {/* User Info */}
-            {!collapsed && user && (
+            {/* Admin Badge */}
+            {!collapsed && (
                 <div className="p-4 border-b border-gray-700">
-                    <p className="text-sm text-gray-400">Xin chào,</p>
-                    <p className="font-medium truncate">{user.username}</p>
+                    <div className="flex items-center gap-2 text-green-400">
+                        <KeyRound size={16} />
+                        <span className="text-sm font-medium">JWT Authenticated</span>
+                    </div>
                 </div>
             )}
 
@@ -505,15 +506,41 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [password, setPassword] = useState('');
+    const [loginError, setLoginError] = useState('');
+    const [loginLoading, setLoginLoading] = useState(false);
     const navigate = useNavigate();
 
+    // Check JWT auth on mount
     useEffect(() => {
-        if (!isLoggedIn()) {
-            navigate('/');
-            return;
+        if (isAdminLoggedIn()) {
+            setIsAuthenticated(true);
+            loadData();
+        } else {
+            setLoading(false);
         }
-        loadData();
     }, []);
+
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setLoginLoading(true);
+        setLoginError('');
+
+        try {
+            const result = await adminLogin(password);
+            if (result.success) {
+                setIsAuthenticated(true);
+                loadData();
+            } else {
+                setLoginError(result.message || 'Sai mật khẩu');
+            }
+        } catch (error) {
+            setLoginError(error.message || 'Lỗi đăng nhập');
+        } finally {
+            setLoginLoading(false);
+        }
+    };
 
     const loadData = async () => {
         setLoading(true);
@@ -542,14 +569,74 @@ export default function AdminDashboard() {
         }
     };
 
-    if (!isLoggedIn()) {
+    // Show login form if not authenticated
+    if (!isAuthenticated) {
         return (
-            <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-                <div className="text-center">
-                    <Shield className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                    <h1 className="text-xl font-bold mb-2">Cần đăng nhập</h1>
-                    <Link to="/" className="text-blue-500 hover:underline">Quay về trang chủ</Link>
-                </div>
+            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full max-w-md"
+                >
+                    <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-700">
+                        <div className="text-center mb-8">
+                            <div className="w-20 h-20 mx-auto rounded-full bg-blue-500/20 flex items-center justify-center mb-4">
+                                <Shield className="w-10 h-10 text-blue-400" />
+                            </div>
+                            <h1 className="text-2xl font-bold text-white mb-2">Admin Panel</h1>
+                            <p className="text-gray-400">Nhập mật khẩu để truy cập</p>
+                        </div>
+
+                        <form onSubmit={handleLogin} className="space-y-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    Mật khẩu Admin
+                                </label>
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="Nhập mật khẩu..."
+                                    className="w-full px-4 py-3 rounded-xl bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                    autoFocus
+                                />
+                            </div>
+
+                            {loginError && (
+                                <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300 text-sm text-center">
+                                    {loginError}
+                                </div>
+                            )}
+
+                            <button
+                                type="submit"
+                                disabled={loginLoading || !password}
+                                className="w-full py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+                            >
+                                {loginLoading ? (
+                                    <>
+                                        <RefreshCw className="w-5 h-5 animate-spin" />
+                                        Đang xác thực...
+                                    </>
+                                ) : (
+                                    <>
+                                        <KeyRound className="w-5 h-5" />
+                                        Đăng nhập
+                                    </>
+                                )}
+                            </button>
+                        </form>
+
+                        <div className="mt-6 pt-6 border-t border-gray-700 text-center">
+                            <Link
+                                to="/"
+                                className="text-sm text-gray-400 hover:text-white transition-colors"
+                            >
+                                ← Quay về trang chủ
+                            </Link>
+                        </div>
+                    </div>
+                </motion.div>
             </div>
         );
     }

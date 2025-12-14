@@ -1,11 +1,11 @@
 // src/components/layout/Sidebar.jsx
-// Chú thích: Sidebar v4.1 - Thêm Voice Chat menu
+// Chú thích: Sidebar v4.2 - Thêm Journey (Hành trình XP)
 import { NavLink } from 'react-router-dom';
 import {
   Home, Heart, MessageCircle, Gamepad2, Sparkles,
   BookOpenCheck, Timer, Library, Settings, Moon,
   ChevronLeft, ChevronRight, BarChart3, Trophy, Headphones,
-  Users, Shield
+  Users, Shield, Star
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -35,13 +35,14 @@ const sections = [
     items: [
       { icon: Gamepad2, label: 'Trò chơi', path: '/games' },
       { icon: Trophy, label: 'Thành tích', path: '/achievements' },
+      { icon: Star, label: 'Hành trình', path: '/journey', badge: 'Mới' },
     ],
   },
   {
     label: 'Cộng đồng',
     items: [
       { icon: Users, label: 'Diễn đàn', path: '/forum', badge: 'Mới' },
-      { icon: Shield, label: 'Quản trị', path: '/admin' },
+      // Admin: truy cập trực tiếp qua URL /admin (chỉ admin mới vào được)
     ],
   },
   {

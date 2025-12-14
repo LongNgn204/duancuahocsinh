@@ -16,7 +16,13 @@ import {
     getBreathingSessions, addBreathingSession,
     getSleepLogs, addSleepLog, deleteSleepLog, updateSleepLog,
     getAchievements, unlockAchievement,
-    getStats, exportData, importData
+    getStats, exportData, importData,
+    // Phase 1 additions
+    getGameScores, addGameScore,
+    getNotificationSettings, saveNotificationSettings,
+    logSOSEvent, getSOSLogs,
+    getRandomCardsHistory, addRandomCardHistory,
+    getUserStats, addUserXP
 } from './data-api.js';
 
 import {
@@ -120,6 +126,25 @@ function matchRoute(pathname, method) {
     if (pathname === '/api/data/export' && method === 'GET') return 'data:export';
     if (pathname === '/api/data/import' && method === 'POST') return 'data:import';
 
+    // Data routes - Game Scores
+    if (pathname === '/api/data/game-scores' && method === 'GET') return 'data:games:list';
+    if (pathname === '/api/data/game-scores' && method === 'POST') return 'data:games:add';
+
+    // Data routes - Notification Settings
+    if (pathname === '/api/data/notification-settings' && method === 'GET') return 'data:notifications:get';
+    if (pathname === '/api/data/notification-settings' && method === 'POST') return 'data:notifications:save';
+
+    // Data routes - SOS Logs
+    if (pathname === '/api/data/sos-log' && method === 'POST') return 'data:sos:log';
+
+    // Data routes - Random Cards History
+    if (pathname === '/api/data/random-cards-history' && method === 'GET') return 'data:cards:list';
+    if (pathname === '/api/data/random-cards-history' && method === 'POST') return 'data:cards:add';
+
+    // Data routes - User Stats / Gamification
+    if (pathname === '/api/data/user-stats' && method === 'GET') return 'data:user-stats:get';
+    if (pathname === '/api/data/user-stats/add-xp' && method === 'POST') return 'data:user-stats:xp';
+
     // AI Chat (legacy path)
     if (pathname === '/' && method === 'POST') return 'ai:chat';
     if (pathname === '/api/chat' && method === 'POST') return 'ai:chat';
@@ -138,11 +163,14 @@ function matchRoute(pathname, method) {
     if (pathname === '/api/tts' && method === 'POST') return 'tts:synthesize';
 
     // Admin routes
+    if (pathname === '/api/admin/login' && method === 'POST') return 'admin:login'; // NEW: Admin login
+    if (pathname === '/api/admin/verify' && method === 'GET') return 'admin:verify'; // NEW: Verify token
     if (pathname === '/api/admin/ban-user' && method === 'POST') return 'admin:ban';
     if (pathname.match(/^\/api\/admin\/ban-user\/\d+$/) && method === 'DELETE') return 'admin:unban';
     if (pathname === '/api/admin/logs' && method === 'GET') return 'admin:logs';
     if (pathname === '/api/admin/banned-users' && method === 'GET') return 'admin:banned';
     if (pathname === '/api/admin/forum-stats' && method === 'GET') return 'admin:forum-stats';
+    if (pathname === '/api/admin/sos-logs' && method === 'GET') return 'admin:sos-logs';
 
     return null;
 }
@@ -266,6 +294,43 @@ export default {
                     response = await importData(request, env);
                     break;
 
+                // Game Scores endpoints
+                case 'data:games:list':
+                    response = await getGameScores(request, env);
+                    break;
+                case 'data:games:add':
+                    response = await addGameScore(request, env);
+                    break;
+
+                // Notification Settings endpoints
+                case 'data:notifications:get':
+                    response = await getNotificationSettings(request, env);
+                    break;
+                case 'data:notifications:save':
+                    response = await saveNotificationSettings(request, env);
+                    break;
+
+                // SOS Log endpoint
+                case 'data:sos:log':
+                    response = await logSOSEvent(request, env);
+                    break;
+
+                // Random Cards History endpoints
+                case 'data:cards:list':
+                    response = await getRandomCardsHistory(request, env);
+                    break;
+                case 'data:cards:add':
+                    response = await addRandomCardHistory(request, env);
+                    break;
+
+                // User Stats / Gamification endpoints
+                case 'data:user-stats:get':
+                    response = await getUserStats(request, env);
+                    break;
+                case 'data:user-stats:xp':
+                    response = await addUserXP(request, env);
+                    break;
+
                 // AI Chat - delegate to existing ai-proxy logic
                 case 'ai:chat':
                     // Import dynamically to avoid circular dependency issues
@@ -304,21 +369,166 @@ export default {
                     break;
 
                 // Admin endpoints
+                // NEW: Admin login - standalone authentication
+                case 'admin:login':
+                    try {
+                        const { password } = await request.json();
+                        const adminPassword = env.ADMIN_PASSWORD || 'BanDongHanh2024@Admin';
+
+                        if (password !== adminPassword) {
+                            response = json({ error: 'invalid_password', message: 'Sai mật khẩu admin' }, 401);
+                            break;
+                        }
+
+                        // Tạo JWT đơn giản (expires in 24h)
+                        const jwtSecret = env.JWT_SECRET || 'default-secret';
+                        const expiry = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+                        const payload = { role: 'admin', exp: expiry };
+                        const token = btoa(JSON.stringify(payload)) + '.' + btoa(jwtSecret.slice(0, 8) + expiry);
+
+                        response = json({
+                            success: true,
+                            token,
+                            expiresAt: new Date(expiry).toISOString()
+                        });
+                    } catch (e) {
+                        response = json({ error: 'server_error', message: e.message }, 500);
+                    }
+                    break;
+
+                // NEW: Verify admin token
+                case 'admin:verify':
+                    try {
+                        const authHeader = request.headers.get('Authorization');
+                        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                            response = json({ error: 'no_token', valid: false }, 401);
+                            break;
+                        }
+
+                        const token = authHeader.split(' ')[1];
+                        const [payloadB64, sigB64] = token.split('.');
+
+                        if (!payloadB64 || !sigB64) {
+                            response = json({ error: 'invalid_token', valid: false }, 401);
+                            break;
+                        }
+
+                        const payload = JSON.parse(atob(payloadB64));
+                        const jwtSecret = env.JWT_SECRET || 'default-secret';
+                        const expectedSig = btoa(jwtSecret.slice(0, 8) + payload.exp);
+
+                        if (sigB64 !== expectedSig || payload.exp < Date.now()) {
+                            response = json({ error: 'expired_or_invalid', valid: false }, 401);
+                            break;
+                        }
+
+                        response = json({ valid: true, role: payload.role });
+                    } catch (e) {
+                        response = json({ error: 'invalid_token', valid: false }, 401);
+                    }
+                    break;
+
                 case 'admin:ban':
-                    response = await banUser(request, env);
-                    break;
                 case 'admin:unban':
-                    const unbanPath = url.pathname.match(/\/api\/admin\/ban-user\/(\d+)/);
-                    response = await unbanUser(request, env, unbanPath ? unbanPath[1] : null);
-                    break;
                 case 'admin:logs':
-                    response = await getAdminLogs(request, env);
-                    break;
                 case 'admin:banned':
-                    response = await getBannedUsers(request, env);
-                    break;
                 case 'admin:forum-stats':
-                    response = await getForumStats(request, env);
+                case 'admin:sos-logs':
+                    // Verify JWT token for all admin routes
+                    const adminAuthHeader = request.headers.get('Authorization');
+                    if (!adminAuthHeader || !adminAuthHeader.startsWith('Bearer ')) {
+                        response = json({ error: 'not_authenticated', message: 'Cần đăng nhập admin' }, 401);
+                        break;
+                    }
+
+                    try {
+                        const adminToken = adminAuthHeader.split(' ')[1];
+                        const [payloadB64Admin, sigB64Admin] = adminToken.split('.');
+                        const payloadAdmin = JSON.parse(atob(payloadB64Admin));
+                        const jwtSecretAdmin = env.JWT_SECRET || 'default-secret';
+                        const expectedSigAdmin = btoa(jwtSecretAdmin.slice(0, 8) + payloadAdmin.exp);
+
+                        if (sigB64Admin !== expectedSigAdmin || payloadAdmin.exp < Date.now()) {
+                            response = json({ error: 'token_expired', message: 'Token hết hạn' }, 401);
+                            break;
+                        }
+                    } catch {
+                        response = json({ error: 'invalid_token', message: 'Token không hợp lệ' }, 401);
+                        break;
+                    }
+
+                    // JWT valid, handle each route
+                    try {
+                        switch (route) {
+                            case 'admin:forum-stats':
+                                // Return stats, fallback to zeros if tables don't exist
+                                try {
+                                    const [postsCount, commentsCount, bannedCount, hiddenPosts] = await Promise.all([
+                                        env.ban_dong_hanh_db.prepare('SELECT COUNT(*) as count FROM forum_posts').first().catch(() => ({ count: 0 })),
+                                        env.ban_dong_hanh_db.prepare('SELECT COUNT(*) as count FROM forum_comments').first().catch(() => ({ count: 0 })),
+                                        env.ban_dong_hanh_db.prepare('SELECT COUNT(*) as count FROM banned_users').first().catch(() => ({ count: 0 })),
+                                        env.ban_dong_hanh_db.prepare('SELECT COUNT(*) as count FROM forum_posts WHERE is_hidden = 1').first().catch(() => ({ count: 0 }))
+                                    ]);
+                                    response = json({
+                                        total_posts: postsCount?.count || 0,
+                                        total_comments: commentsCount?.count || 0,
+                                        banned_users: bannedCount?.count || 0,
+                                        hidden_posts: hiddenPosts?.count || 0
+                                    });
+                                } catch {
+                                    response = json({ total_posts: 0, total_comments: 0, banned_users: 0, hidden_posts: 0 });
+                                }
+                                break;
+
+                            case 'admin:logs':
+                                try {
+                                    const logsLimit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 100);
+                                    const logsResult = await env.ban_dong_hanh_db.prepare(
+                                        'SELECT * FROM admin_logs ORDER BY created_at DESC LIMIT ?'
+                                    ).bind(logsLimit).all().catch(() => ({ results: [] }));
+                                    response = json({ items: logsResult?.results || [] });
+                                } catch {
+                                    response = json({ items: [] });
+                                }
+                                break;
+
+                            case 'admin:banned':
+                                try {
+                                    const bannedResult = await env.ban_dong_hanh_db.prepare(
+                                        'SELECT * FROM banned_users ORDER BY created_at DESC'
+                                    ).all().catch(() => ({ results: [] }));
+                                    response = json({ items: bannedResult?.results || [] });
+                                } catch {
+                                    response = json({ items: [] });
+                                }
+                                break;
+
+                            case 'admin:sos-logs':
+                                try {
+                                    const sosLogsResult = await env.ban_dong_hanh_db.prepare(
+                                        'SELECT * FROM sos_logs ORDER BY created_at DESC LIMIT 100'
+                                    ).all().catch(() => ({ results: [] }));
+                                    response = json({ items: sosLogsResult?.results || [] });
+                                } catch {
+                                    response = json({ items: [] });
+                                }
+                                break;
+
+                            case 'admin:ban':
+                                response = json({ error: 'not_implemented', message: 'Tính năng ban user chưa sẵn sàng (cần database)' }, 501);
+                                break;
+
+                            case 'admin:unban':
+                                response = json({ error: 'not_implemented', message: 'Tính năng unban user chưa sẵn sàng (cần database)' }, 501);
+                                break;
+
+                            default:
+                                response = json({ error: 'unknown_route' }, 404);
+                        }
+                    } catch (adminError) {
+                        console.error('[Admin API] Error:', adminError.message);
+                        response = json({ error: 'server_error', message: adminError.message }, 500);
+                    }
                     break;
 
                 // TTS Synthesize via Hugging Face

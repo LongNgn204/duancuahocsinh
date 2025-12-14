@@ -1,17 +1,18 @@
 // src/pages/Dashboard.jsx
-// Chú thích: Dashboard v3.0 - Modern hero, mood selector, quick actions, stats
-import { useState } from 'react';
+// Chú thích: Dashboard v4.0 - Real data sync từ backend
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   MessageCircle, Heart, Sparkles, Gamepad2,
   TrendingUp, Calendar, Award, ChevronRight,
-  Sun, Cloud, CloudRain, Zap, Meh
+  Sun, Cloud, CloudRain, Zap, Meh, Star, Loader2
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import GlowOrbs, { GlowOrbsSmall } from '../components/ui/GlowOrbs';
+import { isLoggedIn, getCurrentUser, getUserStats } from '../utils/api';
 
 // Mood options với icons và colors
 const moods = [
@@ -65,7 +66,77 @@ const tips = [
 
 export default function Dashboard() {
   const [selectedMood, setSelectedMood] = useState(null);
-  const [userName] = useState('bạn'); // Có thể lấy từ localStorage hoặc context
+  const [userName, setUserName] = useState('bạn');
+  const [stats, setStats] = useState({ streak: 0, chatCount: 0, xp: 0, level: 1 });
+  const [loading, setLoading] = useState(true);
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
+
+  // Fetch real data từ backend khi component mount
+  useEffect(() => {
+    const loadUserData = async () => {
+      setLoading(true);
+
+      // Check login status
+      const loggedIn = isLoggedIn();
+      setIsUserLoggedIn(loggedIn);
+
+      if (loggedIn) {
+        const user = getCurrentUser();
+        if (user?.username) {
+          setUserName(user.username);
+        }
+
+        try {
+          // Fetch user stats từ backend
+          const userStats = await getUserStats().catch(() => null);
+
+          if (userStats) {
+            setStats({
+              streak: userStats.current_streak || 0,
+              chatCount: userStats.breathing_count || 0, // Số lần thở
+              xp: userStats.total_xp || 0,
+              level: userStats.level || 1
+            });
+          }
+        } catch (e) {
+          console.error('Error loading user stats:', e);
+        }
+      } else {
+        // Guest mode - load từ localStorage
+        try {
+          const localGratitude = JSON.parse(localStorage.getItem('gratitude_jar') || '[]');
+          const localChats = JSON.parse(localStorage.getItem('chat_history') || '[]');
+          setStats({
+            streak: calculateStreak(localGratitude),
+            chatCount: localChats.length,
+            xp: 0,
+            level: 1
+          });
+        } catch { }
+      }
+
+      setLoading(false);
+    };
+
+    loadUserData();
+  }, []);
+
+  // Helper: Tính streak từ gratitude entries
+  const calculateStreak = (entries) => {
+    if (!entries.length) return 0;
+    let streak = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < entries.length; i++) {
+      const entryDate = new Date(entries[i].date || entries[i].created_at);
+      entryDate.setHours(0, 0, 0, 0);
+      const diff = Math.floor((today - entryDate) / (1000 * 60 * 60 * 24));
+      if (diff === i) streak++;
+      else break;
+    }
+    return streak;
+  };
 
   // Lấy giờ hiện tại để chào
   const hour = new Date().getHours();
@@ -103,15 +174,33 @@ export default function Dashboard() {
 
               {/* Stats preview */}
               <div className="hidden md:flex items-center gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-[--brand]">7</div>
-                  <div className="text-xs text-[--muted]">Ngày streak</div>
-                </div>
-                <div className="w-px h-10 bg-[--surface-border]" />
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-[--accent]">23</div>
-                  <div className="text-xs text-[--muted]">Cuộc chat</div>
-                </div>
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-[--brand]" />
+                ) : (
+                  <>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-[--brand]">{stats.streak}</div>
+                      <div className="text-xs text-[--muted]">Ngày streak</div>
+                    </div>
+                    <div className="w-px h-10 bg-[--surface-border]" />
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-[--accent]">{stats.chatCount}</div>
+                      <div className="text-xs text-[--muted]">Cuộc chat</div>
+                    </div>
+                    {isUserLoggedIn && (
+                      <>
+                        <div className="w-px h-10 bg-[--surface-border]" />
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-[--secondary] flex items-center gap-1">
+                            <Star size={16} />
+                            {stats.xp}
+                          </div>
+                          <div className="text-xs text-[--muted]">XP (Lv.{stats.level})</div>
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
               </div>
             </div>
 

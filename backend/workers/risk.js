@@ -10,27 +10,40 @@ const RED_PATTERNS = [
     'tự tử', 'tự vẫn', 'tự sát',
     'muốn chết', 'mún chết', 'muon chet',
     'kết thúc cuộc đời', 'kết thúc tất cả',
-    'chết đi cho rồi', 'chết đi',
-    'không muốn sống', 'k muốn sống',
-    'sống làm gì', 'sống để làm gì',
+    'chết đi cho rồi', 'chết đi', 'chết đc rồi',
+    'không muốn sống', 'k muốn sống', 'ko muon song',
+    'sống làm gì', 'sống để làm gì', 'sống chi',
     'muốn biến mất', 'biến mất khỏi đời',
     // Tự làm hại
     'tự làm hại', 'tự cắt', 'rạch tay',
-    'uống thuốc ngủ', 'overdose',
+    'uống thuốc ngủ', 'overdose', 'tự hurt',
     // Bạo lực/lạm dụng
-    'bị xâm hại', 'bị lạm dụng',
+    'bị xâm hại', 'bị lạm dụng', 'bị sờ soạng',
     // Có kế hoạch cụ thể
     'đã chuẩn bị', 'có kế hoạch', 'ngay bây giờ',
+
+    // ===== GEN Z VOCABULARY - PHASE 1 ADDITION =====
+    // Tiếng lóng "muốn chết"
+    'mún đi luôn', 'muốn đi luôn', 'đi luôn cho rồi',
+    'ngủ luôn', 'ngủ mãi', 'sleep forever',
+    'đi khỏi thế giới', 'rời khỏi thế giới này',
+    'end game', 'game over đời', 'gg đi',
+    'bái bai thế giới', 'bye bye cuộc đời',
+    // Mạng xã hội style
+    'ko thể tiếp tục nữa', 'hết năng lượng sống',
+    'cạn pin rồi', 'bat low quá', 'energy = 0',
+    // Viết tắt phổ biến
+    'kts', 'muốn c', 'muốn die',
 ];
 
 // Từ khóa YELLOW - cần theo dõi
 const YELLOW_PATTERNS = [
     // Tuyệt vọng kéo dài
     'tuyệt vọng', 'hết hy vọng', 'vô vọng',
-    'không ai quan tâm', 'không ai hiểu',
+    'không ai quan tâm', 'không ai hiểu', 'k ai quan tâm',
     'vô dụng', 'vô ích', 'thừa thãi',
-    'gánh nặng cho mọi người',
-    'không xứng đáng',
+    'gánh nặng cho mọi người', 'là gánh nặng',
+    'không xứng đáng', 'k xứng đáng',
     'bế tắc hoàn toàn', 'không có lối thoát',
     // Bắt nạt nặng
     'bị bắt nạt', 'bị bully', 'bị đánh',
@@ -38,6 +51,23 @@ const YELLOW_PATTERNS = [
     // Mơ hồ "không muốn sống"
     'không muốn thức dậy', 'chán sống',
     'mệt mỏi với cuộc sống',
+
+    // ===== GEN Z VOCABULARY - PHASE 1 ADDITION =====
+    // Tiếng lóng chán/buồn
+    'chán đời', 'chán vl', 'chán real', 'chán thật sự',
+    'toang', 'toang rồi', 'toang real', 'toang thật sự',
+    'emo quá', 'đang emo', 'emo nặng',
+    'xuống tinh thần', 'mood đi xuống',
+    // Mạng xã hội style
+    'không ai care', 'no one cares', 'ai mà hiểu',
+    'cô đơn vl', 'lonely af', 'một mình hoài',
+    'áp lực quá trời', 'stress vl', 'burn out rồi',
+    // Tự ti
+    'fail đủ thứ', 'mình dở quá', 'mình tệ quá',
+    'không làm được gì cả', 'useless real',
+    // Gia đình
+    'bố mẹ không hiểu', 'bị la hoài', 'bị so sánh',
+    'ghét về nhà', 'không muốn về nhà',
 ];
 
 /**

@@ -743,3 +743,473 @@ export async function importData(request, env) {
         return json({ error: 'server_error' }, 500);
     }
 }
+
+// =============================================================================
+// GAME SCORES ENDPOINTS
+// =============================================================================
+
+/**
+ * GET /api/data/game-scores - Lấy điểm số game
+ * Query params: ?game_type=space_control&limit=10&leaderboard=true
+ */
+export async function getGameScores(request, env) {
+    const userId = getUserId(request);
+    const url = new URL(request.url);
+    const gameType = url.searchParams.get('game_type');
+    const limit = Math.min(parseInt(url.searchParams.get('limit') || '10'), 50);
+    const leaderboard = url.searchParams.get('leaderboard') === 'true';
+
+    try {
+        if (leaderboard) {
+            // Leaderboard toàn bộ users (ẩn danh)
+            const result = await env.ban_dong_hanh_db.prepare(`
+                SELECT gs.score, gs.level_reached, gs.created_at, 
+                       'Player_' || SUBSTR(CAST(gs.user_id AS TEXT), 1, 3) as player_name
+                FROM game_scores gs
+                ${gameType ? 'WHERE gs.game_type = ?' : ''}
+                ORDER BY gs.score DESC
+                LIMIT ?
+            `).bind(...(gameType ? [gameType, limit] : [limit])).all();
+
+            return json({ leaderboard: result.results });
+        }
+
+        // Personal scores - cần đăng nhập
+        if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+        const query = gameType
+            ? 'SELECT id, game_type, score, level_reached, play_duration_seconds, created_at FROM game_scores WHERE user_id = ? AND game_type = ? ORDER BY score DESC LIMIT ?'
+            : 'SELECT id, game_type, score, level_reached, play_duration_seconds, created_at FROM game_scores WHERE user_id = ? ORDER BY created_at DESC LIMIT ?';
+
+        const result = await env.ban_dong_hanh_db.prepare(query)
+            .bind(...(gameType ? [userId, gameType, limit] : [userId, limit])).all();
+
+        // Lấy high score cho mỗi game
+        const highScores = await env.ban_dong_hanh_db.prepare(`
+            SELECT game_type, MAX(score) as high_score 
+            FROM game_scores 
+            WHERE user_id = ? 
+            GROUP BY game_type
+        `).bind(userId).all();
+
+        return json({
+            items: result.results,
+            highScores: Object.fromEntries(highScores.results.map(h => [h.game_type, h.high_score]))
+        });
+    } catch (error) {
+        console.error('[Data] getGameScores error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+/**
+ * POST /api/data/game-scores - Lưu điểm game mới
+ * Body: { game_type: string, score: number, level_reached?: number, play_duration_seconds?: number }
+ */
+export async function addGameScore(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    try {
+        const { game_type, score, level_reached = 1, play_duration_seconds } = await request.json();
+
+        if (!game_type || typeof game_type !== 'string') {
+            return json({ error: 'game_type bắt buộc' }, 400);
+        }
+
+        if (typeof score !== 'number' || score < 0) {
+            return json({ error: 'score phải là số không âm' }, 400);
+        }
+
+        const validGames = ['space_control', 'bee_game', 'bubble_pop', 'color_match', 'doodle'];
+        if (!validGames.includes(game_type)) {
+            return json({ error: 'game_type không hợp lệ' }, 400);
+        }
+
+        // Lấy high score hiện tại
+        const currentHigh = await env.ban_dong_hanh_db.prepare(
+            'SELECT MAX(score) as high FROM game_scores WHERE user_id = ? AND game_type = ?'
+        ).bind(userId, game_type).first();
+
+        const isNewRecord = score > (currentHigh?.high || 0);
+
+        // Lưu score mới
+        const result = await env.ban_dong_hanh_db.prepare(
+            'INSERT INTO game_scores (user_id, game_type, score, level_reached, play_duration_seconds) VALUES (?, ?, ?, ?, ?) RETURNING *'
+        ).bind(userId, game_type, score, level_reached, play_duration_seconds || null).first();
+
+        // Cập nhật user_stats nếu là record mới
+        if (isNewRecord) {
+            await env.ban_dong_hanh_db.prepare(`
+                INSERT INTO user_stats (user_id, games_played, highest_game_score)
+                VALUES (?, 1, ?)
+                ON CONFLICT(user_id) DO UPDATE SET
+                    games_played = games_played + 1,
+                    highest_game_score = MAX(highest_game_score, ?),
+                    updated_at = datetime('now')
+            `).bind(userId, score, score).run();
+        }
+
+        return json({
+            success: true,
+            item: result,
+            isNewRecord,
+            previousHigh: currentHigh?.high || 0
+        }, 201);
+    } catch (error) {
+        console.error('[Data] addGameScore error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+// =============================================================================
+// NOTIFICATION SETTINGS ENDPOINTS
+// =============================================================================
+
+/**
+ * GET /api/data/notification-settings - Lấy cài đặt thông báo
+ */
+export async function getNotificationSettings(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    try {
+        const settings = await env.ban_dong_hanh_db.prepare(
+            'SELECT daily_reminder, pomodoro_alerts, sleep_reminder, reminder_time, push_subscription FROM notification_settings WHERE user_id = ?'
+        ).bind(userId).first();
+
+        // Trả về default settings nếu chưa có
+        return json({
+            settings: settings || {
+                daily_reminder: false,
+                pomodoro_alerts: true,
+                sleep_reminder: false,
+                reminder_time: null,
+                push_subscription: null
+            }
+        });
+    } catch (error) {
+        console.error('[Data] getNotificationSettings error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+/**
+ * POST /api/data/notification-settings - Lưu cài đặt thông báo
+ * Body: { daily_reminder?: boolean, pomodoro_alerts?: boolean, sleep_reminder?: boolean, reminder_time?: string, push_subscription?: object }
+ */
+export async function saveNotificationSettings(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    try {
+        const { daily_reminder, pomodoro_alerts, sleep_reminder, reminder_time, push_subscription } = await request.json();
+
+        // Validate reminder_time format nếu có
+        if (reminder_time && !/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(reminder_time)) {
+            return json({ error: 'reminder_time phải có định dạng HH:MM' }, 400);
+        }
+
+        // Stringify push_subscription nếu là object
+        const subscriptionValue = push_subscription ? JSON.stringify(push_subscription) : null;
+
+        await env.ban_dong_hanh_db.prepare(`
+            INSERT INTO notification_settings (user_id, daily_reminder, pomodoro_alerts, sleep_reminder, reminder_time, push_subscription)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET
+                daily_reminder = COALESCE(?, daily_reminder),
+                pomodoro_alerts = COALESCE(?, pomodoro_alerts),
+                sleep_reminder = COALESCE(?, sleep_reminder),
+                reminder_time = COALESCE(?, reminder_time),
+                push_subscription = COALESCE(?, push_subscription),
+                updated_at = datetime('now')
+        `).bind(
+            userId,
+            daily_reminder ? 1 : 0,
+            pomodoro_alerts !== false ? 1 : 0,
+            sleep_reminder ? 1 : 0,
+            reminder_time || null,
+            subscriptionValue,
+            daily_reminder !== undefined ? (daily_reminder ? 1 : 0) : null,
+            pomodoro_alerts !== undefined ? (pomodoro_alerts ? 1 : 0) : null,
+            sleep_reminder !== undefined ? (sleep_reminder ? 1 : 0) : null,
+            reminder_time || null,
+            subscriptionValue
+        ).run();
+
+        return json({ success: true });
+    } catch (error) {
+        console.error('[Data] saveNotificationSettings error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+// =============================================================================
+// SOS LOGS ENDPOINTS
+// =============================================================================
+
+/**
+ * POST /api/data/sos-log - Ghi log sự kiện SOS
+ * Body: { event_type: string, risk_level?: string, trigger_text?: string, location?: {lat, lng}, metadata?: object }
+ * Chú thích: endpoint này không yêu cầu đăng nhập để hỗ trợ cả khách
+ */
+export async function logSOSEvent(request, env) {
+    const userId = getUserId(request); // có thể null
+
+    try {
+        const { event_type, risk_level, trigger_text, location, metadata } = await request.json();
+
+        if (!event_type) {
+            return json({ error: 'event_type bắt buộc' }, 400);
+        }
+
+        const validEventTypes = ['overlay_opened', 'hotline_clicked', 'map_viewed', 'message_flagged', 'false_positive'];
+        if (!validEventTypes.includes(event_type)) {
+            return json({ error: 'event_type không hợp lệ' }, 400);
+        }
+
+        // Tạo hashed_user_id ẩn danh nếu có userId
+        let hashedUserId = null;
+        if (userId) {
+            // Simple hash: chỉ lấy 8 ký tự đầu của hash
+            const encoder = new TextEncoder();
+            const data = encoder.encode(userId.toString() + 'bdh_salt');
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            hashedUserId = hashArray.slice(0, 4).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        await env.ban_dong_hanh_db.prepare(`
+            INSERT INTO sos_logs (user_id, hashed_user_id, event_type, risk_level, trigger_text, location_lat, location_lng, metadata)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+            userId || null,
+            hashedUserId,
+            event_type,
+            risk_level || null,
+            trigger_text ? trigger_text.slice(0, 50) : null, // Chỉ lưu 50 ký tự từ khóa
+            location?.lat || null,
+            location?.lng || null,
+            metadata ? JSON.stringify(metadata) : null
+        ).run();
+
+        console.log('[SOS] Event logged:', { event_type, risk_level, hashedUserId });
+
+        return json({ success: true });
+    } catch (error) {
+        console.error('[Data] logSOSEvent error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+/**
+ * GET /api/admin/sos-logs - Lấy danh sách SOS logs (admin only)
+ * Query params: ?limit=50&risk_level=red
+ */
+export async function getSOSLogs(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    // Kiểm tra quyền admin
+    const user = await env.ban_dong_hanh_db.prepare(
+        'SELECT is_admin FROM users WHERE id = ?'
+    ).bind(userId).first();
+
+    if (!user?.is_admin) {
+        return json({ error: 'forbidden' }, 403);
+    }
+
+    try {
+        const url = new URL(request.url);
+        const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 200);
+        const riskLevel = url.searchParams.get('risk_level');
+
+        const query = riskLevel
+            ? 'SELECT * FROM sos_logs WHERE risk_level = ? ORDER BY created_at DESC LIMIT ?'
+            : 'SELECT * FROM sos_logs ORDER BY created_at DESC LIMIT ?';
+
+        const result = await env.ban_dong_hanh_db.prepare(query)
+            .bind(...(riskLevel ? [riskLevel, limit] : [limit])).all();
+
+        // Thống kê nhanh
+        const stats = await env.ban_dong_hanh_db.prepare(`
+            SELECT 
+                risk_level,
+                COUNT(*) as count,
+                COUNT(DISTINCT hashed_user_id) as unique_users
+            FROM sos_logs
+            WHERE created_at > datetime('now', '-7 days')
+            GROUP BY risk_level
+        `).all();
+
+        return json({
+            logs: result.results,
+            stats: Object.fromEntries(stats.results.map(s => [s.risk_level || 'unknown', { count: s.count, unique_users: s.unique_users }]))
+        });
+    } catch (error) {
+        console.error('[Admin] getSOSLogs error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+// =============================================================================
+// RANDOM CARDS HISTORY ENDPOINTS
+// =============================================================================
+
+/**
+ * GET /api/data/random-cards-history - Lấy lịch sử thẻ đã xem
+ * Query params: ?limit=50
+ */
+export async function getRandomCardsHistory(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    try {
+        const url = new URL(request.url);
+        const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 100);
+
+        const result = await env.ban_dong_hanh_db.prepare(
+            'SELECT card_id, viewed_at, action_taken FROM random_cards_history WHERE user_id = ? ORDER BY viewed_at DESC LIMIT ?'
+        ).bind(userId, limit).all();
+
+        return json({ items: result.results });
+    } catch (error) {
+        console.error('[Data] getRandomCardsHistory error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+/**
+ * POST /api/data/random-cards-history - Ghi lại thẻ đã xem
+ * Body: { card_id: string, action_taken?: boolean }
+ */
+export async function addRandomCardHistory(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    try {
+        const { card_id, action_taken = false } = await request.json();
+
+        if (!card_id) {
+            return json({ error: 'card_id bắt buộc' }, 400);
+        }
+
+        await env.ban_dong_hanh_db.prepare(
+            'INSERT INTO random_cards_history (user_id, card_id, action_taken) VALUES (?, ?, ?)'
+        ).bind(userId, card_id, action_taken ? 1 : 0).run();
+
+        return json({ success: true }, 201);
+    } catch (error) {
+        console.error('[Data] addRandomCardHistory error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+// =============================================================================
+// USER STATS ENDPOINTS
+// =============================================================================
+
+/**
+ * GET /api/data/user-stats - Lấy thống kê gamification của user
+ */
+export async function getUserStats(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    try {
+        let stats = await env.ban_dong_hanh_db.prepare(
+            'SELECT * FROM user_stats WHERE user_id = ?'
+        ).bind(userId).first();
+
+        if (!stats) {
+            // Tạo stats mới nếu chưa có
+            await env.ban_dong_hanh_db.prepare(
+                'INSERT INTO user_stats (user_id) VALUES (?)'
+            ).bind(userId).run();
+            stats = {
+                total_xp: 0,
+                current_level: 1,
+                breathing_total: 0,
+                gratitude_streak: 0,
+                max_gratitude_streak: 0,
+                journal_count: 0,
+                focus_total_minutes: 0,
+                games_played: 0,
+                highest_game_score: 0
+            };
+        }
+
+        // Tính level từ XP
+        const xpPerLevel = 100;
+        const level = Math.floor(stats.total_xp / xpPerLevel) + 1;
+        const xpForNextLevel = xpPerLevel - (stats.total_xp % xpPerLevel);
+
+        return json({
+            ...stats,
+            calculated_level: level,
+            xp_for_next_level: xpForNextLevel,
+            xp_progress_percent: Math.round(((stats.total_xp % xpPerLevel) / xpPerLevel) * 100)
+        });
+    } catch (error) {
+        console.error('[Data] getUserStats error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+/**
+ * POST /api/data/user-stats/add-xp - Thêm XP cho user
+ * Body: { xp: number, source: string }
+ */
+export async function addUserXP(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    try {
+        const { xp, source } = await request.json();
+
+        if (typeof xp !== 'number' || xp <= 0) {
+            return json({ error: 'xp phải là số dương' }, 400);
+        }
+
+        // Giới hạn XP cộng mỗi lần để tránh abuse
+        const cappedXP = Math.min(xp, 100);
+
+        // Lấy stats hiện tại
+        const currentStats = await env.ban_dong_hanh_db.prepare(
+            'SELECT total_xp, current_level FROM user_stats WHERE user_id = ?'
+        ).bind(userId).first();
+
+        const oldLevel = currentStats?.current_level || 1;
+        const oldXP = currentStats?.total_xp || 0;
+        const newXP = oldXP + cappedXP;
+        const xpPerLevel = 100;
+        const newLevel = Math.floor(newXP / xpPerLevel) + 1;
+
+        // Cập nhật stats
+        await env.ban_dong_hanh_db.prepare(`
+            INSERT INTO user_stats (user_id, total_xp, current_level)
+            VALUES (?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET
+                total_xp = total_xp + ?,
+                current_level = ?,
+                updated_at = datetime('now')
+        `).bind(userId, newXP, newLevel, cappedXP, newLevel).run();
+
+        const leveledUp = newLevel > oldLevel;
+
+        console.log('[XP] Added:', { userId, xp: cappedXP, source, newLevel, leveledUp });
+
+        return json({
+            success: true,
+            xp_added: cappedXP,
+            total_xp: newXP,
+            level: newLevel,
+            leveled_up: leveledUp,
+            old_level: oldLevel
+        });
+    } catch (error) {
+        console.error('[Data] addUserXP error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+

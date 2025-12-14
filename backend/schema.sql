@@ -5,6 +5,7 @@
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT NOT NULL UNIQUE,
+  is_admin INTEGER DEFAULT 0, -- 1 = admin có quyền quản trị
   created_at TEXT DEFAULT (datetime('now')),
   last_login TEXT
 );
@@ -184,5 +185,98 @@ CREATE TABLE IF NOT EXISTS banned_users (
   FOREIGN KEY (banned_by) REFERENCES users(id)
 );
 
--- Thêm cột is_admin vào users table (nếu chưa có)
--- ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0;
+-- is_admin đã được thêm trực tiếp vào bảng users ở trên
+
+-- =============================================================================
+-- PHASE 2 ADDITIONS: Notifications, Stories, Games, SOS Logs
+-- =============================================================================
+
+-- Bảng notification_settings: cài đặt thông báo cho mỗi user
+CREATE TABLE IF NOT EXISTS notification_settings (
+  user_id INTEGER PRIMARY KEY,
+  daily_reminder INTEGER DEFAULT 0, -- 1 = bật nhắc hàng ngày
+  pomodoro_alerts INTEGER DEFAULT 1, -- 1 = bật thông báo Pomodoro
+  sleep_reminder INTEGER DEFAULT 0, -- 1 = bật nhắc ngủ
+  reminder_time TEXT, -- HH:MM format cho thời gian nhắc
+  push_subscription TEXT, -- JSON Web Push subscription object
+  updated_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Bảng stories: thư viện truyện cho StoryTeller
+CREATE TABLE IF NOT EXISTS stories (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  category TEXT DEFAULT 'short_story', -- 'folklore', 'fairy_tale', 'short_story', 'motivation'
+  age_rating TEXT DEFAULT 'all', -- 'all', 'teen' (cho nội dung phức tạp hơn)
+  is_ai_generated INTEGER DEFAULT 0, -- 1 = được tạo bởi AI
+  likes_count INTEGER DEFAULT 0,
+  read_count INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_stories_category ON stories(category);
+CREATE INDEX IF NOT EXISTS idx_stories_rating ON stories(age_rating);
+
+-- Bảng game_scores: điểm số các minigame
+CREATE TABLE IF NOT EXISTS game_scores (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  game_type TEXT NOT NULL, -- 'space_control', 'bee_game', 'bubble_pop', 'color_match', 'doodle'
+  score INTEGER NOT NULL,
+  level_reached INTEGER DEFAULT 1,
+  play_duration_seconds INTEGER, -- Thời gian chơi
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_game_scores_user ON game_scores(user_id);
+CREATE INDEX IF NOT EXISTS idx_game_scores_type ON game_scores(game_type);
+CREATE INDEX IF NOT EXISTS idx_game_scores_top ON game_scores(game_type, score DESC);
+
+-- Bảng sos_logs: log sự kiện SOS để admin giám sát
+CREATE TABLE IF NOT EXISTS sos_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER, -- NULL nếu khách không đăng nhập
+  hashed_user_id TEXT, -- Hash ẩn danh để hiển thị
+  event_type TEXT NOT NULL, -- 'overlay_opened', 'hotline_clicked', 'map_viewed', 'message_flagged'
+  risk_level TEXT, -- 'red', 'yellow', 'critical'
+  trigger_text TEXT, -- Từ khóa đã trigger (không lưu toàn bộ message)
+  location_lat REAL, -- Vĩ độ nếu user cho phép
+  location_lng REAL, -- Kinh độ nếu user cho phép
+  metadata TEXT, -- JSON bổ sung (hotline clicked, action taken, etc.)
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_sos_logs_date ON sos_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_sos_logs_level ON sos_logs(risk_level);
+CREATE INDEX IF NOT EXISTS idx_sos_logs_user ON sos_logs(user_id);
+
+-- Bảng random_cards_history: lịch sử thẻ wellness đã xem
+CREATE TABLE IF NOT EXISTS random_cards_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  card_id TEXT NOT NULL, -- ID thẻ đã xem
+  viewed_at TEXT DEFAULT (datetime('now')),
+  action_taken INTEGER DEFAULT 0, -- 1 = user đã thực hiện hành động
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_random_cards_user ON random_cards_history(user_id);
+
+-- Bảng user_stats: thống kê tổng hợp cho gamification
+CREATE TABLE IF NOT EXISTS user_stats (
+  user_id INTEGER PRIMARY KEY,
+  total_xp INTEGER DEFAULT 0,
+  current_level INTEGER DEFAULT 1,
+  breathing_total INTEGER DEFAULT 0, -- Tổng số lần thở
+  gratitude_streak INTEGER DEFAULT 0, -- Streak hiện tại
+  max_gratitude_streak INTEGER DEFAULT 0, -- Streak cao nhất
+  journal_count INTEGER DEFAULT 0,
+  focus_total_minutes INTEGER DEFAULT 0,
+  games_played INTEGER DEFAULT 0,
+  highest_game_score INTEGER DEFAULT 0,
+  updated_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

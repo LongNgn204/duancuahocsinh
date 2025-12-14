@@ -15,6 +15,7 @@ import GlowOrbs from './components/ui/GlowOrbs';
 import FloatingChatButton from './components/ui/FloatingChatButton';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import AuthModal from './components/auth/AuthModal';
+import TourGuide, { TourTriggerButton, useTourStatus } from './components/tour/TourGuide';
 
 
 // Lazy load pages
@@ -38,6 +39,7 @@ const Achievements = lazy(() => import('./pages/Achievements'));
 const TalkToAI = lazy(() => import('./pages/TalkToAI'));
 const Forum = lazy(() => import('./pages/Forum'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const Journey = lazy(() => import('./pages/Journey'));
 
 // Loading fallback với animation
 function LoadingFallback() {
@@ -85,6 +87,9 @@ function AppLayout({ children }) {
 
       {/* Floating AI Chat Button */}
       {!focusMode && <FloatingChatButton />}
+
+      {/* Tour Guide Help Button */}
+      {!focusMode && <TourTriggerButton />}
     </div>
   );
 }
@@ -154,6 +159,7 @@ function AppRoutes() {
           <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
           <Route path="/talk" element={<AppLayout><TalkToAI /></AppLayout>} />
           <Route path="/forum" element={<AppLayout><Forum /></AppLayout>} />
+          <Route path="/journey" element={<AppLayout><Journey /></AppLayout>} />
 
           {/* Admin Dashboard - Standalone layout */}
           <Route path="/admin" element={<AdminDashboard />} />
