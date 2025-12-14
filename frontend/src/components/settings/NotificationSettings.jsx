@@ -2,9 +2,18 @@
 // Chú thích: Component cài đặt thông báo - Push notifications cho reminders
 // Phase 2: Browser Notifications
 
-import { useState, useEffect, useCallback } from 'react';
-import { Bell, BellOff, Moon, Timer, AlertCircle, Check, Info } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Bell, BellOff, Moon, Timer, AlertCircle, Check, Info, Wind, Heart } from 'lucide-react';
 import { isLoggedIn, getNotificationSettings, saveNotificationSettings } from '../../utils/api';
+import {
+    requestNotificationPermission,
+    sendNotification,
+    scheduleGratitudeReminder,
+    scheduleSleepReminder,
+    scheduleBreathingReminder,
+    initializeNotificationsFromSettings,
+    getNotificationPermission,
+} from '../../utils/notificationService';
 
 // =============================================================================
 // NOTIFICATION SETTINGS COMPONENT
@@ -20,13 +29,37 @@ export default function NotificationSettings() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState(null);
+    const scheduledTimeoutsRef = useRef([]); // Lưu timeout IDs để clear sau
 
     // Check notification permission
     useEffect(() => {
-        if ('Notification' in window) {
-            setPermissionStatus(Notification.permission);
-        }
+        setPermissionStatus(getNotificationPermission());
     }, []);
+
+    // Initialize scheduled notifications khi settings thay đổi
+    useEffect(() => {
+        if (permissionStatus === 'granted' && !loading) {
+            // Clear existing
+            scheduledTimeoutsRef.current.forEach(id => clearTimeout(id));
+            scheduledTimeoutsRef.current = [];
+
+            // Schedule mới
+            if (settings.daily_reminder && settings.reminder_time) {
+                const id = scheduleGratitudeReminder(settings.reminder_time);
+                scheduledTimeoutsRef.current.push(id);
+            }
+
+            if (settings.sleep_reminder) {
+                const id = scheduleSleepReminder(settings.sleep_reminder_time || '22:00');
+                scheduledTimeoutsRef.current.push(id);
+            }
+        }
+
+        return () => {
+            // Cleanup khi unmount
+            scheduledTimeoutsRef.current.forEach(id => clearTimeout(id));
+        };
+    }, [settings.daily_reminder, settings.reminder_time, settings.sleep_reminder, permissionStatus, loading]);
 
     // Load settings từ server
     useEffect(() => {
@@ -51,6 +84,8 @@ export default function NotificationSettings() {
                         pomodoro_alerts: data.settings.pomodoro_alerts !== false,
                         sleep_reminder: !!data.settings.sleep_reminder,
                         reminder_time: data.settings.reminder_time || '09:00',
+                        sleep_reminder_time: data.settings.sleep_reminder_time || '22:00',
+                        breathing_reminder: !!data.settings.breathing_reminder,
                     });
                 }
             } catch (e) {
@@ -63,24 +98,25 @@ export default function NotificationSettings() {
 
     // Request notification permission
     const requestPermission = useCallback(async () => {
-        if (!('Notification' in window)) {
-            setMessage({ type: 'error', text: 'Trình duyệt không hỗ trợ thông báo' });
-            return false;
-        }
-
         try {
-            const permission = await Notification.requestPermission();
-            setPermissionStatus(permission);
+            const granted = await requestNotificationPermission();
+            setPermissionStatus(getNotificationPermission());
 
-            if (permission === 'granted') {
-                setMessage({ type: 'success', text: 'Đã bật thông báo!' });
+            if (granted) {
+                setMessage({ type: 'success', text: 'Đã bật thông báo! Các nhắc nhở sẽ được gửi theo lịch đã cài đặt.' });
+                // Gửi test notification
+                setTimeout(() => {
+                    sendNotification('🌟 Bạn Đồng Hành', {
+                        body: 'Thông báo đã được bật thành công!',
+                    });
+                }, 500);
                 return true;
             } else {
                 setMessage({ type: 'error', text: 'Bạn đã từ chối nhận thông báo' });
                 return false;
             }
         } catch (e) {
-            setMessage({ type: 'error', text: 'Lỗi khi yêu cầu quyền thông báo' });
+            setMessage({ type: 'error', text: e.message || 'Lỗi khi yêu cầu quyền thông báo' });
             return false;
         }
     }, []);
@@ -134,10 +170,8 @@ export default function NotificationSettings() {
             return;
         }
 
-        new Notification('🌟 Bạn Đồng Hành', {
+        sendNotification('🌟 Bạn Đồng Hành', {
             body: 'Đây là thông báo test. Chúc bạn một ngày tốt lành!',
-            icon: '/favicon.ico',
-            badge: '/favicon.ico',
         });
     }, [permissionStatus, requestPermission]);
 
@@ -229,6 +263,55 @@ export default function NotificationSettings() {
                     description="Nhắc đi ngủ lúc 22:00"
                     enabled={settings.sleep_reminder}
                     onToggle={() => toggleSetting('sleep_reminder')}
+                >
+                    {settings.sleep_reminder && (
+                        <div className="mt-2 flex items-center gap-2">
+                            <span className="text-xs text-gray-500">Thời gian:</span>
+                            <input
+                                type="time"
+                                value={settings.sleep_reminder_time || '22:00'}
+                                onChange={(e) => {
+                                    const newSettings = { ...settings, sleep_reminder_time: e.target.value };
+                                    setSettings(newSettings);
+                                    if (isLoggedIn()) {
+                                        saveNotificationSettings({ sleep_reminder_time: e.target.value });
+                                    } else {
+                                        localStorage.setItem('notification_settings', JSON.stringify(newSettings));
+                                    }
+                                }}
+                                className="px-2 py-1 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                            />
+                        </div>
+                    )}
+                </SettingItem>
+
+                {/* Breathing Reminder (optional) */}
+                <SettingItem
+                    icon={<Wind className="w-5 h-5" />}
+                    title="Nhắc thở & thư giãn"
+                    description="Nhắc mỗi 2 giờ để thở sâu"
+                    enabled={settings.breathing_reminder || false}
+                    onToggle={() => {
+                        const newValue = !(settings.breathing_reminder || false);
+                        const newSettings = { ...settings, breathing_reminder: newValue };
+                        setSettings(newSettings);
+                        
+                        if (newValue && permissionStatus === 'granted') {
+                            const id = scheduleBreathingReminder(120);
+                            scheduledTimeoutsRef.current.push(id);
+                        } else {
+                            // Clear breathing reminders
+                            scheduledTimeoutsRef.current.forEach(id => {
+                                try { clearTimeout(id); } catch {}
+                            });
+                        }
+
+                        if (isLoggedIn()) {
+                            saveNotificationSettings({ breathing_reminder: newValue });
+                        } else {
+                            localStorage.setItem('notification_settings', JSON.stringify(newSettings));
+                        }
+                    }}
                 />
             </div>
 

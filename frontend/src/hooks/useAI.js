@@ -210,8 +210,32 @@ export function useAI() {
         return;
       }
 
-      const historyCap = messages.slice(-5);
-      const stream = await streamFromEndpoint(`${url}?stream=true`, { message: trimmed, history: historyCap, images });
+      // Tăng số lượng messages gửi lên (từ 5 lên 10)
+      const historyCap = messages.slice(-10);
+      
+      // Tạo memory summary nếu có nhiều messages
+      let memorySummary = '';
+      if (messages.length > 10) {
+        const oldMessages = messages.slice(0, -10);
+        const userOldMessages = oldMessages
+          .filter(m => m.role === 'user')
+          .map(m => m.content || '')
+          .filter(Boolean)
+          .join(' ');
+        
+        if (userOldMessages.length > 0) {
+          // Tạo summary đơn giản (client-side)
+          const words = userOldMessages.split(/\s+/).slice(0, 100);
+          memorySummary = `Tóm tắt trước đó: ${words.join(' ')}${userOldMessages.length > words.join(' ').length ? '...' : ''}`;
+        }
+      }
+      
+      const stream = await streamFromEndpoint(`${url}?stream=true`, { 
+        message: trimmed, 
+        history: historyCap, 
+        images,
+        memorySummary 
+      });
 
       if (stream.type === 'json') {
         const data = stream.data;

@@ -170,10 +170,10 @@ export async function getGratitudeList(limit = 50, offset = 0) {
     return apiRequest(`/api/data/gratitude?limit=${limit}&offset=${offset}`);
 }
 
-export async function addGratitude(content) {
+export async function addGratitude(content, tag = null) {
     return apiRequest('/api/data/gratitude', {
         method: 'POST',
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, tag }),
     });
 }
 
@@ -322,6 +322,20 @@ export async function upvoteForumPost(postId) {
     return apiRequest(`/api/forum/post/${postId}/upvote`, { method: 'POST' });
 }
 
+/**
+ * Báo cáo bài viết hoặc bình luận
+ * @param {string} targetType - 'post' hoặc 'comment'
+ * @param {number} targetId - ID của post hoặc comment
+ * @param {string} reason - Lý do: 'spam', 'harassment', 'inappropriate', 'misinformation', 'other'
+ * @param {string} details - Chi tiết bổ sung (optional)
+ */
+export async function reportForumContent(targetType, targetId, reason, details = null) {
+    return apiRequest('/api/forum/report', {
+        method: 'POST',
+        body: JSON.stringify({ target_type: targetType, target_id: targetId, reason, details }),
+    });
+}
+
 // =============================================================================
 // ADMIN API - JWT Authentication
 // =============================================================================
@@ -422,6 +436,12 @@ export async function getBannedUsers() {
 
 export async function getForumStats() {
     return adminApiRequest('/api/admin/forum-stats');
+}
+
+export async function getSOSLogs(limit = 100, riskLevel = null) {
+    let url = `/api/admin/sos-logs?limit=${limit}`;
+    if (riskLevel) url += `&risk_level=${encodeURIComponent(riskLevel)}`;
+    return adminApiRequest(url);
 }
 
 export async function banUser(userId, reason = null, durationDays = null) {

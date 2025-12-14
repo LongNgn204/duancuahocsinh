@@ -7,7 +7,7 @@ import Badge from '../ui/Badge';
 import GlowOrbs from '../ui/GlowOrbs';
 import {
     Trophy, Star, Flame, Target, Heart, Moon, Brain,
-    MessageCircle, Sparkles, Lock, CheckCircle
+    Bot, Sparkles, Lock, CheckCircle
 } from 'lucide-react';
 
 // Achievement definitions
@@ -124,7 +124,7 @@ const ACHIEVEMENTS = [
         id: 'chat_first',
         name: 'Bắt đầu trò chuyện',
         description: 'Gửi tin nhắn đầu tiên cho AI',
-        icon: MessageCircle,
+        icon: Bot,
         category: 'chat',
         condition: (stats) => stats.chat?.messages >= 1,
         rarity: 'common',
@@ -133,7 +133,7 @@ const ACHIEVEMENTS = [
         id: 'chat_100',
         name: 'Bạn thân AI',
         description: 'Gửi 100 tin nhắn',
-        icon: MessageCircle,
+        icon: Bot,
         category: 'chat',
         condition: (stats) => stats.chat?.messages >= 100,
         rarity: 'epic',

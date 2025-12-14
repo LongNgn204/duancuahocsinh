@@ -28,6 +28,7 @@ const BeeGame = lazy(() => import('./components/games/BeeGame'));
 const BubblePop = lazy(() => import('./components/games/BubblePop'));
 const ColorMatch = lazy(() => import('./components/games/ColorMatch'));
 const DoodleCanvas = lazy(() => import('./components/games/DoodleCanvas'));
+const ReflexGame = lazy(() => import('./components/games/ReflexGame'));
 const Games = lazy(() => import('./pages/Games'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Focus = lazy(() => import('./pages/Focus'));
@@ -36,7 +37,6 @@ const Sleep = lazy(() => import('./pages/Sleep'));
 const Resources = lazy(() => import('./pages/Resources'));
 const Analytics = lazy(() => import('./pages/Analytics'));
 const Achievements = lazy(() => import('./pages/Achievements'));
-const TalkToAI = lazy(() => import('./pages/TalkToAI'));
 const Forum = lazy(() => import('./pages/Forum'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const Journey = lazy(() => import('./pages/Journey'));
@@ -71,7 +71,7 @@ function AppLayout({ children }) {
       {/* Body */}
       <div className={`flex-1 relative z-10 ${focusMode ? 'grid place-items-center' : 'flex'}`}>
         {!focusMode && <Sidebar />}
-        <main className="flex-1 p-4 pb-24 md:p-6 md:pb-8 lg:p-8" role="main">
+        <main className="flex-1 p-3 pb-24 sm:p-4 md:p-6 md:pb-8 lg:p-8" role="main">
           <div className="max-w-6xl mx-auto">
             {children}
           </div>
@@ -88,8 +88,8 @@ function AppLayout({ children }) {
       {/* Floating AI Chat Button */}
       {!focusMode && <FloatingChatButton />}
 
-      {/* Tour Guide Help Button */}
-      {!focusMode && <TourTriggerButton />}
+      {/* Tour Guide Help Button - Disabled */}
+      {/* {!focusMode && <TourTriggerButton />} */}
     </div>
   );
 }
@@ -146,6 +146,7 @@ function AppRoutes() {
           <Route path="/breathing" element={<AppLayout><BreathingBubble /></AppLayout>} />
           <Route path="/gratitude" element={<AppLayout><GratitudeJar /></AppLayout>} />
           <Route path="/games" element={<AppLayout><Games /></AppLayout>} />
+          <Route path="/games/reflex" element={<AppLayout><ReflexGame /></AppLayout>} />
           <Route path="/games/bee" element={<AppLayout><BeeGame /></AppLayout>} />
           <Route path="/games/bubble" element={<AppLayout><BubblePop /></AppLayout>} />
           <Route path="/games/memory" element={<AppLayout><ColorMatch /></AppLayout>} />
@@ -157,7 +158,6 @@ function AppRoutes() {
           <Route path="/analytics" element={<AppLayout><Analytics /></AppLayout>} />
           <Route path="/achievements" element={<AppLayout><Achievements /></AppLayout>} />
           <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
-          <Route path="/talk" element={<AppLayout><TalkToAI /></AppLayout>} />
           <Route path="/forum" element={<AppLayout><Forum /></AppLayout>} />
           <Route path="/journey" element={<AppLayout><Journey /></AppLayout>} />
 

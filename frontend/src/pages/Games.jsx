@@ -9,6 +9,15 @@ import { Gamepad2, Sparkles, Target, Palette, Brain } from 'lucide-react';
 
 const games = [
     {
+        id: 'reflex',
+        name: 'Game Phản Xạ',
+        description: 'Luyện phản xạ nhanh với Space bar, phản xạ theo âm thanh/ánh sáng',
+        icon: '⚡',
+        color: 'from-yellow-500 to-orange-500',
+        path: '/games/reflex',
+        badge: 'Mới',
+    },
+    {
         id: 'bee',
         name: 'Ong Bay',
         description: 'Điều khiển chú ong bay qua chướng ngại vật',

@@ -9,6 +9,7 @@ import GlowOrbs from '../ui/GlowOrbs';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { toDayStr } from '../../utils/gratitude';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Settings, Flame, Wind, Sparkles } from 'lucide-react';
+import RandomWellnessCard from './RandomWellnessCard';
 
 const STORAGE_KEY = 'breathing_sessions_v1';
 
@@ -376,6 +377,14 @@ export default function BreathingBubble() {
             </div>
           </div>
         </Card>
+
+        {/* Random Wellness Card */}
+        <RandomWellnessCard 
+          onActionTaken={(card) => {
+            console.log('[Breathing] Action taken:', card.id);
+            // Có thể thêm XP hoặc notification ở đây
+          }}
+        />
 
         {/* Tips */}
         <Card size="md">

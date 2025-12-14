@@ -3,9 +3,9 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-    MessageCircle, Heart, Sparkles, Gamepad2, Brain, Shield,
+    Bot, Heart, Sparkles, Gamepad2, Brain, Shield,
     Users, Clock, Award, ArrowRight, CheckCircle, Star,
-    BookOpen, Headphones, Palette, Zap
+    BookOpen, Palette, Zap, MessageCircle
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
@@ -25,7 +25,7 @@ const stagger = {
 // Features data
 const features = [
     {
-        icon: MessageCircle,
+        icon: Bot,
         title: 'Tâm sự An toàn',
         description: 'Chat với AI thấu hiểu, không phán xét. Chia sẻ mọi lo âu trong không gian riêng tư.',
         color: 'from-teal-500 to-cyan-500',
@@ -65,7 +65,7 @@ const features = [
 // Stats data
 const stats = [
     { value: '10,000+', label: 'Học sinh đã sử dụng', icon: Users },
-    { value: '50,000+', label: 'Cuộc trò chuyện', icon: MessageCircle },
+    { value: '50,000+', label: 'Cuộc trò chuyện', icon: Bot },
     { value: '95%', label: 'Phản hồi tích cực', icon: Star },
     { value: '24/7', label: 'Luôn sẵn sàng', icon: Clock },
 ];
@@ -156,7 +156,7 @@ export default function LandingPage() {
                                 <div className="grid md:grid-cols-3 gap-6">
                                     {/* Quick action cards */}
                                     {[
-                                        { icon: MessageCircle, label: 'Chat', color: 'from-teal-500 to-cyan-500' },
+                                        { icon: Bot, label: 'Tâm sự với AI', color: 'from-teal-500 to-cyan-500' },
                                         { icon: Heart, label: 'Thở', color: 'from-pink-500 to-rose-500' },
                                         { icon: Sparkles, label: 'Biết ơn', color: 'from-amber-500 to-orange-500' },
                                     ].map((item, idx) => (
@@ -318,7 +318,7 @@ export default function LandingPage() {
                                     {[
                                         { icon: Brain, label: 'AI Thông minh', desc: 'Hiểu context & cảm xúc' },
                                         { icon: Shield, label: 'An toàn', desc: 'Bảo mật dữ liệu' },
-                                        { icon: Headphones, label: 'Hỗ trợ 24/7', desc: 'Luôn sẵn sàng lắng nghe' },
+                                        { icon: Bot, label: 'Hỗ trợ 24/7', desc: 'Chat văn bản hoặc nói chuyện với AI' },
                                         { icon: Palette, label: 'Thân thiện', desc: 'Giao diện dễ sử dụng' },
                                     ].map((item) => (
                                         <div key={item.label} className="glass-card p-4 rounded-xl text-center">

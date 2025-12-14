@@ -120,6 +120,19 @@ export default function FocusTimer() {
             audio.play().catch(() => { });
         } catch (_) { }
 
+        // Send browser notification nếu có quyền
+        if (window.Notification && Notification.permission === 'granted') {
+            try {
+                const { sendNotification } = await import('../../utils/notificationService');
+                const message = mode === 'work' 
+                    ? 'Đã hoàn thành phiên tập trung! Hãy nghỉ ngơi một chút nhé 🎉'
+                    : 'Đã hết giờ nghỉ! Sẵn sàng tập trung tiếp? 💪';
+                sendNotification('⏰ Pomodoro', { body: message });
+            } catch (e) {
+                console.warn('[FocusTimer] Notification error:', e);
+            }
+        }
+
         if (mode === 'work') {
             // Update stats
             const minutes = getMinutes();

@@ -29,7 +29,8 @@ import {
     getForumPosts, getForumPost, createForumPost,
     addComment, upvotePost, deletePost, deleteComment,
     toggleLockPost, banUser, unbanUser,
-    getAdminLogs, getBannedUsers, getForumStats
+    getAdminLogs, getBannedUsers, getForumStats,
+    reportContent
 } from './forum-api.js';
 
 import { classifyRiskRules, getRedTierResponse } from './risk.js';
@@ -158,6 +159,7 @@ function matchRoute(pathname, method) {
     if (pathname.match(/^\/api\/forum\/post\/\d+\/upvote$/) && method === 'POST') return 'forum:post:upvote';
     if (pathname.match(/^\/api\/forum\/post\/\d+\/lock$/) && method === 'POST') return 'forum:post:lock';
     if (pathname.match(/^\/api\/forum\/comment\/\d+$/) && method === 'DELETE') return 'forum:comment:delete';
+    if (pathname === '/api/forum/report' && method === 'POST') return 'forum:report';
 
     // TTS Proxy route
     if (pathname === '/api/tts' && method === 'POST') return 'tts:synthesize';
@@ -366,6 +368,9 @@ export default {
                 case 'forum:comment:delete':
                     const commentDelPath = url.pathname.match(/\/api\/forum\/comment\/(\d+)/);
                     response = await deleteComment(request, env, commentDelPath ? commentDelPath[1] : null);
+                    break;
+                case 'forum:report':
+                    response = await reportContent(request, env);
                     break;
 
                 // Admin endpoints

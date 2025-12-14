@@ -821,7 +821,7 @@ export async function addGameScore(request, env) {
             return json({ error: 'score phải là số không âm' }, 400);
         }
 
-        const validGames = ['space_control', 'bee_game', 'bubble_pop', 'color_match', 'doodle'];
+        const validGames = ['space_control', 'bee_game', 'bubble_pop', 'color_match', 'doodle', 'reflex'];
         if (!validGames.includes(game_type)) {
             return json({ error: 'game_type không hợp lệ' }, 400);
         }

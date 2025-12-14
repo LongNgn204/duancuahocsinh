@@ -28,36 +28,76 @@ export function createMemorySummary(history = [], recentLimit = 8) {
     const oldMessages = history.slice(0, -recentLimit);
     if (oldMessages.length === 0) return '';
 
-    // Tạo summary đơn giản bằng cách lấy key points
+    // Tạo summary có cấu trúc: chủ đề chính, cảm xúc, nguyên nhân gốc
     const userMessages = oldMessages
         .filter(m => m.role === 'user')
-        .map(m => m.content)
-        .join(' ');
+        .map(m => m.content || '')
+        .filter(Boolean);
 
-    // Trích xuất facts cơ bản (không lưu sensitive info)
-    const summary = extractKeyFacts(userMessages);
+    const assistantMessages = oldMessages
+        .filter(m => m.role === 'assistant')
+        .map(m => m.content || '')
+        .filter(Boolean);
+
+    // Trích xuất key information
+    const allText = [...userMessages, ...assistantMessages].join(' ');
+    const summary = extractKeyFacts(allText, userMessages);
 
     return summary;
 }
 
 /**
  * Trích xuất facts quan trọng từ text (helper function)
- * @param {string} text 
- * @returns {string} Key facts
+ * @param {string} text - All text
+ * @param {Array} userMessages - User messages only
+ * @returns {string} Key facts summary
  */
-function extractKeyFacts(text) {
+function extractKeyFacts(text, userMessages = []) {
     if (!text) return '';
 
-    // Giới hạn độ dài
-    const words = text.split(/\s+/).slice(0, 150);
-    const shortened = words.join(' ');
+    // Tìm chủ đề chính (từ khóa lặp lại)
+    const commonTopics = ['học tập', 'gia đình', 'bạn bè', 'tình cảm', 'stress', 'lo lắng', 'buồn', 'cô đơn'];
+    const foundTopics = commonTopics.filter(topic => 
+        text.toLowerCase().includes(topic)
+    );
 
-    // Format thành summary
-    if (shortened.length > 0) {
-        return `Tóm tắt trước đó: ${shortened.slice(0, 400)}${shortened.length > 400 ? '...' : ''}`;
+    // Tìm cảm xúc chính
+    const emotions = ['buồn', 'vui', 'giận', 'sợ', 'lo lắng', 'stress', 'cô đơn', 'tủi thân', 'confused'];
+    const foundEmotions = emotions.filter(emotion => 
+        text.toLowerCase().includes(emotion)
+    );
+
+    // Lấy key sentences từ user messages (câu dài hơn 20 ký tự)
+    const keySentences = userMessages
+        .map(msg => {
+            const sentences = msg.split(/[.!?]\s+/).filter(s => s.length > 20);
+            return sentences.slice(0, 2); // Lấy 2 câu đầu tiên
+        })
+        .flat()
+        .slice(0, 3); // Tối đa 3 câu
+
+    // Tạo summary có cấu trúc
+    const parts = [];
+    
+    if (foundTopics.length > 0) {
+        parts.push(`Chủ đề chính: ${foundTopics.join(', ')}`);
+    }
+    
+    if (foundEmotions.length > 0) {
+        parts.push(`Cảm xúc: ${foundEmotions.join(', ')}`);
+    }
+    
+    if (keySentences.length > 0) {
+        parts.push(`Điểm quan trọng: ${keySentences.join(' | ')}`);
     }
 
-    return '';
+    // Fallback: nếu không có gì, lấy 150 từ đầu
+    if (parts.length === 0) {
+        const words = text.split(/\s+/).slice(0, 100);
+        return `Tóm tắt: ${words.join(' ')}${text.length > words.join(' ').length ? '...' : ''}`;
+    }
+
+    return parts.join('\n');
 }
 
 /**

@@ -12,7 +12,7 @@ import {
 import {
     getForumStats, getAdminLogs, getBannedUsers, getForumPosts,
     deleteForumPost, toggleLockPost, banUser, unbanUser,
-    adminLogin, isAdminLoggedIn, adminLogout
+    adminLogin, isAdminLoggedIn, adminLogout, getSOSLogs
 } from '../utils/api';
 
 // =============================================================================
@@ -39,6 +39,7 @@ function AdminSidebar({ activeTab, setActiveTab, collapsed, setCollapsed }) {
         { id: 'overview', label: 'Tổng quan', icon: BarChart3 },
         { id: 'posts', label: 'Quản lý bài viết', icon: FileText },
         { id: 'users', label: 'Người dùng bị cấm', icon: Ban },
+        { id: 'sos', label: 'SOS Logs', icon: AlertTriangle },
         { id: 'logs', label: 'Nhật ký hoạt động', icon: Activity },
     ];
 
@@ -150,7 +151,7 @@ function StatCard({ icon: Icon, label, value, color, trend }) {
 // OVERVIEW TAB
 // =============================================================================
 
-function OverviewTab({ stats, logs }) {
+function OverviewTab({ stats, logs, sosStats }) {
     return (
         <div className="space-y-6">
             {/* Stats Grid */}
@@ -160,6 +161,30 @@ function OverviewTab({ stats, logs }) {
                 <StatCard icon={EyeOff} label="Bài viết đã ẩn" value={stats?.hidden_posts || 0} color="bg-orange-500" />
                 <StatCard icon={Ban} label="Người dùng bị cấm" value={stats?.banned_users || 0} color="bg-red-500" />
             </div>
+
+            {/* SOS Stats */}
+            {sosStats && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <StatCard 
+                        icon={AlertTriangle} 
+                        label="SOS Events (7 ngày)" 
+                        value={sosStats.total || 0} 
+                        color="bg-red-500" 
+                    />
+                    <StatCard 
+                        icon={AlertTriangle} 
+                        label="Critical Risk" 
+                        value={sosStats.critical || 0} 
+                        color="bg-red-600" 
+                    />
+                    <StatCard 
+                        icon={Users} 
+                        label="Unique Users" 
+                        value={sosStats.unique_users || 0} 
+                        color="bg-purple-500" 
+                    />
+                </div>
+            )}
 
             {/* Recent Activity */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
@@ -424,6 +449,128 @@ function BannedUsersTab({ bannedUsers, onUnban, onRefresh }) {
 }
 
 // =============================================================================
+// SOS LOGS TAB
+// =============================================================================
+
+function SOSLogsTab({ sosLogs, onRefresh }) {
+    const [filterRisk, setFilterRisk] = useState(null);
+    const [filteredLogs, setFilteredLogs] = useState([]);
+
+    useEffect(() => {
+        if (filterRisk) {
+            setFilteredLogs(sosLogs.filter(log => log.risk_level === filterRisk));
+        } else {
+            setFilteredLogs(sosLogs);
+        }
+    }, [sosLogs, filterRisk]);
+
+    const riskColors = {
+        'critical': 'bg-red-600 text-white',
+        'red': 'bg-red-500 text-white',
+        'yellow': 'bg-yellow-500 text-white',
+        'green': 'bg-green-500 text-white',
+        'safe': 'bg-gray-500 text-white',
+    };
+
+    const eventTypeLabels = {
+        'overlay_opened': 'Mở overlay SOS',
+        'hotline_clicked': 'Nhấn hotline',
+        'map_viewed': 'Xem bản đồ',
+        'message_flagged': 'Tin nhắn được đánh dấu',
+        'false_positive': 'False positive',
+    };
+
+    return (
+        <div className="space-y-4">
+            {/* Filters */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
+                <div className="flex items-center gap-4 flex-wrap">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Lọc theo mức độ:</span>
+                    <button
+                        onClick={() => setFilterRisk(null)}
+                        className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${!filterRisk
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            }`}
+                    >
+                        Tất cả
+                    </button>
+                    {['critical', 'red', 'yellow', 'green', 'safe'].map(risk => (
+                        <button
+                            key={risk}
+                            onClick={() => setFilterRisk(risk)}
+                            className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${filterRisk === risk
+                                    ? riskColors[risk] || 'bg-gray-500 text-white'
+                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                }`}
+                        >
+                            {risk.toUpperCase()}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Logs List */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5 text-red-500" />
+                        SOS Logs ({filteredLogs.length})
+                    </h3>
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead className="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thời gian</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Loại sự kiện</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mức độ</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trigger text</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User ID</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                            {filteredLogs.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                                        Không có log nào
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredLogs.map(log => (
+                                    <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                        <td className="px-6 py-4 text-sm text-gray-500">
+                                            {formatDate(log.created_at)}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm">
+                                            {eventTypeLabels[log.event_type] || log.event_type}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {log.risk_level && (
+                                                <span className={`px-2 py-1 text-xs rounded ${riskColors[log.risk_level] || 'bg-gray-500 text-white'}`}>
+                                                    {log.risk_level.toUpperCase()}
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">
+                                            {log.trigger_text || '-'}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-500">
+                                            {log.hashed_user_id ? `#${log.hashed_user_id}` : '-'}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// =============================================================================
 // LOGS TAB
 // =============================================================================
 
@@ -503,6 +650,8 @@ export default function AdminDashboard() {
     const [stats, setStats] = useState(null);
     const [logs, setLogs] = useState([]);
     const [bannedUsers, setBannedUsers] = useState([]);
+    const [sosLogs, setSosLogs] = useState([]);
+    const [sosStats, setSosStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -545,14 +694,30 @@ export default function AdminDashboard() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [statsData, logsData, bannedData] = await Promise.all([
+            const [statsData, logsData, bannedData, sosData] = await Promise.all([
                 getForumStats().catch(() => null),
                 getAdminLogs(50).catch(() => ({ items: [] })),
-                getBannedUsers().catch(() => ({ items: [] }))
+                getBannedUsers().catch(() => ({ items: [] })),
+                getSOSLogs(100).catch(() => ({ items: [] }))
             ]);
             if (statsData) setStats(statsData);
             setLogs(logsData.items || []);
             setBannedUsers(bannedData.items || []);
+            setSosLogs(sosData.items || []);
+
+            // Tính SOS stats
+            if (sosData.items && sosData.items.length > 0) {
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                const recentLogs = sosData.items.filter(log => new Date(log.created_at) >= sevenDaysAgo);
+                const criticalCount = recentLogs.filter(log => log.risk_level === 'critical' || log.risk_level === 'red').length;
+                const uniqueUsers = new Set(recentLogs.map(log => log.hashed_user_id).filter(Boolean)).size;
+                setSosStats({
+                    total: recentLogs.length,
+                    critical: criticalCount,
+                    unique_users: uniqueUsers
+                });
+            }
         } catch (e) {
             console.error('Load admin data error:', e);
         } finally {
@@ -661,6 +826,7 @@ export default function AdminDashboard() {
                                 {activeTab === 'overview' && 'Tổng quan'}
                                 {activeTab === 'posts' && 'Quản lý bài viết'}
                                 {activeTab === 'users' && 'Người dùng bị cấm'}
+                                {activeTab === 'sos' && 'SOS Logs'}
                                 {activeTab === 'logs' && 'Nhật ký hoạt động'}
                             </h1>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -688,7 +854,17 @@ export default function AdminDashboard() {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
                             >
-                                <OverviewTab stats={stats} logs={logs} />
+                                <OverviewTab stats={stats} logs={logs} sosStats={sosStats} />
+                            </motion.div>
+                        )}
+                        {activeTab === 'sos' && (
+                            <motion.div
+                                key="sos"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                            >
+                                <SOSLogsTab sosLogs={sosLogs} onRefresh={loadData} />
                             </motion.div>
                         )}
                         {activeTab === 'posts' && (

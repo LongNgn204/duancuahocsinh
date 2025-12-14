@@ -3,7 +3,7 @@
 // STT: SpeechRecognition (vi-VN)
 // TTS: SpeechSynthesis (vi-VN) với Play/Stop
 // LLM: Workers AI qua backend SSE streaming
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVoiceAgentCF } from '../../hooks/useVoiceAgentCF';
 import Card from '../ui/Card';
@@ -45,22 +45,29 @@ function VoiceRings({ isActive, color = 'brand' }) {
     );
 }
 
-// Audio visualizer bars
-function AudioBars({ isActive }) {
+// Real-time audio visualizer với Web Audio API
+function AudioBars({ isActive, audioLevel = 0 }) {
+    const bars = 12;
+    const barHeights = Array.from({ length: bars }, (_, i) => {
+        if (!isActive) return 8;
+        // Tạo pattern sóng dựa trên audioLevel và index
+        const baseHeight = 8 + (audioLevel * 40);
+        const wave = Math.sin((Date.now() / 200) + (i * 0.5)) * 8;
+        return Math.max(8, Math.min(48, baseHeight + wave));
+    });
+
     return (
-        <div className="flex items-center justify-center gap-1 h-8">
-            {[...Array(5)].map((_, i) => (
+        <div className="flex items-center justify-center gap-0.5 h-12">
+            {barHeights.map((height, i) => (
                 <motion.div
                     key={i}
-                    className="w-1 bg-white/80 rounded-full"
+                    className="w-1.5 bg-white/90 rounded-full"
                     animate={isActive ? {
-                        height: [8, 24 + Math.random() * 16, 8],
+                        height: height,
                     } : { height: 8 }}
                     transition={{
-                        duration: 0.5 + Math.random() * 0.3,
-                        repeat: isActive ? Infinity : 0,
-                        ease: 'easeInOut',
-                        delay: i * 0.1
+                        duration: 0.1,
+                        ease: 'easeOut'
                     }}
                 />
             ))}
@@ -85,11 +92,72 @@ export default function VoiceChat() {
     const [textInput, setTextInput] = useState('');
     const [showTextInput, setShowTextInput] = useState(false);
     const [displayedResponse, setDisplayedResponse] = useState('');
+    const [audioLevel, setAudioLevel] = useState(0);
+    const [isHolding, setIsHolding] = useState(false);
+    const audioContextRef = useRef(null);
+    const analyserRef = useRef(null);
+    const animationFrameRef = useRef(null);
 
     // Sync response to displayed response
     useEffect(() => {
         setDisplayedResponse(response);
     }, [response]);
+
+    // Setup audio visualization khi listening
+    useEffect(() => {
+        if (status === 'listening' && isSupported) {
+            // Khởi tạo Web Audio API để visualize
+            const setupAudioVisualization = async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const analyser = audioContext.createAnalyser();
+                    const microphone = audioContext.createMediaStreamSource(stream);
+                    
+                    analyser.fftSize = 256;
+                    analyser.smoothingTimeConstant = 0.8;
+                    microphone.connect(analyser);
+                    
+                    audioContextRef.current = audioContext;
+                    analyserRef.current = analyser;
+                    
+                    // Update audio level
+                    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                    const updateLevel = () => {
+                        if (analyserRef.current && status === 'listening') {
+                            analyserRef.current.getByteFrequencyData(dataArray);
+                            const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
+                            setAudioLevel(average / 255);
+                            animationFrameRef.current = requestAnimationFrame(updateLevel);
+                        }
+                    };
+                    updateLevel();
+                } catch (err) {
+                    console.warn('[VoiceChat] Audio visualization setup failed:', err);
+                }
+            };
+            
+            setupAudioVisualization();
+        } else {
+            // Cleanup
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
+            if (audioContextRef.current) {
+                audioContextRef.current.close();
+            }
+            setAudioLevel(0);
+        }
+        
+        return () => {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
+            if (audioContextRef.current) {
+                audioContextRef.current.close();
+            }
+        };
+    }, [status, isSupported]);
 
     // Handle toggle listening
     const handleToggleListening = () => {
@@ -241,13 +309,46 @@ export default function VoiceChat() {
 
                     <motion.button
                         onClick={isSpeaking ? handleStopSpeaking : handleToggleListening}
+                        onTouchStart={(e) => {
+                            if (!isSupported || isThinking) return;
+                            setIsHolding(true);
+                            if (status === 'idle') {
+                                startListening();
+                            }
+                        }}
+                        onTouchEnd={(e) => {
+                            setIsHolding(false);
+                            if (status === 'listening') {
+                                stopListening();
+                            }
+                        }}
+                        onMouseDown={(e) => {
+                            if (!isSupported || isThinking) return;
+                            if (status === 'idle' && e.button === 0) {
+                                setIsHolding(true);
+                                startListening();
+                            }
+                        }}
+                        onMouseUp={(e) => {
+                            setIsHolding(false);
+                            if (status === 'listening') {
+                                stopListening();
+                            }
+                        }}
+                        onMouseLeave={() => {
+                            setIsHolding(false);
+                            if (status === 'listening') {
+                                stopListening();
+                            }
+                        }}
                         disabled={!isSupported || isThinking}
                         className={`
                             relative z-10 w-36 h-36 rounded-full 
                             flex flex-col items-center justify-center gap-2
                             shadow-2xl transition-all duration-300
                             disabled:opacity-70 disabled:cursor-not-allowed
-                            ${isListening
+                            touch-target
+                            ${isListening || isHolding
                                 ? 'bg-gradient-to-br from-red-500 to-rose-600 scale-110'
                                 : isThinking
                                     ? 'bg-gradient-to-br from-amber-400 to-orange-500 animate-pulse'
@@ -265,18 +366,22 @@ export default function VoiceChat() {
                             </>
                         ) : isSpeaking ? (
                             <>
-                                <AudioBars isActive={true} />
+                                <AudioBars isActive={true} audioLevel={0.5} />
                                 <span className="text-white/80 text-xs font-medium">Dừng</span>
                             </>
                         ) : isListening ? (
                             <>
-                                <MicOff className="w-10 h-10 text-white" />
-                                <span className="text-white/80 text-xs font-medium">Dừng</span>
+                                <AudioBars isActive={true} audioLevel={audioLevel} />
+                                <span className="text-white/80 text-xs font-medium">
+                                    {isHolding ? 'Giữ để nói' : 'Đang nghe...'}
+                                </span>
                             </>
                         ) : (
                             <>
                                 <Mic className="w-10 h-10 text-white" />
-                                <span className="text-white/80 text-xs font-medium">Nói</span>
+                                <span className="text-white/80 text-xs font-medium">
+                                    {isHolding ? 'Giữ để nói' : 'Nhấn hoặc giữ'}
+                                </span>
                             </>
                         )}
                     </motion.button>
@@ -406,7 +511,8 @@ export default function VoiceChat() {
                 <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-[--brand]/5 to-[--secondary]/5 border border-[--brand]/10">
                     <Heart className="w-5 h-5 text-[--brand] shrink-0" />
                     <p className="text-sm text-[--text-secondary]">
-                        <span className="font-medium text-[--text]">Mẹo:</span> Nói tự nhiên như đang tâm sự với bạn bè. AI sẽ lắng nghe và đáp lại.
+                        <span className="font-medium text-[--text]">Mẹo:</span> Nói tự nhiên như đang tâm sự với bạn bè. 
+                        Trên mobile, bạn có thể giữ nút để nói, thả ra để gửi. AI sẽ lắng nghe và đáp lại.
                     </p>
                 </div>
             </div>

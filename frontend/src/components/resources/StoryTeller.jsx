@@ -11,7 +11,7 @@ import { useTTS } from '../../hooks/useTTS';
 import {
     BookOpen, Play, Pause, Square, Volume2, VolumeX,
     RefreshCw, Sparkles, ChevronRight, Clock, Gauge,
-    Rabbit, Turtle, Wand2, Loader2
+    Rabbit, Turtle, Wand2, Loader2, Bookmark, BookmarkCheck
 } from 'lucide-react';
 
 // Kho truyện dân gian Việt Nam (chính xác theo nguyên bản)
@@ -167,28 +167,90 @@ Một hôm, vợ Cuội lại tưới nước bẩn vào gốc cây. Cây thuố
 Từ đó, cứ đêm rằm, người ta nhìn lên mặt trăng thấy bóng chú Cuội ngồi dưới gốc cây đa.
 
 Trẻ em có bài hát: "Thằng Cuội ngồi gốc cây đa, để trâu ăn lúa gọi cha ời ời."`
+    },
+    {
+        id: 'con-rong-chau-tien',
+        title: 'Con Rồng Cháu Tiên',
+        category: 'Truyền thuyết',
+        duration: '7 phút',
+        thumbnail: '🐉',
+        content: `Ngày xưa, ở miền đất Lạc Việt, có vị thần tên là Lạc Long Quân, con trai của Kinh Dương Vương. Lạc Long Quân có sức mạnh phi thường, có thể hô mưa gọi gió, diệt yêu quái.
+
+Một hôm, Lạc Long Quân lên núi, gặp nàng Âu Cơ, con gái của Đế Lai, xinh đẹp như tiên. Hai người yêu nhau, kết thành vợ chồng.
+
+Âu Cơ có thai, sinh ra một bọc trăm trứng. Trăm trứng nở ra một trăm người con trai khôi ngô tuấn tú. Các con lớn lên không cần bú mớm, tự lớn như thổi, ai cũng thông minh, khỏe mạnh.
+
+Một hôm, Lạc Long Quân nói với Âu Cơ: "Ta là giống Rồng, nàng là giống Tiên, khó ở lâu với nhau được. Ta đem năm mươi con xuống biển, nàng đem năm mươi con lên núi. Khi nào có việc thì giúp đỡ lẫn nhau."
+
+Âu Cơ nghe theo, đem năm mươi con lên núi. Người con cả được tôn làm vua, lấy hiệu là Hùng Vương, đặt tên nước là Văn Lang.
+
+Từ đó, người Việt tự gọi mình là "Con Rồng Cháu Tiên", để nhớ đến nguồn gốc cao quý của mình.`
+    },
+    {
+        id: 'su-tich-trau-cau',
+        title: 'Sự tích Trầu Cau',
+        category: 'Sự tích',
+        duration: '5 phút',
+        thumbnail: '🌿',
+        content: `Ngày xưa, có hai anh em sinh đôi tên là Tân và Lang, giống nhau như đúc. Hai anh em rất yêu thương nhau, không bao giờ rời xa.
+
+Khi lớn lên, hai anh em cùng yêu một cô gái tên là Nàng Dâu. Cô gái không biết chọn ai, vì hai người giống nhau quá.
+
+Một hôm, Tân biết em mình cũng yêu Nàng Dâu, bèn nhường em, bỏ đi biệt tích. Lang tìm anh mãi không thấy, buồn rầu mà chết.
+
+Nàng Dâu thương Lang, cũng chết theo. Ba người được chôn cạnh nhau.
+
+Từ ba ngôi mộ, mọc lên ba cây: một cây cao thẳng (Tân), một cây quấn quanh (Lang), một cây leo (Nàng Dâu). Người ta gọi là cây cau, cây trầu và dây trầu.
+
+Từ đó, người Việt có tục ăn trầu cau để nhớ đến tình nghĩa anh em, tình yêu thủy chung.`
+    },
+    {
+        id: 'con-co',
+        title: 'Con Cò',
+        category: 'Cổ tích',
+        duration: '4 phút',
+        thumbnail: '🦢',
+        content: `Ngày xưa, có một con cò già sống một mình bên bờ ao. Cò già yếu, không thể kiếm ăn được nữa.
+
+Một hôm, cò thấy một con cá rô đang bơi. Cò nghĩ: "Mình sẽ lừa cá để ăn thịt."
+
+Cò nói với cá: "Cá ơi, nước ao sắp cạn rồi. Để tôi đưa bạn sang ao khác có nhiều nước hơn."
+
+Cá tin lời, để cò cắp đi. Nhưng cò không đưa cá sang ao khác, mà đưa đến một nơi khô cằn, định ăn thịt.
+
+Cá khóc lóc: "Cò ơi, sao cò lừa tôi? Tôi tin tưởng cò mà cò lại hại tôi."
+
+Cò nghe vậy, cảm động, bèn đưa cá về ao cũ. Từ đó, cò không bao giờ lừa dối ai nữa.
+
+Câu chuyện này dạy: Đừng lừa dối người khác, dù là để có lợi cho mình.`
     }
 ];
 
 // Chế độ tốc độ đọc
 const SPEED_MODES = {
     slow: {
-        label: 'Kể chậm',
+        label: '0.75x',
         icon: Turtle,
         rate: 0.75,
-        description: 'Dễ theo dõi, thư giãn'
+        description: 'Chậm - Dễ theo dõi, thư giãn'
     },
     normal: {
-        label: 'Bình thường',
+        label: '1.0x',
         icon: Gauge,
         rate: 1.0,
-        description: 'Tốc độ vừa phải'
+        description: 'Bình thường - Tốc độ vừa phải'
     },
     fast: {
-        label: 'Kể nhanh',
+        label: '1.25x',
         icon: Rabbit,
         rate: 1.25,
-        description: 'Tiết kiệm thời gian'
+        description: 'Nhanh - Tiết kiệm thời gian'
+    },
+    veryFast: {
+        label: '1.5x',
+        icon: Rabbit,
+        rate: 1.5,
+        description: 'Rất nhanh - Đọc nhanh nhất'
     }
 };
 
@@ -233,30 +295,60 @@ export default function StoryTeller() {
         return minutes * 60 * 1000; // milliseconds
     }, []);
 
-    // Bắt đầu đọc truyện
+    // Load bookmark khi chọn story
+    useEffect(() => {
+        if (selectedStory) {
+            const bookmarks = loadBookmarks();
+            const bookmark = bookmarks[selectedStory.id];
+            if (bookmark && bookmark.position > 0) {
+                setProgress(bookmark.position);
+            } else {
+                setProgress(0);
+            }
+        }
+    }, [selectedStory]);
+
+    // Bắt đầu đọc truyện (từ bookmark nếu có)
     const handlePlay = useCallback(() => {
         if (!selectedStory) return;
 
         const content = selectedStory.content;
         const rate = SPEED_MODES[speedMode].rate;
+        
+        // Nếu có bookmark, đọc từ vị trí đó
+        const bookmarks = loadBookmarks();
+        const bookmark = bookmarks[selectedStory.id];
+        let contentToRead = content;
+        
+        if (bookmark && bookmark.position > 0 && progress > 0) {
+            // Tính toán vị trí trong text dựa trên progress
+            const charIndex = Math.floor((progress / 100) * content.length);
+            contentToRead = content.slice(charIndex);
+        }
 
-        play(content, { rate, pitch: 1 });
+        play(contentToRead, { rate, pitch: 1 });
         setIsPlaying(true);
         startTimeRef.current = Date.now();
 
         // Tính progress
-        const duration = estimateDuration(content, rate);
+        const duration = estimateDuration(contentToRead, rate);
+        const startProgress = bookmark && bookmark.position > 0 ? progress : 0;
+        
         progressIntervalRef.current = setInterval(() => {
             const elapsed = Date.now() - startTimeRef.current;
-            const newProgress = Math.min((elapsed / duration) * 100, 100);
+            const newProgress = Math.min(startProgress + (elapsed / duration) * (100 - startProgress), 100);
             setProgress(newProgress);
 
             if (newProgress >= 100) {
                 clearInterval(progressIntervalRef.current);
                 setIsPlaying(false);
+                // Xóa bookmark khi đọc xong
+                const bookmarks = loadBookmarks();
+                delete bookmarks[selectedStory.id];
+                localStorage.setItem(STORY_BOOKMARK_KEY, JSON.stringify(bookmarks));
             }
         }, 500);
-    }, [selectedStory, speedMode, play, estimateDuration]);
+    }, [selectedStory, speedMode, play, estimateDuration, progress]);
 
     // Dừng đọc
     const handleStop = useCallback(() => {
@@ -597,6 +689,38 @@ Và họ sống hạnh phúc mãi mãi.`;
                                     <RefreshCw size={20} />
                                 </Button>
                             </div>
+
+                            {/* Bookmark indicator */}
+                            {(() => {
+                                const bookmarks = loadBookmarks();
+                                const bookmark = bookmarks[selectedStory.id];
+                                return bookmark && bookmark.position > 0 ? (
+                                    <div className="mt-4 flex items-center justify-center gap-2">
+                                        <BookmarkCheck size={16} className="text-[--brand]" />
+                                        <span className="text-sm text-[--muted]">
+                                            Đã lưu vị trí: {Math.round(bookmark.position)}% - 
+                                            <button
+                                                onClick={() => {
+                                                    setProgress(0);
+                                                    const bookmarks = loadBookmarks();
+                                                    delete bookmarks[selectedStory.id];
+                                                    localStorage.setItem(STORY_BOOKMARK_KEY, JSON.stringify(bookmarks));
+                                                }}
+                                                className="ml-1 text-[--brand] hover:underline"
+                                            >
+                                                Xóa bookmark
+                                            </button>
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <div className="mt-4 flex items-center justify-center gap-2">
+                                        <Bookmark size={16} className="text-[--muted]" />
+                                        <span className="text-xs text-[--muted]">
+                                            Vị trí sẽ tự động lưu khi bạn dừng đọc
+                                        </span>
+                                    </div>
+                                );
+                            })()}
 
                             {/* Story content preview */}
                             <div className="mt-6 pt-4 border-t border-[--surface-border]">

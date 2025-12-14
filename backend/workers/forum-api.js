@@ -649,3 +649,74 @@ export async function getForumStats(request, env) {
         return json({ error: 'server_error' }, 500);
     }
 }
+
+/**
+ * POST /api/forum/report - Báo cáo bài viết hoặc bình luận
+ * Body: { target_type: 'post'|'comment', target_id: number, reason: string, details?: string }
+ */
+export async function reportContent(request, env) {
+    const userId = getUserId(request); // Có thể null nếu khách
+
+    try {
+        const { target_type, target_id, reason, details } = await request.json();
+
+        // Validate
+        if (!target_type || !['post', 'comment'].includes(target_type)) {
+            return json({ error: 'invalid_target_type' }, 400);
+        }
+
+        if (!target_id || typeof target_id !== 'number') {
+            return json({ error: 'invalid_target_id' }, 400);
+        }
+
+        const validReasons = ['spam', 'harassment', 'inappropriate', 'misinformation', 'other'];
+        if (!reason || !validReasons.includes(reason)) {
+            return json({ error: 'invalid_reason' }, 400);
+        }
+
+        // Kiểm tra target có tồn tại không
+        const table = target_type === 'post' ? 'forum_posts' : 'forum_comments';
+        const target = await env.ban_dong_hanh_db.prepare(
+            `SELECT id FROM ${table} WHERE id = ?`
+        ).bind(target_id).first();
+
+        if (!target) {
+            return json({ error: 'target_not_found' }, 404);
+        }
+
+        // Kiểm tra đã báo cáo chưa (tránh spam report)
+        const existingReport = await env.ban_dong_hanh_db.prepare(
+            'SELECT id FROM forum_reports WHERE target_type = ? AND target_id = ? AND reporter_user_id = ? AND status = ?'
+        ).bind(target_type, target_id, userId || null, 'pending').first();
+
+        if (existingReport) {
+            return json({ 
+                error: 'already_reported', 
+                message: 'Bạn đã báo cáo nội dung này rồi. Admin sẽ xem xét sớm nhất.' 
+            }, 400);
+        }
+
+        // Lưu báo cáo
+        const result = await env.ban_dong_hanh_db.prepare(
+            'INSERT INTO forum_reports (target_type, target_id, reporter_user_id, reason, details, status) VALUES (?, ?, ?, ?, ?, ?) RETURNING id, created_at'
+        ).bind(
+            target_type,
+            target_id,
+            userId || null,
+            reason,
+            details ? details.slice(0, 500) : null, // Giới hạn 500 ký tự
+            'pending'
+        ).first();
+
+        console.log('[Forum] Content reported:', { target_type, target_id, reason, reporter: userId || 'guest' });
+
+        return json({
+            success: true,
+            report_id: result.id,
+            message: 'Cảm ơn bạn đã báo cáo. Admin sẽ xem xét nội dung này sớm nhất.'
+        }, 201);
+    } catch (error) {
+        console.error('[Forum] reportContent error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}

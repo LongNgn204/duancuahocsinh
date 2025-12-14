@@ -55,9 +55,9 @@ const variants = {
 
 const padding = {
   none: '',
-  sm: 'p-4',
-  md: 'p-6',
-  lg: 'p-8',
+  sm: 'p-3 sm:p-4',
+  md: 'p-4 sm:p-5 md:p-6',
+  lg: 'p-5 sm:p-6 md:p-8',
 };
 
 export default function Card({

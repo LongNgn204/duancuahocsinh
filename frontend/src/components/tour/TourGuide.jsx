@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     ChevronLeft, ChevronRight, X, Play,
-    MessageCircle, Wind, Heart, Gamepad2,
+    Bot, Wind, Heart, Gamepad2,
     Star, BookOpenCheck, HelpCircle, CheckCircle
 } from 'lucide-react';
 
@@ -27,7 +27,7 @@ const TOUR_STEPS = [
         id: 'chat',
         title: 'Tâm sự với AI',
         description: 'Bạn có thể chat hoặc nói chuyện với AI bất cứ lúc nào. AI sẽ lắng nghe và không phán xét bạn.',
-        icon: MessageCircle,
+        icon: Bot,
         route: '/chat',
         position: 'center',
         tip: 'Thử hỏi: "Hôm nay mình thấy hơi buồn..." 💬',

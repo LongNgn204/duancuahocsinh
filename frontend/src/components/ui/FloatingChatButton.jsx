@@ -3,7 +3,7 @@
 // để người dùng có thể nhanh chóng truy cập AI chat từ bất kỳ đâu
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, X, MessageCircle, Sparkles } from 'lucide-react';
+import { Bot, X, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 
 export default function FloatingChatButton() {
@@ -60,7 +60,7 @@ export default function FloatingChatButton() {
                                     animate={{ scale: 1 }}
                                     transition={{ delay: 0.05, type: 'spring' }}
                                 >
-                                    <MessageCircle size={22} className="text-white" />
+                                    <Bot size={22} className="text-white" />
                                 </motion.div>
                             </Link>
 

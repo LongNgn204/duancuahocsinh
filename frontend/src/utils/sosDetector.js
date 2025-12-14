@@ -39,6 +39,11 @@ const CRITICAL_PATTERNS = [
   'cạn pin rồi', 'bat low quá', 'energy = 0',
   // Viết tắt phổ biến
   'kts', 'muốn c', 'muốn die',
+  // Thêm gen-Z patterns
+  'uninstall life', 'delete myself', 'alt+f4 đời',
+  'restart lại đời', 'reset cuộc đời',
+  'không còn muốn tồn tại', 'không muốn exist',
+  'tired of existing', 'done với cuộc sống',
 ];
 
 // Từ khóa HIGH - Nguy cơ cao, cần theo dõi sát
@@ -90,6 +95,13 @@ const MEDIUM_PATTERNS = [
   // Tự ti
   'fail đủ thứ', 'mình dở quá', 'mình tệ quá',
   'không làm được gì cả', 'useless real',
+  // Thêm gen-Z patterns
+  'depressed af', 'sad real', 'mood = 0',
+  'không còn động lực', 'motivation = 0',
+  'overwhelmed', 'quá tải rồi', 'không chịu nổi',
+  'mental breakdown', 'suy sụp tinh thần',
+  'toxic environment', 'môi trường độc hại',
+  'không có ai để nói', 'không có ai tin tưởng',
 
   // Lo âu
   'lo lắng quá', 'lo nhiều lắm',

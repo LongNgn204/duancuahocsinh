@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  MessageCircle, Heart, Sparkles, Gamepad2,
+  Bot, Heart, Sparkles, Gamepad2,
   TrendingUp, Calendar, Award, ChevronRight,
   Sun, Cloud, CloudRain, Zap, Meh, Star, Loader2
 } from 'lucide-react';
@@ -28,8 +28,8 @@ const quickActions = [
   {
     path: '/chat',
     label: 'Tâm sự với AI',
-    icon: MessageCircle,
-    description: 'Chia sẻ điều bạn đang nghĩ',
+    icon: Bot,
+    description: 'Chat văn bản hoặc nói chuyện với AI',
     color: 'from-teal-500 to-cyan-500',
     badge: 'HOT'
   },
@@ -164,7 +164,7 @@ export default function Dashboard() {
                   <Calendar size={12} className="mr-1" />
                   {new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </Badge>
-                <h1 className="text-3xl md:text-4xl font-bold">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">
                   {greeting}, <span className="gradient-text">{userName}</span>! 👋
                 </h1>
                 <p className="text-[--text-secondary] mt-2 max-w-md">
@@ -173,7 +173,7 @@ export default function Dashboard() {
               </div>
 
               {/* Stats preview */}
-              <div className="hidden md:flex items-center gap-4">
+              <div className="hidden sm:flex items-center gap-3 md:gap-4">
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin text-[--brand]" />
                 ) : (
@@ -205,7 +205,7 @@ export default function Dashboard() {
             </div>
 
             {/* Mood Selector */}
-            <div className="grid grid-cols-5 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
               {moods.map((mood) => (
                 <motion.button
                   key={mood.id}
@@ -375,7 +375,7 @@ export default function Dashboard() {
           </p>
           <div className="mt-6 flex justify-center gap-3">
             <Link to="/chat">
-              <Button variant="primary" icon={<MessageCircle size={18} />}>
+              <Button variant="primary" icon={<Bot size={18} />}>
                 Bắt đầu trò chuyện
               </Button>
             </Link>

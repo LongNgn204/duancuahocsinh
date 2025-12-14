@@ -7,7 +7,7 @@ import Badge from '../ui/Badge';
 import GlowOrbs from '../ui/GlowOrbs';
 import {
     BarChart3, TrendingUp, Clock, Heart, Brain,
-    Target, Flame, Moon, Gamepad2, MessageCircle,
+    Target, Flame, Moon, Gamepad2, Bot,
     Activity, Sparkles, Wind, Loader2, RefreshCw
 } from 'lucide-react';
 import { getStats, isLoggedIn } from '../../utils/api';
@@ -397,7 +397,7 @@ export default function AnalyticsDashboard() {
 
                     <Card>
                         <h3 className="font-semibold flex items-center gap-2 mb-4">
-                            <MessageCircle size={18} className="text-emerald-500" />
+                            <Bot size={18} className="text-emerald-500" />
                             Trò chuyện AI
                         </h3>
                         <div className="space-y-3">

@@ -2,9 +2,9 @@
 // Chú thích: Sidebar v4.2 - Thêm Journey (Hành trình XP)
 import { NavLink } from 'react-router-dom';
 import {
-  Home, Heart, MessageCircle, Gamepad2, Sparkles,
+  Home, Heart, Bot, Gamepad2, Sparkles,
   BookOpenCheck, Timer, Library, Settings, Moon,
-  ChevronLeft, ChevronRight, BarChart3, Trophy, Headphones,
+  ChevronLeft, ChevronRight, BarChart3, Trophy,
   Users, Shield, Star
 } from 'lucide-react';
 import { useState } from 'react';
@@ -14,8 +14,7 @@ const sections = [
     label: 'Chính',
     items: [
       { icon: Home, label: 'Trang chủ', path: '/app' },
-      { icon: MessageCircle, label: 'Tâm sự (Chat)', path: '/chat' },
-      { icon: Headphones, label: 'Nói chuyện với AI', path: '/talk', badge: 'Mới' },
+      { icon: Bot, label: 'Tâm sự với AI', path: '/chat' },
       { icon: BarChart3, label: 'Thống kê', path: '/analytics' },
     ],
   },
@@ -60,7 +59,7 @@ export default function Sidebar() {
     <aside
       className={`
         hidden md:flex flex-col
-        ${collapsed ? 'w-20' : 'w-64'}
+        ${collapsed ? 'w-20' : 'w-56 lg:w-64'}
         shrink-0 
         glass-strong
         border-r border-[--surface-border]

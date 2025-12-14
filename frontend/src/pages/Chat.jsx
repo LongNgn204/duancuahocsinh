@@ -1,5 +1,5 @@
 // src/pages/Chat.jsx
-// Chú thích: Chat v3.1 - Modern UI với EmergencyOverlay multi-step calming flow
+// Chú thích: Chat v4.0 - Hợp nhất Text Chat và Voice Chat với tab switching
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAI } from '../hooks/useAI';
@@ -10,13 +10,15 @@ import Card from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import { useSpeech } from '../hooks/useSpeech';
 import MicVisualizer from '../components/chat/MicVisualizer';
-import { useTTS } from '../hooks/useTTS';
+import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import ChatList from '../components/chat/ChatList';
 import EmergencyOverlay from '../components/modals/EmergencyOverlay';
+import VoiceChat from '../components/chat/VoiceChat';
 import {
   Send, Mic, MicOff, Image, RotateCcw, Edit3,
   Copy, Volume2, VolumeX, ThumbsUp, ThumbsDown,
-  Sparkles, Plus, Trash2, MessageCircle
+  Sparkles, Plus, Trash2, MessageCircle, Settings, Play, Pause,
+  Bot, Headphones
 } from 'lucide-react';
 
 
@@ -76,7 +78,7 @@ function Feedback({ value, onUp, onDown }) {
   );
 }
 
-function Bubble({ role, children, onCopy, onPlayTTS, onStopTTS, speaking, ts, feedbackUI, isLatest }) {
+function Bubble({ role, children, onCopy, onPlayTTS, onPauseTTS, onResumeTTS, onStopTTS, speaking, paused, ts, feedbackUI, isLatest, onTtsSettings }) {
   const isUser = role === 'user';
 
   return (
@@ -116,14 +118,58 @@ function Bubble({ role, children, onCopy, onPlayTTS, onStopTTS, speaking, ts, fe
               >
                 <Copy size={12} /> Sao chép
               </button>
-              <button
-                type="button"
-                onClick={speaking ? onStopTTS : onPlayTTS}
-                className="flex items-center gap-1 hover:text-[--text] transition-colors"
-              >
-                {speaking ? <VolumeX size={12} /> : <Volume2 size={12} />}
-                {speaking ? 'Dừng' : 'Đọc'}
-              </button>
+              <div className="flex items-center gap-1">
+                {speaking ? (
+                  <>
+                    {paused ? (
+                      <button
+                        type="button"
+                        onClick={onResumeTTS}
+                        className="flex items-center gap-1 hover:text-[--text] transition-colors"
+                        title="Tiếp tục đọc"
+                      >
+                        <Play size={12} /> Tiếp tục
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={onPauseTTS}
+                        className="flex items-center gap-1 hover:text-[--text] transition-colors"
+                        title="Tạm dừng"
+                      >
+                        <Pause size={12} /> Tạm dừng
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={onStopTTS}
+                      className="flex items-center gap-1 hover:text-[--text] transition-colors"
+                      title="Dừng đọc"
+                    >
+                      <VolumeX size={12} /> Dừng
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={onPlayTTS}
+                    className="flex items-center gap-1 hover:text-[--text] transition-colors"
+                    title="Đọc tin nhắn"
+                  >
+                    <Volume2 size={12} /> Đọc
+                  </button>
+                )}
+                {onTtsSettings && (
+                  <button
+                    type="button"
+                    onClick={onTtsSettings}
+                    className="p-1 hover:text-[--text] transition-colors"
+                    title="Cài đặt TTS"
+                  >
+                    <Settings size={12} />
+                  </button>
+                )}
+              </div>
               {feedbackUI}
             </>
           )}
@@ -163,7 +209,22 @@ export default function Chat() {
   }, [speech.text]);
 
   // TTS
-  const { play, stop, speaking } = useTTS('vi-VN');
+  const {
+    isSupported: ttsSupported,
+    isSpeaking: speaking,
+    isPaused: ttsPaused,
+    speak,
+    pause: pauseTTS,
+    resume: resumeTTS,
+    stop,
+    vietnameseVoices,
+    selectedVoice,
+    setSelectedVoice,
+  } = useTextToSpeech();
+
+  // TTS settings state
+  const [ttsRate, setTtsRate] = useState(1); // 0.5 - 2
+  const [showTtsSettings, setShowTtsSettings] = useState(false);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -229,9 +290,59 @@ export default function Chat() {
   };
 
   const currentThread = threads.find(t => t.id === currentId);
+  const [chatMode, setChatMode] = useState('text'); // 'text' | 'voice'
 
   return (
-    <div className="h-[calc(100vh-10rem)] md:h-[calc(100vh-12rem)] flex flex-col md:grid md:grid-cols-[280px_1fr] gap-4" role="main">
+    <div className="min-h-[70vh] space-y-4" role="main">
+      {/* Mode Tabs */}
+      <Card size="sm">
+        <div className="flex items-center gap-2">
+          <div className="flex-1 flex gap-2 p-1 bg-[--surface-border] rounded-xl">
+            <button
+              onClick={() => setChatMode('text')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-all ${
+                chatMode === 'text'
+                  ? 'bg-white dark:bg-gray-800 text-[--brand] shadow-sm font-medium'
+                  : 'text-[--muted] hover:text-[--text]'
+              }`}
+            >
+              <MessageCircle size={18} />
+              <span className="text-sm">Chat văn bản</span>
+            </button>
+            <button
+              onClick={() => setChatMode('voice')}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-all ${
+                chatMode === 'voice'
+                  ? 'bg-white dark:bg-gray-800 text-[--brand] shadow-sm font-medium'
+                  : 'text-[--muted] hover:text-[--text]'
+              }`}
+            >
+              <Headphones size={18} />
+              <span className="text-sm">Nói chuyện</span>
+            </button>
+          </div>
+        </div>
+      </Card>
+
+      {/* Voice Chat Mode */}
+      {chatMode === 'voice' && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 10 }}
+        >
+          <VoiceChat />
+        </motion.div>
+      )}
+
+      {/* Text Chat Mode */}
+      {chatMode === 'text' && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 10 }}
+          className="h-[calc(100vh-20rem)] md:h-[calc(100vh-18rem)] flex flex-col md:grid md:grid-cols-[280px_1fr] gap-4"
+        >
       {/* A11y live region */}
       <div aria-live="polite" aria-atomic="false" className="sr-only" ref={liveRegionRef} />
 
@@ -268,7 +379,7 @@ export default function Chat() {
         <div className="flex items-center justify-between p-4 border-b border-[--surface-border]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[--brand] to-[--brand-light] flex items-center justify-center shadow-lg">
-              <MessageCircle className="w-5 h-5 text-white" />
+              <Bot className="w-5 h-5 text-white" />
             </div>
             <div>
               <h2 className="font-semibold text-[--text]">{currentThread?.title || 'Cuộc trò chuyện'}</h2>
@@ -287,7 +398,7 @@ export default function Chat() {
           {messages.length === 0 && (
             <div className="h-full flex flex-col items-center justify-center text-center">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[--brand]/20 to-[--secondary]/20 flex items-center justify-center mb-4">
-                <Sparkles className="w-8 h-8 text-[--brand]" />
+                <Bot className="w-8 h-8 text-[--brand]" />
               </div>
               <h3 className="font-semibold text-lg text-[--text] mb-2">Xin chào! 👋</h3>
               <p className="text-[--muted] max-w-sm">
@@ -305,9 +416,23 @@ export default function Chat() {
                 ts={m.ts}
                 isLatest={i === messages.length - 1}
                 onCopy={() => onCopyMsg(m.content)}
-                onPlayTTS={() => m.role === 'assistant' && play(m.content)}
+                onPlayTTS={() => {
+                  if (m.role === 'assistant') {
+                    const text = typeof m.content === 'string' 
+                      ? m.content 
+                      : (m.content?.reply || m.content?.text || JSON.stringify(m.content));
+                    speak(text, {
+                      rate: ttsRate,
+                      voice: selectedVoice,
+                    });
+                  }
+                }}
+                onPauseTTS={pauseTTS}
+                onResumeTTS={resumeTTS}
                 onStopTTS={stop}
                 speaking={speaking}
+                paused={ttsPaused}
+                onTtsSettings={() => setShowTtsSettings(true)}
                 feedbackUI={
                   m.role === 'assistant' ? (
                     <Feedback
@@ -472,7 +597,109 @@ export default function Chat() {
         </div>
       </Card>
 
-      {/* Emergency Overlay - Multi-step calming flow */}
+        {/* Emergency Overlay - Multi-step calming flow */}
+        <EmergencyOverlay
+          isOpen={!!sos}
+          level={sos?.level || 'high'}
+          message={typeof sos === 'string' ? sos : sos?.message}
+          onClose={clearSOS}
+        />
+
+        {/* TTS Settings Modal */}
+        {showTtsSettings && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="max-w-md w-full">
+            <div className="p-4 border-b border-[--surface-border] flex items-center justify-between">
+              <h3 className="font-semibold text-[--text]">Cài đặt Text-to-Speech</h3>
+              <button
+                onClick={() => setShowTtsSettings(false)}
+                className="p-1 hover:bg-[--surface-border] rounded-lg transition-colors"
+              >
+                <span className="text-xl">×</span>
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              {/* Tốc độ đọc */}
+              <div>
+                <label className="block text-sm font-medium text-[--text] mb-2">
+                  Tốc độ đọc: {ttsRate.toFixed(2)}x
+                </label>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="2"
+                  step="0.1"
+                  value={ttsRate}
+                  onChange={(e) => setTtsRate(parseFloat(e.target.value))}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-[--muted] mt-1">
+                  <span>0.5x</span>
+                  <span>1x</span>
+                  <span>1.5x</span>
+                  <span>2x</span>
+                </div>
+              </div>
+
+              {/* Chọn giọng */}
+              {vietnameseVoices.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-[--text] mb-2">
+                    Giọng đọc
+                  </label>
+                  <select
+                    value={selectedVoice?.name || ''}
+                    onChange={(e) => {
+                      const voice = vietnameseVoices.find(v => v.name === e.target.value);
+                      if (voice) setSelectedVoice(voice);
+                    }}
+                    className="w-full px-3 py-2 rounded-lg border border-[--surface-border] bg-[--surface] text-[--text]"
+                  >
+                    {vietnameseVoices.map((voice) => (
+                      <option key={voice.name} value={voice.name}>
+                        {voice.name} {voice.default ? '(Mặc định)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-[--muted] mt-1">
+                    {selectedVoice && (
+                      selectedVoice.name.includes('Female') || selectedVoice.name.includes('Nữ')
+                        ? 'Giọng nữ'
+                        : selectedVoice.name.includes('Male') || selectedVoice.name.includes('Nam')
+                        ? 'Giọng nam'
+                        : 'Giọng mặc định'
+                    )}
+                  </p>
+                </div>
+              )}
+
+              {vietnameseVoices.length === 0 && (
+                <p className="text-sm text-[--muted]">
+                  Không tìm thấy giọng tiếng Việt. Trình duyệt sẽ sử dụng giọng mặc định.
+                </p>
+              )}
+
+              {/* Test button */}
+              <Button
+                onClick={() => {
+                  speak('Đây là giọng đọc mẫu. Bạn có thể điều chỉnh tốc độ và giọng đọc theo ý thích.', {
+                    rate: ttsRate,
+                    voice: selectedVoice,
+                  });
+                }}
+                variant="outline"
+                className="w-full"
+              >
+                <Volume2 size={16} /> Nghe thử
+              </Button>
+            </div>
+          </Card>
+        </div>
+        )}
+        </motion.div>
+      )}
+
+      {/* Emergency Overlay - Global (cho cả voice mode) */}
       <EmergencyOverlay
         isOpen={!!sos}
         level={sos?.level || 'high'}

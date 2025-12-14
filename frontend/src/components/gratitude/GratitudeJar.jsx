@@ -1,6 +1,6 @@
 // src/components/gratitude/GratitudeJar.jsx
 // Chú thích: Gratitude v3.1 - Modern UI với server sync, 3D jar visual, floating cards, enhanced animations
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
@@ -14,7 +14,23 @@ import {
 import { isLoggedIn, getGratitudeList, addGratitude, scheduleSync } from '../../utils/api';
 
 const STORAGE_KEY = 'gratitude';
-const SUGGESTIONS = [
+
+// Predefined tags với emoji và gợi ý nội dung
+const PREDEFINED_TAGS = [
+  { id: 'family', label: 'Gia đình', emoji: '👨‍👩‍👧', suggestions: ['cảm ơn bố mẹ', 'cảm ơn anh chị em', 'bữa cơm gia đình', 'sự quan tâm của người thân'] },
+  { id: 'friends', label: 'Bạn bè', emoji: '👫', suggestions: ['bạn đã lắng nghe', 'bạn đã giúp đỡ', 'khoảnh khắc vui vẻ', 'sự hỗ trợ của bạn bè'] },
+  { id: 'health', label: 'Sức khỏe', emoji: '💪', suggestions: ['cơ thể khỏe mạnh', 'năng lượng tích cực', 'giấc ngủ ngon', 'sức khỏe tinh thần'] },
+  { id: 'study', label: 'Học tập', emoji: '📚', suggestions: ['hiểu được bài học mới', 'điểm số tốt', 'thầy cô giảng dạy', 'kiến thức mới'] },
+  { id: 'nature', label: 'Tự nhiên', emoji: '🌿', suggestions: ['ánh nắng mặt trời', 'cây xanh', 'không khí trong lành', 'cảnh đẹp thiên nhiên'] },
+  { id: 'music', label: 'Âm nhạc', emoji: '🎵', suggestions: ['bài hát yêu thích', 'âm nhạc xoa dịu', 'cảm xúc qua âm nhạc'] },
+  { id: 'food', label: 'Đồ ăn', emoji: '🍜', suggestions: ['món ăn ngon', 'bữa ăn ấm cúng', 'đồ uống yêu thích'] },
+  { id: 'achievement', label: 'Thành tựu', emoji: '🏆', suggestions: ['hoàn thành mục tiêu', 'vượt qua thử thách', 'tiến bộ cá nhân'] },
+  { id: 'kindness', label: 'Lòng tốt', emoji: '💝', suggestions: ['hành động tử tế', 'sự giúp đỡ từ người lạ', 'lòng tốt nhận được'] },
+  { id: 'peace', label: 'Bình yên', emoji: '☮️', suggestions: ['khoảnh khắc yên tĩnh', 'sự bình yên nội tâm', 'thời gian nghỉ ngơi'] },
+];
+
+// Quick suggestions cho nội dung
+const QUICK_SUGGESTIONS = [
   { label: 'Gia đình', emoji: '👨‍👩‍👧' },
   { label: 'Bạn bè', emoji: '👫' },
   { label: 'Sức khỏe', emoji: '💪' },
@@ -23,8 +39,8 @@ const SUGGESTIONS = [
   { label: 'Âm nhạc', emoji: '🎵' },
 ];
 
-// Sparkline component
-function Sparkline({ entries, days = 14 }) {
+// Enhanced Sparkline component với streak visualization
+function Sparkline({ entries, days = 30, streak = 0 }) {
   const data = useMemo(() => {
     const today = new Date();
     const arr = [];
@@ -32,23 +48,62 @@ function Sparkline({ entries, days = 14 }) {
       const d = new Date();
       d.setDate(today.getDate() - i);
       const key = toDayStr(d);
-      const has = entries.some((e) => toDayStr(new Date(e.date || e.created_at)) === key);
-      arr.push({ day: key, v: has ? 1 : 0 });
+      const dayEntries = entries.filter((e) => toDayStr(new Date(e.date || e.created_at)) === key);
+      const has = dayEntries.length > 0;
+      arr.push({ 
+        day: key, 
+        v: has ? 1 : 0,
+        count: dayEntries.length,
+        isToday: i === 0,
+        isInStreak: i < streak,
+      });
     }
     return arr;
-  }, [entries, days]);
+  }, [entries, days, streak]);
+
+  const maxCount = Math.max(...data.map(d => d.count), 1);
 
   return (
-    <div className="flex items-end gap-1 h-8">
-      {data.map((d, i) => (
-        <motion.div
-          key={d.day}
-          className={`w-2 rounded-full transition-colors ${d.v ? 'bg-gradient-to-t from-[--brand] to-[--brand-light]' : 'bg-[--surface-border]'}`}
-          initial={{ height: 4 }}
-          animate={{ height: d.v ? 24 : 8 }}
-          transition={{ delay: i * 0.03 }}
-        />
-      ))}
+    <div className="space-y-2">
+      <div className="flex items-end gap-0.5 h-12">
+        {data.map((d, i) => (
+          <motion.div
+            key={d.day}
+            className="relative flex flex-col items-center group"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: i * 0.02 }}
+          >
+            <motion.div
+              className={`w-3 rounded-t transition-all ${
+                d.v 
+                  ? d.isInStreak 
+                    ? 'bg-gradient-to-t from-[--brand] via-[--brand-light] to-orange-400' 
+                    : 'bg-gradient-to-t from-[--brand] to-[--brand-light]'
+                  : 'bg-[--surface-border]'
+              } ${d.isToday ? 'ring-2 ring-[--brand] ring-offset-1' : ''}`}
+              initial={{ height: 4 }}
+              animate={{ 
+                height: d.v 
+                  ? Math.max(16, (d.count / maxCount) * 40) 
+                  : 8 
+              }}
+              transition={{ delay: i * 0.02 }}
+            />
+            {/* Tooltip */}
+            <div className="absolute bottom-full mb-2 hidden group-hover:block z-10 px-2 py-1 text-xs bg-[--text] text-white rounded-lg whitespace-nowrap">
+              {d.day}: {d.v ? `${d.count} điều biết ơn` : 'Chưa có'}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+      <div className="flex justify-between text-xs text-[--muted]">
+        <span>{days} ngày qua</span>
+        <span className="flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full bg-gradient-to-t from-[--brand] to-[--brand-light]" />
+          Có entry
+        </span>
+      </div>
     </div>
   );
 }
@@ -91,13 +146,15 @@ function EntryCard({ entry, style }) {
 export default function GratitudeJar() {
   const [entries, setEntries] = useState([]);
   const [text, setText] = useState('');
-  const [tag, setTag] = useState('');
+  const [selectedTag, setSelectedTag] = useState('');
+  const [customTag, setCustomTag] = useState('');
   const [filter, setFilter] = useState('');
   const [filterTag, setFilterTag] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [source, setSource] = useState('local'); // 'server' | 'local'
+  const [showContentSuggestions, setShowContentSuggestions] = useState(false);
 
   // Load entries - prefer server if logged in
   useEffect(() => {
@@ -111,7 +168,7 @@ export default function GratitudeJar() {
             id: item.id,
             text: item.content,
             date: item.created_at,
-            tag: undefined // server doesn't store tag yet
+            tag: item.tag || undefined
           }));
           setEntries(serverEntries);
           setSource('server');
@@ -147,15 +204,36 @@ export default function GratitudeJar() {
     } catch (_) { }
   };
 
+  // Get content suggestions based on selected tag
+  const getContentSuggestions = useMemo(() => {
+    if (!selectedTag) {
+      // Suggest based on most used tags
+      const tagCounts = {};
+      entries.forEach(e => {
+        if (e.tag) tagCounts[e.tag] = (tagCounts[e.tag] || 0) + 1;
+      });
+      const topTag = Object.entries(tagCounts).sort((a, b) => b[1] - a[1])[0];
+      if (topTag) {
+        const tagInfo = PREDEFINED_TAGS.find(t => t.id === topTag[0] || t.label.toLowerCase() === topTag[0].toLowerCase());
+        return tagInfo?.suggestions || [];
+      }
+      return [];
+    }
+    const tagInfo = PREDEFINED_TAGS.find(t => t.id === selectedTag || t.label.toLowerCase() === selectedTag.toLowerCase());
+    return tagInfo?.suggestions || [];
+  }, [selectedTag, entries]);
+
   // Add entry - save to both local and server
   const addEntry = async () => {
     const t = text.trim();
     if (!t) return;
 
+    const finalTag = selectedTag || customTag.trim() || undefined;
+
     const newEntry = {
       id: Date.now(),
       text: t,
-      tag: tag.trim() || undefined,
+      tag: finalTag,
       date: new Date().toISOString(),
     };
 
@@ -163,14 +241,16 @@ export default function GratitudeJar() {
     const next = [...entries, newEntry];
     saveLocal(next);
     setText('');
-    setTag('');
+    setSelectedTag('');
+    setCustomTag('');
     setShowForm(false);
+    setShowContentSuggestions(false);
 
     // Save to server if logged in
     if (isLoggedIn()) {
       setSaving(true);
       try {
-        const result = await addGratitude(t);
+        const result = await addGratitude(t, finalTag);
         // Update with server ID
         if (result.id) {
           const updated = next.map(e => e.id === newEntry.id ? { ...e, serverId: result.id } : e);
@@ -194,6 +274,37 @@ export default function GratitudeJar() {
     a.download = `gratitude-${toDayStr(new Date())}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const importJSON = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const imported = JSON.parse(event.target.result);
+          if (Array.isArray(imported)) {
+            const merged = [...entries, ...imported].filter((e, i, arr) => 
+              arr.findIndex(a => a.id === e.id) === i
+            );
+            saveLocal(merged);
+            if (isLoggedIn()) {
+              // Sync to server
+              scheduleSync(1000);
+            }
+            alert(`Đã import ${imported.length} điều biết ơn!`);
+          }
+        } catch (err) {
+          alert('Lỗi: File JSON không hợp lệ');
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
   };
 
   const streak = useMemo(() => computeStreakFromEntries(entries), [entries]);
@@ -240,7 +351,7 @@ export default function GratitudeJar() {
           </div>
 
           <div className="flex items-center gap-4">
-            <Sparkline entries={entries} />
+            <Sparkline entries={entries} days={30} streak={streak} />
             <Badge variant="primary" icon={<Flame size={14} />} size="lg">
               {streak} ngày streak
             </Badge>
@@ -300,33 +411,80 @@ export default function GratitudeJar() {
                   autoFocus
                 />
 
-                {/* Quick suggestions */}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {SUGGESTIONS.map((s) => (
-                    <Button
-                      key={s.label}
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setText((t) => (t ? `${t} ${s.label}` : s.label))}
-                    >
-                      {s.emoji} {s.label}
-                    </Button>
-                  ))}
+                {/* Tag selection */}
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-[--text] mb-2">
+                    Chọn chủ đề (tuỳ chọn)
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {PREDEFINED_TAGS.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedTag(selectedTag === t.id ? '' : t.id);
+                          setCustomTag('');
+                          setShowContentSuggestions(true);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
+                          selectedTag === t.id
+                            ? 'bg-[--brand] text-white shadow-md'
+                            : 'bg-[--surface-border] text-[--text] hover:bg-[--surface-border]/80'
+                        }`}
+                      >
+                        {t.emoji} {t.label}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  {/* Custom tag input */}
+                  {!selectedTag && (
+                    <div className="mt-2 flex items-center gap-2 glass rounded-xl px-3 py-2">
+                      <Tag size={16} className="text-[--muted]" />
+                      <input
+                        value={customTag}
+                        onChange={(e) => setCustomTag(e.target.value)}
+                        placeholder="Hoặc nhập tag tùy chỉnh"
+                        className="flex-1 bg-transparent outline-none text-sm text-[--text] placeholder:text-[--muted]"
+                      />
+                    </div>
+                  )}
                 </div>
 
-                {/* Tag input */}
-                <div className="mt-4 flex items-center gap-3">
-                  <div className="flex-1 flex items-center gap-2 glass rounded-xl px-3 py-2">
-                    <Tag size={16} className="text-[--muted]" />
-                    <input
-                      value={tag}
-                      onChange={(e) => setTag(e.target.value)}
-                      placeholder="Thêm tag (tuỳ chọn)"
-                      className="flex-1 bg-transparent outline-none text-sm text-[--text] placeholder:text-[--muted]"
-                    />
+                {/* Content suggestions based on tag */}
+                {showContentSuggestions && getContentSuggestions.length > 0 && (
+                  <div className="mt-3 p-3 bg-[--surface-border]/50 rounded-xl">
+                    <p className="text-xs text-[--muted] mb-2">💡 Gợi ý nội dung:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {getContentSuggestions.map((suggestion, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setText((t) => (t ? `${t}, ${suggestion}` : `Hôm nay mình biết ơn ${suggestion}`));
+                          }}
+                          className="px-2 py-1 text-xs bg-white dark:bg-gray-800 rounded-lg hover:bg-[--brand]/10 transition-colors text-[--text]"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <Button onClick={addEntry} disabled={!text.trim()}>
+                )}
+
+                {/* Action buttons */}
+                <div className="mt-4 flex items-center gap-3">
+                  <Button onClick={addEntry} disabled={!text.trim()} className="flex-1">
                     Thêm vào lọ
+                  </Button>
+                  <Button variant="ghost" onClick={() => {
+                    setShowForm(false);
+                    setText('');
+                    setSelectedTag('');
+                    setCustomTag('');
+                    setShowContentSuggestions(false);
+                  }}>
+                    Hủy
                   </Button>
                 </div>
               </motion.div>

@@ -6,18 +6,25 @@
 import { classifyRiskRules, getRedTierResponse } from './risk.js';
 import { sanitizeInput } from './sanitize.js';
 import { formatMessagesForLLM, getRecentMessages, createMemorySummary } from './memory.js';
+import { checkTokenLimit, addTokenUsage, estimateTokens } from './token-tracker.js';
 
 // ============================================================================
 // SYSTEM INSTRUCTIONS - Mentor tâm lý học đường v2.0 (Phase 4 Enhanced)
 // ============================================================================
 const SYSTEM_INSTRUCTIONS = `Bạn là "Bạn Đồng Hành" - một mentor tâm lý ấm áp, tôn trọng, không phán xét cho học sinh Việt Nam (12-18 tuổi).
 
+VAI TRÒ: MENTOR TÂM LÝ (KHÔNG PHẢI BÁC SĨ)
+- Bạn là người bạn đồng hành, lắng nghe và hỗ trợ, KHÔNG chẩn đoán bệnh hay kê thuốc
+- Mục tiêu: giúp học sinh tự khám phá cảm xúc, tìm giải pháp từ bên trong
+- Tạo không gian an toàn để học sinh chia sẻ mà không sợ bị phán xét
+
 PHONG CÁCH TRẢ LỜI
 - Thấu cảm trước, gợi ý sau: "Mình hiểu cảm giác đó khó chịu lắm..."
-- Ngắn gọn (50-100 từ), dùng từ gần gũi Gen Z tự nhiên
+- Ngắn gọn (50-100 từ), dùng từ gần gũi Gen Z tự nhiên (không quá formal)
 - TUYỆT ĐỐI KHÔNG nói "Tôi là AI", "là trí tuệ nhân tạo" - giữ giọng như người bạn thân
-- Xác thực cảm xúc trước khi đưa lời khuyên
+- Xác thực cảm xúc trước khi đưa lời khuyên: "Cảm giác đó hoàn toàn bình thường..."
 - Kết thúc bằng 1 câu hỏi mở giúp học sinh tự suy ngẫm
+- Tránh robot, tránh lặp lại câu hỏi đã hỏi trong context
 
 PHƯƠNG PHÁP SOCRATIC (ƯU TIÊN)
 - Thay vì đưa lời khuyên ngay, hỏi câu hỏi giúp tự khám phá:
@@ -42,10 +49,14 @@ QUY TRÌNH SUY LUẬN (NỘI BỘ - KHÔNG TIẾT LỘ)
 5. Nếu yellow: Xác thực cảm xúc sâu hơn + theo dõi + đề xuất cụ thể
 6. Nếu red: Phản hồi an toàn ngay lập tức (xem phần AN TOÀN)
 
-SỬ DỤNG MEMORY/CONTEXT
-- Nếu có context từ messages trước, thể hiện sự nhớ: "Hôm trước bạn có chia sẻ về..."
-- Theo dõi sự tiến bộ: "Mình thấy bạn đã cố gắng... Tuyệt vời!"
+SỬ DỤNG MEMORY/CONTEXT (QUAN TRỌNG)
+- Nếu có context từ messages trước, thể hiện sự nhớ một cách tự nhiên:
+  + "Hôm trước bạn có chia sẻ về [chủ đề]... Mình thấy bạn đã tiến bộ rồi đấy!"
+  + "Mình nhớ bạn từng nói về [điều gì đó]... Bây giờ bạn cảm thấy thế nào?"
+- Theo dõi sự tiến bộ và công nhận: "Mình thấy bạn đã cố gắng... Tuyệt vời!"
 - Không lặp lại câu hỏi đã hỏi trong context gần đây
+- Nếu context có thông tin về nguyên nhân gốc (stress học tập, gia đình, bạn bè), tham chiếu lại một cách tự nhiên
+- Sử dụng memory summary để hiểu bối cảnh dài hạn, không chỉ tin nhắn gần nhất
 
 GỢI Ý HÀNH ĐỘNG (actions)
 - Luôn đưa 2-3 gợi ý hành động cụ thể, nhỏ, dễ thực hiện NGAY
@@ -384,6 +395,20 @@ export default {
 
 
     // ========================================================================
+    // CHECK TOKEN LIMIT
+    // ========================================================================
+    const tokenCheck = await checkTokenLimit(env);
+    if (!tokenCheck.allowed) {
+      console.warn(`[AI-Proxy] Token limit exceeded: ${tokenCheck.tokens}/${tokenCheck.limit}`);
+      return json({
+        error: 'token_limit_exceeded',
+        message: 'Đã đạt giới hạn sử dụng tháng này. Vui lòng thử lại vào tháng sau.',
+        tokens: tokenCheck.tokens,
+        limit: tokenCheck.limit,
+      }, 429, origin, traceId);
+    }
+
+    // ========================================================================
     // PREPARE MESSAGES FOR LLM
     // ========================================================================
     const messages = formatMessagesForLLM(
@@ -392,6 +417,14 @@ export default {
       sanitizedMessage,
       memorySummary
     );
+
+    // Estimate tokens for this request
+    const estimatedTokens = estimateTokens(
+      JSON.stringify(messages) + sanitizedMessage
+    );
+    
+    // Store for later use in streaming handler
+    const tokenCheckRef = { ...tokenCheck };
 
     // ========================================================================
     // CHECK IF STREAMING REQUESTED
@@ -458,14 +491,20 @@ export default {
               // Send done event
               send(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
 
+              // Update token usage (estimate từ full text)
+              const responseTokens = estimateTokens(fullText);
+              const totalTokens = estimatedTokensRef + responseTokens;
+              await addTokenUsage(env, totalTokens);
+
               // Log completion
               console.log(JSON.stringify({
                 type: 'response',
                 traceId,
                 riskLevel,
                 latencyMs: Date.now() - startTime,
+                tokens: totalTokens,
+                tokenUsage: tokenCheckRef.tokens + totalTokens,
                 status: 200,
-
                 stream: true,
               }));
 
@@ -498,6 +537,11 @@ export default {
         // 2-pass accuracy check
         parsed = await twoPassCheck(env, parsed, sanitizedMessage);
 
+        // Update token usage (estimate từ response)
+        const responseTokens = estimateTokens(parsed.reply || '');
+        const totalTokens = estimatedTokens + responseTokens;
+        await addTokenUsage(env, totalTokens);
+
         // Log completion
         console.log(JSON.stringify({
           type: 'response',
@@ -505,6 +549,8 @@ export default {
           riskLevel: parsed.riskLevel,
           confidence: parsed.confidence,
           latencyMs: Date.now() - startTime,
+          tokens: totalTokens,
+          tokenUsage: tokenCheck.tokens + totalTokens,
           status: 200,
           stream: false,
         }));

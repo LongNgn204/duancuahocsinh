@@ -10,6 +10,27 @@
 
 /* ===== THEME TOKENS ===== */
 @theme {
+  /* ===== SPACING SCALE ===== */
+  --space-xs: 0.25rem;
+  /* 4px */
+  --space-sm: 0.5rem;
+  /* 8px */
+  --space-md: 1rem;
+  /* 16px */
+  --space-lg: 1.5rem;
+  /* 24px */
+  --space-xl: 2rem;
+  /* 32px */
+  --space-2xl: 3rem;
+  /* 48px */
+
+  /* ===== CONTAINER WIDTHS ===== */
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+
+  /* ===== COLORS ===== */
   /* Màu chính - Rose/Coral (Ấm áp, Thân thiện) */
   --color-primary: #e11d48;
   --color-primary-light: #f43f5e;
@@ -140,8 +161,21 @@ body,
   scroll-behavior: smooth;
 }
 
+/* Responsive base font size */
 html {
   font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 14px;
+  }
 }
 
 body {
@@ -153,7 +187,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.65;
-  font-size: calc(16px * var(--fs-scale, 1));
+  font-size: calc(1rem * var(--fs-scale, 1));
 }
 
 /* ===== TYPOGRAPHY ===== */
@@ -168,26 +202,32 @@ h6 {
   font-weight: 700;
 }
 
+/* Fluid typography với clamp() */
 h1 {
-  @apply text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight;
+  font-size: clamp(1.75rem, 4vw + 1rem, 3rem);
   line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.025em;
 }
 
 h2 {
-  @apply text-2xl md:text-3xl lg:text-4xl font-bold;
+  font-size: clamp(1.5rem, 3vw + 0.5rem, 2.25rem);
   line-height: 1.25;
+  font-weight: 700;
 }
 
 h3 {
-  @apply text-xl md:text-2xl font-semibold;
+  font-size: clamp(1.25rem, 2vw + 0.5rem, 1.75rem);
+  font-weight: 600;
 }
 
 h4 {
-  @apply text-lg md:text-xl font-semibold;
+  font-size: clamp(1.125rem, 1.5vw + 0.5rem, 1.5rem);
+  font-weight: 600;
 }
 
 p {
-  @apply leading-relaxed;
+  line-height: 1.7;
   color: var(--text-secondary);
 }
 
@@ -583,6 +623,21 @@ a:focus-visible {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ===== TOUCH-FRIENDLY UTILITIES ===== */
+/* Chú thích: Đảm bảo các nút và interactive elements có vùng chạm tối thiểu 48x48px cho mobile */
+.touch-target {
+  min-width: 48px;
+  min-height: 48px;
+  padding: 12px;
+  /* Tăng khoảng cách giữa các nút trên mobile */
+  margin: 4px;
+}
+
+/* Spacing cho touch targets */
+.touch-target+.touch-target {
+  margin-left: 8px;
 }
 
 /* ===== PRINT ===== */

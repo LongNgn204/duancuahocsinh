@@ -1,7 +1,7 @@
 // src/components/layout/MobileNav.jsx
 // Chú thích: Modern mobile bottom navigation với floating AI button nổi bật ở giữa
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Heart, Sparkles, Gamepad2, Bot, MessageCircle } from 'lucide-react';
+import { Home, Heart, Sparkles, Gamepad2, Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Navigation items - Chat/AI được tách ra làm nút nổi bật ở giữa
@@ -20,9 +20,10 @@ function NavItem({ to, label, icon: Icon, isActive }) {
     <NavLink
       to={to}
       className={`
-        flex flex-col items-center gap-0.5 
-        px-3 py-2 rounded-xl relative
+        flex flex-col items-center gap-1 
+        px-3 py-2.5 rounded-xl relative
         transition-all duration-200
+        min-w-[48px] min-h-[48px]
         ${isActive
           ? 'text-[--brand]'
           : 'text-[--muted] active:scale-95'
@@ -50,7 +51,7 @@ function NavItem({ to, label, icon: Icon, isActive }) {
         ${isActive ? 'scale-110' : ''}
       `}>
         <Icon
-          size={22}
+          size={24}
           strokeWidth={isActive ? 2.5 : 2}
           className={isActive ? 'drop-shadow-sm' : ''}
         />
@@ -58,7 +59,7 @@ function NavItem({ to, label, icon: Icon, isActive }) {
 
       {/* Label */}
       <span className={`
-        relative z-10 text-[10px] font-medium
+        relative z-10 text-[11px] font-medium
         ${isActive ? 'font-semibold' : ''}
       `}>
         {label}

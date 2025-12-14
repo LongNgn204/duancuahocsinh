@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS gratitude (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL,
   content TEXT NOT NULL,
+  tag TEXT, -- Tag phân loại: 'gia đình', 'bạn bè', 'sức khỏe', 'học tập', etc.
   created_at TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -161,6 +162,26 @@ CREATE TABLE IF NOT EXISTS forum_upvotes (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Bảng forum_reports: báo cáo vi phạm bài viết/bình luận
+CREATE TABLE IF NOT EXISTS forum_reports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  target_type TEXT NOT NULL, -- 'post' hoặc 'comment'
+  target_id INTEGER NOT NULL, -- ID của post hoặc comment
+  reporter_user_id INTEGER, -- NULL nếu khách báo cáo
+  reason TEXT NOT NULL, -- Lý do báo cáo: 'spam', 'harassment', 'inappropriate', 'other'
+  details TEXT, -- Chi tiết bổ sung (optional)
+  status TEXT DEFAULT 'pending', -- 'pending', 'reviewed', 'resolved', 'dismissed'
+  reviewed_by INTEGER, -- Admin đã xem xét
+  reviewed_at TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (reporter_user_id) REFERENCES users(id) ON DELETE SET NULL,
+  FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_forum_reports_target ON forum_reports(target_type, target_id);
+CREATE INDEX IF NOT EXISTS idx_forum_reports_status ON forum_reports(status);
+CREATE INDEX IF NOT EXISTS idx_forum_reports_date ON forum_reports(created_at);
+
 -- Bảng admin_logs: lịch sử hành động admin
 CREATE TABLE IF NOT EXISTS admin_logs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -223,7 +244,7 @@ CREATE INDEX IF NOT EXISTS idx_stories_rating ON stories(age_rating);
 CREATE TABLE IF NOT EXISTS game_scores (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL,
-  game_type TEXT NOT NULL, -- 'space_control', 'bee_game', 'bubble_pop', 'color_match', 'doodle'
+  game_type TEXT NOT NULL, -- 'space_control', 'bee_game', 'bubble_pop', 'color_match', 'doodle', 'reflex'
   score INTEGER NOT NULL,
   level_reached INTEGER DEFAULT 1,
   play_duration_seconds INTEGER, -- Thời gian chơi

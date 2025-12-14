@@ -65,13 +65,13 @@ const variants = {
 };
 
 const sizes = {
-  xs: 'h-7 px-2.5 text-xs gap-1',
-  sm: 'h-9 px-3.5 text-sm gap-1.5',
-  md: 'h-11 px-5 text-base gap-2',
-  lg: 'h-13 px-6 text-lg gap-2.5',
+  xs: 'h-8 px-3 text-xs gap-1.5',
+  sm: 'h-10 px-4 text-sm gap-2',
+  md: 'h-11 px-5 text-base gap-2.5',
+  lg: 'h-12 px-6 text-lg gap-3',
   xl: 'h-14 px-8 text-lg gap-3',
-  icon: 'h-10 w-10 p-0',
-  'icon-sm': 'h-8 w-8 p-0',
+  icon: 'h-11 w-11 p-0',
+  'icon-sm': 'h-9 w-9 p-0',
   'icon-lg': 'h-12 w-12 p-0',
 };
 
