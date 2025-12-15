@@ -92,29 +92,29 @@ async function apiRequest(endpoint, options = {}) {
     }
 
     try {
-    const response = await fetch(url, {
-        ...options,
-        headers: {
-            ...getHeaders(),
-            ...options.headers,
-        },
-    });
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                ...getHeaders(),
+                ...options.headers,
+            },
+        });
 
-    const data = await response.json();
+        const data = await response.json();
 
-    if (!response.ok) {
-        const error = new Error(data.message || data.error || 'Lỗi không xác định');
-        error.status = response.status;
-        error.data = data;
-        throw error;
-    }
+        if (!response.ok) {
+            const error = new Error(data.message || data.error || 'Lỗi không xác định');
+            error.status = response.status;
+            error.data = data;
+            throw error;
+        }
 
         // Cache successful GET responses
         if ((!options.method || options.method === 'GET') && !options.skipCache) {
             await setCache(cacheKey, data);
-    }
+        }
 
-    return data;
+        return data;
     } catch (error) {
         // If offline and GET, try cache as fallback
         if (!navigator.onLine && (!options.method || options.method === 'GET')) {
@@ -126,6 +126,149 @@ async function apiRequest(endpoint, options = {}) {
         throw error;
     }
 }
+
+// =============================================================================
+// ENHANCED SYNC QUEUE - Offline Support & Retry Logic
+// =============================================================================
+
+const SYNC_QUEUE_KEY = 'bdh_sync_queue';
+const MAX_RETRIES = 3;
+
+/**
+ * Get sync queue from localStorage
+ */
+function getSyncQueue() {
+    try {
+        return JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]');
+    } catch {
+        return [];
+    }
+}
+
+/**
+ * Save sync queue to localStorage
+ */
+function saveSyncQueue(queue) {
+    try {
+        localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(queue));
+    } catch (e) {
+        console.error('[SyncQueue] Failed to save:', e);
+    }
+}
+
+/**
+ * Queue an action for later sync when offline
+ * @param {string} type - Action type identifier (e.g., 'gratitude_add', 'game_score')
+ * @param {string} endpoint - API endpoint
+ * @param {string} method - HTTP method
+ * @param {object} body - Request body data
+ */
+export function queueAction(type, endpoint, method, body) {
+    const queue = getSyncQueue();
+    queue.push({
+        id: Date.now().toString() + Math.random().toString(36).slice(2),
+        type,
+        endpoint,
+        method,
+        body,
+        retries: 0,
+        createdAt: new Date().toISOString()
+    });
+    saveSyncQueue(queue);
+    console.log(`[SyncQueue] Queued ${type} action for offline sync`);
+}
+
+/**
+ * Get pending sync queue count
+ */
+export function getPendingSyncCount() {
+    return getSyncQueue().length;
+}
+
+/**
+ * Process all pending sync queue items
+ */
+export async function processSyncQueue() {
+    if (!isLoggedIn() || !navigator.onLine) {
+        console.log('[SyncQueue] Cannot process: offline or not logged in');
+        return { processed: 0, remaining: getSyncQueue().length };
+    }
+
+    const queue = getSyncQueue();
+    if (queue.length === 0) {
+        return { processed: 0, remaining: 0 };
+    }
+
+    console.log(`[SyncQueue] Processing ${queue.length} pending actions...`);
+    const remaining = [];
+    let processed = 0;
+
+    for (const item of queue) {
+        try {
+            await apiRequest(item.endpoint, {
+                method: item.method,
+                body: JSON.stringify(item.body),
+                skipCache: true
+            });
+            processed++;
+            console.log(`[SyncQueue] Synced: ${item.type}`);
+        } catch (err) {
+            item.retries++;
+            if (item.retries < MAX_RETRIES) {
+                remaining.push(item);
+                console.warn(`[SyncQueue] Retry ${item.retries}/${MAX_RETRIES}: ${item.type}`, err.message);
+            } else {
+                console.error(`[SyncQueue] Failed after ${MAX_RETRIES} retries: ${item.type}`, err.message);
+            }
+        }
+    }
+
+    saveSyncQueue(remaining);
+
+    if (remaining.length === 0 && processed > 0) {
+        console.log(`[SyncQueue] All ${processed} actions synced successfully!`);
+    } else if (remaining.length > 0) {
+        console.log(`[SyncQueue] Processed ${processed}, ${remaining.length} remaining for retry`);
+    }
+
+    return { processed, remaining: remaining.length };
+}
+
+/**
+ * Clear entire sync queue (use with caution)
+ */
+export function clearSyncQueue() {
+    localStorage.removeItem(SYNC_QUEUE_KEY);
+    console.log('[SyncQueue] Queue cleared');
+}
+
+// Auto-process sync queue when coming back online or tab becomes visible
+if (typeof window !== 'undefined') {
+    // Process queue when network comes back online
+    window.addEventListener('online', () => {
+        console.log('[SyncQueue] Back online, processing queue...');
+        setTimeout(() => processSyncQueue(), 1000); // Small delay to ensure connection is stable
+    });
+
+    // Process queue when user returns to the tab
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && navigator.onLine && isLoggedIn()) {
+            console.log('[SyncQueue] Tab visible, checking queue...');
+            processSyncQueue();
+        }
+    });
+
+    // Process queue on page load if online and logged in
+    if (navigator.onLine) {
+        // Delay to allow login state to be established
+        setTimeout(() => {
+            if (isLoggedIn()) {
+                processSyncQueue();
+            }
+        }, 2000);
+    }
+}
+
 
 // =============================================================================
 // AUTH API
@@ -868,5 +1011,75 @@ export async function getChatMetrics(days = 7, userId = null) {
     return apiRequest(`/api/data/chat/metrics?${params}`, {
         method: 'GET',
     });
+}
+
+// =============================================================================
+// BOOKMARKS API
+// =============================================================================
+
+/**
+ * Lấy danh sách bookmarks
+ * @param {string} type - Optional filter: 'story' | 'resource'
+ */
+export async function getBookmarks(type = null) {
+    const params = type ? `?type=${type}` : '';
+    return apiRequest(`/api/data/bookmarks${params}`, { method: 'GET' });
+}
+
+/**
+ * Thêm bookmark mới
+ * @param {string} bookmarkType - 'story' | 'resource'
+ * @param {string} itemId - ID của item được bookmark
+ * @param {object} metadata - Optional metadata (title, etc.)
+ */
+export async function addBookmark(bookmarkType, itemId, metadata = null) {
+    return apiRequest('/api/data/bookmarks', {
+        method: 'POST',
+        body: JSON.stringify({ bookmark_type: bookmarkType, item_id: itemId, metadata }),
+    });
+}
+
+/**
+ * Xóa bookmark theo type và item_id
+ * @param {string} bookmarkType - 'story' | 'resource'
+ * @param {string} itemId - ID của item
+ */
+export async function removeBookmark(bookmarkType, itemId) {
+    return apiRequest(`/api/data/bookmarks?type=${bookmarkType}&item_id=${itemId}`, {
+        method: 'DELETE',
+    });
+}
+
+/**
+ * Xóa bookmark theo ID
+ * @param {number} id - Bookmark ID
+ */
+export async function removeBookmarkById(id) {
+    return apiRequest(`/api/data/bookmarks/${id}`, { method: 'DELETE' });
+}
+
+/**
+ * Toggle bookmark - thêm nếu chưa có, xóa nếu đã có
+ * @param {string} bookmarkType - 'story' | 'resource'
+ * @param {string} itemId - ID của item
+ * @param {object} metadata - Optional metadata
+ * @returns {Promise<{isBookmarked: boolean, id?: number}>}
+ */
+export async function toggleBookmark(bookmarkType, itemId, metadata = null) {
+    try {
+        // Thử thêm bookmark trước
+        const result = await addBookmark(bookmarkType, itemId, metadata);
+
+        if (result.alreadyExists) {
+            // Nếu đã tồn tại, xóa nó
+            await removeBookmark(bookmarkType, itemId);
+            return { isBookmarked: false };
+        }
+
+        return { isBookmarked: true, id: result.item?.id };
+    } catch (error) {
+        console.error('[Bookmarks] Toggle failed:', error.message);
+        throw error;
+    }
 }
 

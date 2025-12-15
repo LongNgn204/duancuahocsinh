@@ -24,7 +24,9 @@ import {
     logSOSEvent, getSOSLogs,
     getRandomCardsHistory, addRandomCardHistory,
     getUserStats, addUserXP,
-    submitChatFeedback, getChatMetrics
+    submitChatFeedback, getChatMetrics,
+    // Phase 8 additions - Bookmarks
+    getBookmarks, addBookmark, deleteBookmark, deleteBookmarkById
 } from './data-api.js';
 
 import {
@@ -155,6 +157,12 @@ function matchRoute(pathname, method) {
     if (pathname === '/api/data/user-stats' && method === 'GET') return 'data:user-stats:get';
     if (pathname === '/api/data/user-stats/add-xp' && method === 'POST') return 'data:user-stats:xp';
 
+    // Data routes - Bookmarks
+    if (pathname === '/api/data/bookmarks' && method === 'GET') return 'data:bookmarks:list';
+    if (pathname === '/api/data/bookmarks' && method === 'POST') return 'data:bookmarks:add';
+    if (pathname === '/api/data/bookmarks' && method === 'DELETE') return 'data:bookmarks:delete';
+    if (pathname.match(/^\/api\/data\/bookmarks\/\d+$/) && method === 'DELETE') return 'data:bookmarks:delete-id';
+
     // AI Chat (legacy path)
     if (pathname === '/' && method === 'POST') return 'ai:chat';
     if (pathname === '/api/chat' && method === 'POST') return 'ai:chat';
@@ -183,6 +191,10 @@ function matchRoute(pathname, method) {
     if (pathname === '/api/admin/forum-stats' && method === 'GET') return 'admin:forum-stats';
     if (pathname === '/api/admin/sos-logs' && method === 'GET') return 'admin:sos-logs';
     if (pathname === '/api/admin/users' && method === 'GET') return 'admin:users';
+    if (pathname === '/api/admin/comprehensive-stats' && method === 'GET') return 'admin:comprehensive-stats';
+    if (pathname === '/api/admin/activity-data' && method === 'GET') return 'admin:activity-data';
+    if (pathname === '/api/admin/chat-analytics' && method === 'GET') return 'admin:chat-analytics';
+    if (pathname === '/api/admin/reports' && method === 'GET') return 'admin:reports';
 
     return null;
 }
@@ -199,7 +211,7 @@ export default {
     async fetch(request, env, ctx) {
         // Tạo trace context cho observability
         const trace = createTraceContext(request, env);
-        
+
         const origin = getAllowedOrigin(request, env);
 
         // CORS preflight
@@ -217,7 +229,7 @@ export default {
             const newHeaders = new Headers(response.headers);
             Object.entries(corsHeaders(origin)).forEach(([k, v]) => newHeaders.set(k, v));
             newHeaders.set('X-Trace-Id', trace.traceId);
-            
+
             return new Response(response.body, {
                 status: response.status,
                 headers: newHeaders
@@ -371,6 +383,20 @@ export default {
                     response = await addUserXP(request, env);
                     break;
 
+                // Bookmarks endpoints
+                case 'data:bookmarks:list':
+                    response = await getBookmarks(request, env);
+                    break;
+                case 'data:bookmarks:add':
+                    response = await addBookmark(request, env);
+                    break;
+                case 'data:bookmarks:delete':
+                    response = await deleteBookmark(request, env);
+                    break;
+                case 'data:bookmarks:delete-id':
+                    response = await deleteBookmarkById(request, env, extractId(url.pathname));
+                    break;
+
                 // AI Chat - delegate to existing ai-proxy logic
                 case 'ai:chat':
                     // Import dynamically to avoid circular dependency issues
@@ -478,6 +504,10 @@ export default {
                 case 'admin:forum-stats':
                 case 'admin:sos-logs':
                 case 'admin:users':
+                case 'admin:comprehensive-stats':
+                case 'admin:activity-data':
+                case 'admin:chat-analytics':
+                case 'admin:reports':
                     // Verify JWT token for all admin routes
                     const adminAuthHeader = request.headers.get('Authorization');
                     if (!adminAuthHeader || !adminAuthHeader.startsWith('Bearer ')) {
@@ -568,6 +598,255 @@ export default {
 
                             case 'admin:users':
                                 response = await getAllUsers(request, env);
+                                break;
+
+                            // NEW: Comprehensive Stats - Tất cả thống kê từ database
+                            case 'admin:comprehensive-stats':
+                                try {
+                                    const [
+                                        usersCount,
+                                        gratitudeCount,
+                                        journalCount,
+                                        focusCount,
+                                        breathingCount,
+                                        sleepCount,
+                                        gameScoresCount,
+                                        achievementsCount,
+                                        forumPostsCount,
+                                        forumCommentsCount,
+                                        sosLogsCount,
+                                        chatResponsesCount,
+                                        chatFeedbackCount,
+                                        bookmarksCount,
+                                        todayUsers,
+                                        weekUsers,
+                                        totalXP,
+                                        avgGameScore
+                                    ] = await Promise.all([
+                                        env.ban_dong_hanh_db.prepare('SELECT COUNT(*) as count FROM users').first().catch(() => ({ count: 0 })),
+                                        env.ban_dong_hanh_db.prepare('SELECT COUNT(*) as count FROM gratitude').first().catch(() => ({ count: 0 })),
+                                        env.ban_dong_hanh_db.prepare('SELECT COUNT(*) as count FROM journal').first().catch(() => ({ count: 0 })),
+                                        env.ban_dong_hanh_db.prepare('SELECT COUNT(*) as count, COALESCE(SUM(duration_minutes), 0) as total_minutes FROM focus_sessions').first().catch(() => ({ count: 0, total_minutes: 0 })),
+                                        env.ban_dong_hanh_db.prepare('SELECT COUNT(*) as count, COALESCE(SUM(duration_seconds), 0) as total_seconds FROM breathing_sessions').first().catch(() => ({ count: 0, total_seconds: 0 })),
+                                        env.ban_dong_hanh_db.prepare('SELECT COUNT(*) as count, COALESCE(AVG(duration_minutes), 0) as avg_duration FROM sleep_logs').first().catch(() => ({ count: 0, avg_duration: 0 })),
+                                        env.ban_dong_hanh_db.prepare('SELECT COUNT(*) as count, MAX(score) as max_score FROM game_scores').first().catch(() => ({ count: 0, max_score: 0 })),
+                                        env.ban_dong_hanh_db.prepare('SELECT COUNT(*) as count FROM achievements').first().catch(() => ({ count: 0 })),
+                                        env.ban_dong_hanh_db.prepare('SELECT COUNT(*) as count FROM forum_posts').first().catch(() => ({ count: 0 })),
+                                        env.ban_dong_hanh_db.prepare('SELECT COUNT(*) as count FROM forum_comments').first().catch(() => ({ count: 0 })),
+                                        env.ban_dong_hanh_db.prepare('SELECT COUNT(*) as count FROM sos_logs').first().catch(() => ({ count: 0 })),
+                                        env.ban_dong_hanh_db.prepare('SELECT COUNT(*) as count FROM chat_responses').first().catch(() => ({ count: 0 })),
+                                        env.ban_dong_hanh_db.prepare('SELECT COUNT(*) as count, AVG(response_quality) as avg_quality FROM chat_feedback').first().catch(() => ({ count: 0, avg_quality: 0 })),
+                                        env.ban_dong_hanh_db.prepare('SELECT COUNT(*) as count FROM user_bookmarks').first().catch(() => ({ count: 0 })),
+                                        env.ban_dong_hanh_db.prepare("SELECT COUNT(DISTINCT user_id) as count FROM gratitude WHERE date(created_at) = date('now')").first().catch(() => ({ count: 0 })),
+                                        env.ban_dong_hanh_db.prepare("SELECT COUNT(DISTINCT user_id) as count FROM gratitude WHERE created_at >= datetime('now', '-7 days')").first().catch(() => ({ count: 0 })),
+                                        env.ban_dong_hanh_db.prepare('SELECT COALESCE(SUM(total_xp), 0) as total FROM user_stats').first().catch(() => ({ total: 0 })),
+                                        env.ban_dong_hanh_db.prepare('SELECT AVG(score) as avg FROM game_scores').first().catch(() => ({ avg: 0 }))
+                                    ]);
+
+                                    response = json({
+                                        users: {
+                                            total: usersCount?.count || 0,
+                                            activeToday: todayUsers?.count || 0,
+                                            activeWeek: weekUsers?.count || 0
+                                        },
+                                        content: {
+                                            gratitude: gratitudeCount?.count || 0,
+                                            journal: journalCount?.count || 0,
+                                            bookmarks: bookmarksCount?.count || 0
+                                        },
+                                        activities: {
+                                            focus: {
+                                                sessions: focusCount?.count || 0,
+                                                totalMinutes: focusCount?.total_minutes || 0
+                                            },
+                                            breathing: {
+                                                sessions: breathingCount?.count || 0,
+                                                totalSeconds: breathingCount?.total_seconds || 0
+                                            },
+                                            sleep: {
+                                                logs: sleepCount?.count || 0,
+                                                avgDuration: Math.round(sleepCount?.avg_duration || 0)
+                                            },
+                                            games: {
+                                                plays: gameScoresCount?.count || 0,
+                                                maxScore: gameScoresCount?.max_score || 0,
+                                                avgScore: Math.round(avgGameScore?.avg || 0)
+                                            }
+                                        },
+                                        gamification: {
+                                            achievements: achievementsCount?.count || 0,
+                                            totalXP: totalXP?.total || 0
+                                        },
+                                        community: {
+                                            forumPosts: forumPostsCount?.count || 0,
+                                            forumComments: forumCommentsCount?.count || 0
+                                        },
+                                        ai: {
+                                            chatResponses: chatResponsesCount?.count || 0,
+                                            feedbackCount: chatFeedbackCount?.count || 0,
+                                            avgQuality: parseFloat((chatFeedbackCount?.avg_quality || 0).toFixed(2))
+                                        },
+                                        safety: {
+                                            sosEvents: sosLogsCount?.count || 0
+                                        }
+                                    });
+                                } catch (statsError) {
+                                    console.error('[Admin] comprehensive-stats error:', statsError.message);
+                                    response = json({ error: 'server_error', message: statsError.message }, 500);
+                                }
+                                break;
+
+                            // NEW: Activity Data - Dữ liệu hoạt động theo thời gian
+                            case 'admin:activity-data':
+                                try {
+                                    const days = parseInt(url.searchParams.get('days') || '30');
+
+                                    // Get daily activity counts
+                                    const [gratitudeDaily, journalDaily, breathingDaily, focusDaily, gameDaily] = await Promise.all([
+                                        env.ban_dong_hanh_db.prepare(`
+                                            SELECT date(created_at) as date, COUNT(*) as count 
+                                            FROM gratitude 
+                                            WHERE created_at >= datetime('now', '-${days} days')
+                                            GROUP BY date(created_at)
+                                            ORDER BY date DESC
+                                        `).all().catch(() => ({ results: [] })),
+                                        env.ban_dong_hanh_db.prepare(`
+                                            SELECT date(created_at) as date, COUNT(*) as count 
+                                            FROM journal 
+                                            WHERE created_at >= datetime('now', '-${days} days')
+                                            GROUP BY date(created_at)
+                                            ORDER BY date DESC
+                                        `).all().catch(() => ({ results: [] })),
+                                        env.ban_dong_hanh_db.prepare(`
+                                            SELECT date(created_at) as date, COUNT(*) as count, SUM(duration_seconds) as total_seconds
+                                            FROM breathing_sessions 
+                                            WHERE created_at >= datetime('now', '-${days} days')
+                                            GROUP BY date(created_at)
+                                            ORDER BY date DESC
+                                        `).all().catch(() => ({ results: [] })),
+                                        env.ban_dong_hanh_db.prepare(`
+                                            SELECT date(created_at) as date, COUNT(*) as count, SUM(duration_minutes) as total_minutes
+                                            FROM focus_sessions 
+                                            WHERE created_at >= datetime('now', '-${days} days')
+                                            GROUP BY date(created_at)
+                                            ORDER BY date DESC
+                                        `).all().catch(() => ({ results: [] })),
+                                        env.ban_dong_hanh_db.prepare(`
+                                            SELECT date(created_at) as date, COUNT(*) as count, MAX(score) as max_score
+                                            FROM game_scores 
+                                            WHERE created_at >= datetime('now', '-${days} days')
+                                            GROUP BY date(created_at)
+                                            ORDER BY date DESC
+                                        `).all().catch(() => ({ results: [] }))
+                                    ]);
+
+                                    response = json({
+                                        period: days,
+                                        gratitude: gratitudeDaily?.results || [],
+                                        journal: journalDaily?.results || [],
+                                        breathing: breathingDaily?.results || [],
+                                        focus: focusDaily?.results || [],
+                                        games: gameDaily?.results || []
+                                    });
+                                } catch (activityError) {
+                                    console.error('[Admin] activity-data error:', activityError.message);
+                                    response = json({ error: 'server_error', message: activityError.message }, 500);
+                                }
+                                break;
+
+                            // NEW: Chat Analytics
+                            case 'admin:chat-analytics':
+                                try {
+                                    const [
+                                        riskDistribution,
+                                        responseStats,
+                                        feedbackStats,
+                                        recentResponses
+                                    ] = await Promise.all([
+                                        env.ban_dong_hanh_db.prepare(`
+                                            SELECT risk_level, COUNT(*) as count 
+                                            FROM chat_responses 
+                                            WHERE risk_level IS NOT NULL
+                                            GROUP BY risk_level
+                                        `).all().catch(() => ({ results: [] })),
+                                        env.ban_dong_hanh_db.prepare(`
+                                            SELECT 
+                                                COUNT(*) as total,
+                                                AVG(confidence) as avg_confidence,
+                                                AVG(latency_ms) as avg_latency,
+                                                AVG(tokens_used) as avg_tokens,
+                                                SUM(CASE WHEN used_rag = 1 THEN 1 ELSE 0 END) as rag_count
+                                            FROM chat_responses
+                                        `).first().catch(() => ({})),
+                                        env.ban_dong_hanh_db.prepare(`
+                                            SELECT 
+                                                COUNT(*) as total,
+                                                SUM(CASE WHEN helpful = 1 THEN 1 ELSE 0 END) as helpful_count,
+                                                AVG(response_quality) as avg_quality
+                                            FROM chat_feedback
+                                        `).first().catch(() => ({})),
+                                        env.ban_dong_hanh_db.prepare(`
+                                            SELECT user_message, ai_response, risk_level, confidence, created_at
+                                            FROM chat_responses
+                                            ORDER BY created_at DESC
+                                            LIMIT 20
+                                        `).all().catch(() => ({ results: [] }))
+                                    ]);
+
+                                    response = json({
+                                        riskDistribution: riskDistribution?.results || [],
+                                        stats: {
+                                            total: responseStats?.total || 0,
+                                            avgConfidence: parseFloat((responseStats?.avg_confidence || 0).toFixed(3)),
+                                            avgLatencyMs: Math.round(responseStats?.avg_latency || 0),
+                                            avgTokens: Math.round(responseStats?.avg_tokens || 0),
+                                            ragUsageRate: responseStats?.total > 0
+                                                ? parseFloat((responseStats?.rag_count / responseStats?.total).toFixed(3))
+                                                : 0
+                                        },
+                                        feedback: {
+                                            total: feedbackStats?.total || 0,
+                                            helpfulRate: feedbackStats?.total > 0
+                                                ? parseFloat((feedbackStats?.helpful_count / feedbackStats?.total).toFixed(3))
+                                                : 0,
+                                            avgQuality: parseFloat((feedbackStats?.avg_quality || 0).toFixed(2))
+                                        },
+                                        recentResponses: recentResponses?.results || []
+                                    });
+                                } catch (chatError) {
+                                    console.error('[Admin] chat-analytics error:', chatError.message);
+                                    response = json({ error: 'server_error', message: chatError.message }, 500);
+                                }
+                                break;
+
+                            // NEW: Forum Reports
+                            case 'admin:reports':
+                                try {
+                                    const reportsResult = await env.ban_dong_hanh_db.prepare(`
+                                        SELECT r.*, 
+                                            CASE 
+                                                WHEN r.target_type = 'post' THEN p.content
+                                                WHEN r.target_type = 'comment' THEN c.content
+                                            END as target_content
+                                        FROM forum_reports r
+                                        LEFT JOIN forum_posts p ON r.target_type = 'post' AND r.target_id = p.id
+                                        LEFT JOIN forum_comments c ON r.target_type = 'comment' AND r.target_id = c.id
+                                        ORDER BY r.created_at DESC
+                                        LIMIT 100
+                                    `).all().catch(() => ({ results: [] }));
+
+                                    const pendingCount = await env.ban_dong_hanh_db.prepare(
+                                        "SELECT COUNT(*) as count FROM forum_reports WHERE status = 'pending'"
+                                    ).first().catch(() => ({ count: 0 }));
+
+                                    response = json({
+                                        items: reportsResult?.results || [],
+                                        pendingCount: pendingCount?.count || 0
+                                    });
+                                } catch (reportsError) {
+                                    console.error('[Admin] reports error:', reportsError.message);
+                                    response = json({ items: [], pendingCount: 0 });
+                                }
                                 break;
 
                             default:

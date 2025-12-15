@@ -10,6 +10,7 @@ import {
     Play, Pause, RotateCcw, Trophy, Sparkles,
     Volume2, VolumeX, Zap, Target
 } from 'lucide-react';
+import { isLoggedIn, saveGameScore, rewardXP } from '../../utils/api';
 
 // Bubble colors - pastel palette
 const COLORS = [
@@ -182,7 +183,7 @@ export default function BubblePop() {
     };
 
     // End game
-    const endGame = () => {
+    const endGame = async () => {
         setIsPlaying(false);
         setGameOver(true);
         cancelAnimationFrame(frameRef.current);
@@ -195,6 +196,21 @@ export default function BubblePop() {
         };
         setStats(newStats);
         saveStats(newStats);
+
+        // Sync to server if logged in
+        if (isLoggedIn() && score > 0) {
+            try {
+                const isNewRecord = score > stats.highScore;
+                await saveGameScore('bubble_pop', score, 1, 60 - timeLeft);
+                await rewardXP('game_play');
+                if (isNewRecord) {
+                    await rewardXP('game_new_record');
+                }
+                console.log('[BubblePop] Synced score to server:', score);
+            } catch (e) {
+                console.warn('[BubblePop] Sync failed:', e.message);
+            }
+        }
     };
 
     return (

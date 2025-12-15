@@ -9,6 +9,7 @@ import GlowOrbs from '../ui/GlowOrbs';
 import {
     Play, RotateCcw, Trophy, Brain, Timer, Sparkles, Star
 } from 'lucide-react';
+import { isLoggedIn, saveGameScore, rewardXP } from '../../utils/api';
 
 // Card colors - pastel pairs
 const COLORS = [
@@ -95,6 +96,7 @@ export default function ColorMatch() {
             setGameState('won');
 
             // Update stats
+            const isNewRecord = !stats.bestTime || time < stats.bestTime;
             const newStats = {
                 bestTime: stats.bestTime ? Math.min(stats.bestTime, time) : time,
                 gamesPlayed: stats.gamesPlayed + 1,
@@ -102,6 +104,24 @@ export default function ColorMatch() {
             };
             setStats(newStats);
             saveStats(newStats);
+
+            // Sync to server if logged in
+            if (isLoggedIn()) {
+                (async () => {
+                    try {
+                        // For ColorMatch, score is based on time (lower is better)
+                        // We save moves as score and time as duration
+                        await saveGameScore('color_match', moves, 1, time);
+                        await rewardXP('game_play');
+                        if (isNewRecord) {
+                            await rewardXP('game_new_record');
+                        }
+                        console.log('[ColorMatch] Synced score to server:', { time, moves });
+                    } catch (e) {
+                        console.warn('[ColorMatch] Sync failed:', e.message);
+                    }
+                })();
+            }
         }
     }, [matched, gameState, time, moves, stats.bestTime, stats.gamesPlayed, stats.totalMoves]);
 

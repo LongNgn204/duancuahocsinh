@@ -369,3 +369,22 @@ CREATE TABLE IF NOT EXISTS user_stats (
   updated_at TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- =============================================================================
+-- PHASE 8 ADDITIONS: User Bookmarks for Stories & Resources
+-- =============================================================================
+
+-- Bảng user_bookmarks: lưu bookmarks từ Stories, Resources
+CREATE TABLE IF NOT EXISTS user_bookmarks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  bookmark_type TEXT NOT NULL, -- 'story', 'resource'
+  item_id TEXT NOT NULL, -- ID của item đã bookmark
+  metadata TEXT, -- JSON metadata bổ sung (title, etc.)
+  created_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(user_id, bookmark_type, item_id),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_bookmarks_user ON user_bookmarks(user_id);
+CREATE INDEX IF NOT EXISTS idx_bookmarks_type ON user_bookmarks(bookmark_type);

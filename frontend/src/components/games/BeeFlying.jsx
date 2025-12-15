@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import { Play, RotateCcw, Heart, Clock, AlertCircle } from 'lucide-react';
+import { isLoggedIn, saveGameScore, rewardXP } from '../../utils/api';
 
 const WIDTH = 800;
 const HEIGHT = 500;
@@ -191,6 +192,19 @@ export default function BeeFlying() {
           // Game over
           setGameOver(true);
           setRunning(false);
+
+          // Sync to server if logged in
+          if (isLoggedIn() && score > 0) {
+            (async () => {
+              try {
+                await saveGameScore('bee_flying', score, 1);
+                await rewardXP('game_play');
+                console.log('[BeeFlying] Synced score to server:', score);
+              } catch (e) {
+                console.warn('[BeeFlying] Sync failed:', e.message);
+              }
+            })();
+          }
           return;
         }
 

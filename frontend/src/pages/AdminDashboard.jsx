@@ -38,11 +38,12 @@ function AdminSidebar({ activeTab, setActiveTab, collapsed, setCollapsed }) {
 
     const menuItems = [
         { id: 'overview', label: 'Tổng quan', icon: BarChart3 },
+        { id: 'database-stats', label: 'Thống kê Database', icon: Database },
         { id: 'all-users', label: 'Tất cả người dùng', icon: Users },
         { id: 'posts', label: 'Quản lý bài viết', icon: FileText },
         { id: 'users', label: 'Người dùng bị cấm', icon: Ban },
         { id: 'sos', label: 'SOS Logs', icon: AlertTriangle },
-        { id: 'chat-metrics', label: 'Chat Metrics', icon: MessageSquare },
+        { id: 'chat-metrics', label: 'Chat Analytics', icon: MessageSquare },
         { id: 'logs', label: 'Nhật ký hoạt động', icon: Activity },
     ];
 
@@ -286,6 +287,237 @@ function OverviewTab({ stats, logs, sosStats }) {
                         ))}
                     </div>
                 )}
+            </div>
+        </div>
+    );
+}
+
+// =============================================================================
+// DATABASE STATS TAB - Comprehensive Statistics from All Tables
+// =============================================================================
+
+function DatabaseStatsTab() {
+    const [stats, setStats] = useState(null);
+    const [activityData, setActivityData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        loadStats();
+    }, []);
+
+    const loadStats = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const token = localStorage.getItem('admin_token');
+            const API_BASE = import.meta.env.VITE_API_URL || 'https://ban-dong-hanh-worker.stu725114073.workers.dev';
+
+            const [statsRes, activityRes] = await Promise.all([
+                fetch(`${API_BASE}/api/admin/comprehensive-stats`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`${API_BASE}/api/admin/activity-data?days=30`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+            ]);
+
+            if (statsRes.ok) {
+                setStats(await statsRes.json());
+            }
+            if (activityRes.ok) {
+                setActivityData(await activityRes.json());
+            }
+        } catch (e) {
+            setError(e.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-6 bg-red-50 dark:bg-red-900/20 rounded-2xl text-red-600 dark:text-red-400">
+                Lỗi: {error}
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6">
+            {/* Users Stats */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-blue-500" />
+                    Người dùng
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <StatCard icon={Users} label="Tổng số users" value={stats?.users?.total || 0} color="bg-blue-500" />
+                    <StatCard icon={Activity} label="Active hôm nay" value={stats?.users?.activeToday || 0} color="bg-green-500" />
+                    <StatCard icon={Activity} label="Active 7 ngày" value={stats?.users?.activeWeek || 0} color="bg-indigo-500" />
+                </div>
+            </div>
+
+            {/* Content Stats */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-purple-500" />
+                    Nội dung người dùng tạo
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <StatCard icon={FileText} label="Lọ biết ơn" value={stats?.content?.gratitude || 0} color="bg-pink-500" />
+                    <StatCard icon={FileText} label="Nhật ký" value={stats?.content?.journal || 0} color="bg-purple-500" />
+                    <StatCard icon={FileText} label="Bookmarks" value={stats?.content?.bookmarks || 0} color="bg-cyan-500" />
+                </div>
+            </div>
+
+            {/* Activities Stats */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-green-500" />
+                    Hoạt động
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Focus Sessions</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.activities?.focus?.sessions || 0}</p>
+                        <p className="text-xs text-gray-400">{stats?.activities?.focus?.totalMinutes || 0} phút tổng</p>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Breathing Sessions</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.activities?.breathing?.sessions || 0}</p>
+                        <p className="text-xs text-gray-400">{Math.round((stats?.activities?.breathing?.totalSeconds || 0) / 60)} phút tổng</p>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Sleep Logs</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.activities?.sleep?.logs || 0}</p>
+                        <p className="text-xs text-gray-400">TB: {stats?.activities?.sleep?.avgDuration || 0} phút</p>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Games played</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.activities?.games?.plays || 0}</p>
+                        <p className="text-xs text-gray-400">High score: {stats?.activities?.games?.maxScore || 0}</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Gamification & Community */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                    <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                        🏆 Gamification
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-gradient-to-br from-yellow-400 to-orange-500 text-white rounded-xl p-4">
+                            <p className="text-sm opacity-80">Achievements mở khóa</p>
+                            <p className="text-3xl font-bold">{stats?.gamification?.achievements || 0}</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-xl p-4">
+                            <p className="text-sm opacity-80">Tổng XP</p>
+                            <p className="text-3xl font-bold">{(stats?.gamification?.totalXP || 0).toLocaleString()}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                    <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                        👥 Cộng đồng Forum
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Bài viết</p>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.community?.forumPosts || 0}</p>
+                        </div>
+                        <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Bình luận</p>
+                            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.community?.forumComments || 0}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* AI & Safety */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                    <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                        🤖 AI Chat
+                    </h3>
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <span className="text-sm text-gray-600 dark:text-gray-300">Tổng responses</span>
+                            <span className="font-semibold">{stats?.ai?.chatResponses || 0}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <span className="text-sm text-gray-600 dark:text-gray-300">Feedback count</span>
+                            <span className="font-semibold">{stats?.ai?.feedbackCount || 0}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <span className="text-sm text-gray-600 dark:text-gray-300">Avg quality</span>
+                            <span className="font-semibold">{stats?.ai?.avgQuality || 0}/5</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                    <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5 text-red-500" />
+                        An toàn
+                    </h3>
+                    <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-6 text-center">
+                        <p className="text-sm text-red-600 dark:text-red-400 mb-2">SOS Events</p>
+                        <p className="text-4xl font-bold text-red-600 dark:text-red-400">{stats?.safety?.sosEvents || 0}</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Activity Chart Preview */}
+            {activityData && (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                    <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                        📈 Hoạt động 30 ngày gần đây
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <div className="text-center p-4 bg-pink-50 dark:bg-pink-900/20 rounded-xl">
+                            <p className="text-2xl font-bold text-pink-600">{activityData.gratitude?.length || 0}</p>
+                            <p className="text-xs text-gray-500">Ngày có gratitude</p>
+                        </div>
+                        <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+                            <p className="text-2xl font-bold text-purple-600">{activityData.journal?.length || 0}</p>
+                            <p className="text-xs text-gray-500">Ngày có journal</p>
+                        </div>
+                        <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
+                            <p className="text-2xl font-bold text-green-600">{activityData.breathing?.length || 0}</p>
+                            <p className="text-xs text-gray-500">Ngày có breathing</p>
+                        </div>
+                        <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                            <p className="text-2xl font-bold text-blue-600">{activityData.focus?.length || 0}</p>
+                            <p className="text-xs text-gray-500">Ngày có focus</p>
+                        </div>
+                        <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
+                            <p className="text-2xl font-bold text-orange-600">{activityData.games?.length || 0}</p>
+                            <p className="text-xs text-gray-500">Ngày có games</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Refresh Button */}
+            <div className="text-center">
+                <button
+                    onClick={loadStats}
+                    className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors flex items-center gap-2 mx-auto"
+                >
+                    <RefreshCw className="w-4 h-4" />
+                    Làm mới thống kê
+                </button>
             </div>
         </div>
     );
@@ -1087,11 +1319,12 @@ export default function AdminDashboard() {
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                                 {activeTab === 'overview' && 'Tổng quan'}
+                                {activeTab === 'database-stats' && 'Thống kê Database'}
                                 {activeTab === 'all-users' && 'Tất cả người dùng'}
                                 {activeTab === 'posts' && 'Quản lý bài viết'}
                                 {activeTab === 'users' && 'Người dùng bị cấm'}
                                 {activeTab === 'sos' && 'SOS Logs'}
-                                {activeTab === 'chat-metrics' && 'Chat Metrics'}
+                                {activeTab === 'chat-metrics' && 'Chat Analytics'}
                                 {activeTab === 'logs' && 'Nhật ký hoạt động'}
                             </h1>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -1120,6 +1353,16 @@ export default function AdminDashboard() {
                                 exit={{ opacity: 0, y: -10 }}
                             >
                                 <OverviewTab stats={stats} logs={logs} sosStats={sosStats} />
+                            </motion.div>
+                        )}
+                        {activeTab === 'database-stats' && (
+                            <motion.div
+                                key="database-stats"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                            >
+                                <DatabaseStatsTab />
                             </motion.div>
                         )}
                         {activeTab === 'all-users' && (

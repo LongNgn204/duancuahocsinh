@@ -5,55 +5,54 @@
 [![React](https://img.shields.io/badge/React-19.x-61DAFB?logo=react)](https://react.dev)
 [![Vite](https://img.shields.io/badge/Vite-6.x-646CFF?logo=vite)](https://vitejs.dev)
 
-Nền tảng web giúp học sinh Việt Nam (12–18 tuổi) chăm sóc sức khỏe tinh thần, xây dựng thói quen tích cực và kết nối cộng đồng an toàn.
+Nền tảng web giúp học sinh Việt Nam (12–18 tuổi) chăm sóc sức khỏe tinh thần, xây dựng thói quen tích cực và hỗ trợ khẩn cấp khi cần.
 
 ## Demo
 
 - 🌐 Ứng dụng: [https://ban-dong-hanh.pages.dev](https://ban-dong-hanh.pages.dev)
 - ⚙️ API: `https://ban-dong-hanh-worker.stu725114073.workers.dev`
 
-## Giới thiệu nhanh
+---
 
-- 🤖 AI mentor: trò chuyện an toàn, có bộ lọc prompt injection và giới hạn token.
-- 🧘 Sức khỏe tinh thần: bài tập thở, góc an yên, thẻ wellness, sleep log.
-- 🎯 Thói quen & gamification: journal, gratitude jar, focus timer, achievements, XP/level.
-- 💬 Cộng đồng ẩn danh: diễn đàn có upvote/báo cáo, moderator/admin dashboard.
-- 🆘 An toàn: SOS detector, hotline khẩn cấp, logging ẩn danh.
+## Tính năng chính
+
+| # | Tính năng | Mô tả |
+|---|-----------|-------|
+| 1 | **Trang chủ** | Lời chào theo thời gian, chế độ FOCUS cho học sinh ADHD, quick access cards |
+| 2 | **Liều thuốc tinh thần** | Bài tập thở bong bóng 30s, câu động viên theo 4 nhóm cảm xúc |
+| 3 | **Góc An Yên** | Bài tập thở khoa học, Bộ thẻ An Yên (Bình Yên, Việc làm nhỏ, Nhắn nhủ), TTS hướng dẫn |
+| 4 | **Lọ Biết Ơn** | Streak đếm ngày viết, gợi ý nội dung hàng ngày, sparkline 30 ngày |
+| 5 | **Nhanh tay lẹ mắt** | Chọn hình tương ứng (30-60s), Ong tập bay (theo dõi ong dừng 3s) |
+| 6 | **Góc Nhỏ** | Thông báo nhắc nhở, cài đặt thời gian nhắc việc, Push Notification |
+| 7 | **Hỗ trợ khẩn cấp** | Phát hiện từ khóa tiêu cực, hiển thị hotline + map bệnh viện gần nhất |
+| 8 | **Trò chuyện AI** | Chat văn bản/giọng nói, TTS phát âm thanh, SOS detection |
+| 9 | **Kể chuyện** | Truyện ngắn với bài học, chế độ kể nhanh/chậm, TTS đọc truyện |
+
+---
 
 ## Kiến trúc & Tech stack
 
-- **Frontend**: React 19, Vite 6, Tailwind CSS 4, Framer Motion, React Router 7, Zustand, Playwright, Vitest.
-- **Backend**: Cloudflare Workers (router, auth, forum, data API), D1 (SQLite), Workers AI (Llama 3.1 8B), JWT admin, rate limiting + CORS, AI prompt safety.
-- **Triển khai**: Cloudflare Pages (web) + Workers (API), Wrangler CLI, D1 migration từ `schema.sql`.
+- **Frontend**: React 19, Vite 6, Tailwind CSS, Framer Motion, React Router 7
+- **Backend**: Cloudflare Workers, D1 (SQLite), Workers AI (Llama 3.1 8B)
+- **Triển khai**: Cloudflare Pages (web) + Workers (API)
 
 ## Cấu trúc thư mục
 
 ```
 duancuahocsinh/
-├── frontend/            # Ứng dụng React + Vite
+├── frontend/
 │   ├── src/
-│   │   ├── components/  # UI, chat, breathing, games, gratitude, SOS, layout...
-│   │   ├── pages/       # Dashboard, Chat, Forum, Focus, Journal, Sleep, Admin...
-│   │   ├── hooks/       # AI, voice, offline, theme...
-│   │   ├── utils/       # API client, detector, notifications, caching...
-│   │   └── services/    # Local storage/cache helpers
-│   ├── tests/           # Playwright E2E
+│   │   ├── components/   # UI, chat, breathing, games, gratitude, sos...
+│   │   ├── pages/        # Dashboard, Chat, Wellness, Stories, Games, Corner...
+│   │   ├── hooks/        # AI, voice, offline, theme...
+│   │   └── utils/        # API client, SOS detector, notifications...
 │   └── package.json
-├── backend/             # Cloudflare Workers
-│   ├── workers/         # router, ai-proxy, auth, data-api, forum-api, risk...
-│   ├── scripts/         # cleanup, tooling
-│   ├── schema.sql       # D1 schema
-│   └── wrangler.toml    # Binding & env config
-├── docs/                # PROMPTS.md, DEPLOY.md, deploy-info.json
-├── plan.md, PLAN_TINH_CHINH.md, QUICK_TEST.md, SYNC_PLAN.md
+├── backend/
+│   ├── src/              # router, ai-proxy, auth, data-api...
+│   ├── schema.sql        # D1 schema
+│   └── wrangler.toml     # Config
 └── README.md
 ```
-
-## Yêu cầu
-
-- Node.js 18+ và npm.
-- Tài khoản Cloudflare, Wrangler CLI (`npm i -g wrangler`).
-- Quyền tạo D1 database (hoặc dùng DB sẵn có).
 
 ## Thiết lập nhanh
 
@@ -63,7 +62,6 @@ cd duancuahocsinh
 ```
 
 ### Frontend
-
 ```bash
 cd frontend
 npm install
@@ -71,80 +69,44 @@ npm run dev   # http://localhost:5173
 ```
 
 ### Backend (Cloudflare Workers)
-
 ```bash
 cd backend
 npm install
-
-# Khởi tạo D1 (chỉ chạy lần đầu)
 wrangler d1 create ban-dong-hanh-db
-# Cập nhật database_id tương ứng trong wrangler.toml
-
-# Migration
 wrangler d1 execute ban-dong-hanh-db --file=./schema.sql
-
-# Chạy local
-wrangler dev    # mặc định cổng 8787
+wrangler dev  # http://localhost:8787
 ```
 
 ## Cấu hình môi trường
 
 ### Frontend (`frontend/.env`)
-
-- `VITE_API_URL` (bắt buộc): URL Workers API, ví dụ `http://localhost:8787` hoặc endpoint production.
-- `VITE_AI_PROXY_URL` (tùy chọn): fallback endpoint cho AI proxy.
-- `VITE_VAPID_PUBLIC_KEY` (tùy chọn): bật web push notifications.
-- `VITE_APP_VERSION` (tùy chọn): hiển thị phiên bản build.
+- `VITE_API_URL`: URL Workers API
+- `VITE_VAPID_PUBLIC_KEY`: Web push notifications
 
 ### Backend (`backend/wrangler.toml`)
-
-- `ALLOW_ORIGIN`: danh sách origin cho CORS (ví dụ `http://localhost:5173,https://ban-dong-hanh.pages.dev`).
-- `MODEL`: model Workers AI, mặc định `@cf/meta/llama-3.1-8b-instruct`.
-- `MONTHLY_TOKEN_LIMIT`, `MAX_TOKEN_BUDGET`: giới hạn chi phí AI.
-- `ADMIN_PASSWORD`, `JWT_SECRET`: thông tin đăng nhập & ký JWT cho dashboard/admin API.
-- `[[d1_databases]]`: binding `ban_dong_hanh_db` trỏ tới database ID đã tạo.
+- `ALLOW_ORIGIN`: CORS origins
+- `MODEL`: Workers AI model
+- `JWT_SECRET`: Auth token signing
 
 ## Lệnh quan trọng
 
-### Frontend
+| Frontend | Backend |
+|----------|---------|
+| `npm run dev` | `npm run dev` |
+| `npm run build` | `npm run deploy` |
+| `npm run deploy` | `npm run tail` |
 
-- `npm run dev` — chạy dev server.
-- `npm run build` — build sản phẩm.
-- `npm run lint` — kiểm tra ESLint.
-- `npm run test` — chạy Vitest.
-- `npm run e2e` — chạy Playwright (cần `npm run e2e:install` lần đầu).
-- `npm run deploy` — build + deploy Pages.
+## Quyền riêng tư & An toàn
 
-### Backend
-
-- `npm run dev` — chạy worker local (wrangler dev).
-- `npm run deploy` — deploy worker.
-- `npm test` — Vitest cho worker.
-- `npm run tail` — xem log realtime.
-
-## Testing
-
-- **Unit/Integration**: `cd backend && npm test`, `cd frontend && npm test`.
-- **E2E**: `cd frontend && npm run e2e:install && npm run e2e`.
-- **Kiểm thử nhanh login**: `node test-login-api.js` (sử dụng `API_BASE=...` để trỏ tới môi trường mong muốn) hoặc xem hướng dẫn trong `QUICK_TEST.md`.
-
-## Triển khai
-
-- **Frontend (Pages)**: `cd frontend && npm run deploy` (deploy từ thư mục `dist`).
-- **Backend (Workers)**: `cd backend && npm run deploy`.
-- **Migration DB**: `wrangler d1 execute ban-dong-hanh-db --file=./schema.sql --remote`.
-
-## Quyền riêng tư & an toàn
-
-- Không lưu PII; dữ liệu cá nhân (gratitude, journal, achievements) được giới hạn và có thể export/xóa.
-- SOS detector & bộ lọc nội dung để bảo vệ người dùng trẻ; AI không chẩn đoán hay kê thuốc.
-- Admin dashboard hỗ trợ báo cáo, khóa bài, ban user, xem log SOS.
+- Không lưu PII, dữ liệu có thể export/xóa
+- SOS detector bảo vệ người dùng trẻ
+- AI không chẩn đoán hay kê thuốc
 
 ## Liên hệ
 
 - Email: `stu725114073@hnue.edu.vn`
 - Hotline: `0896636181` (24/7)
-- Website: [https://duancuahocsinh.pages.dev](https://duancuahocsinh.pages.dev)
+- Website: [https://ban-dong-hanh.pages.dev](https://ban-dong-hanh.pages.dev)
 
 ---
 

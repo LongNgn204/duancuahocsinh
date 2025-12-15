@@ -16,6 +16,7 @@ import FloatingChatButton from './components/ui/FloatingChatButton';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import AuthModal from './components/auth/AuthModal';
 import TourGuide, { TourTriggerButton, useTourStatus } from './components/tour/TourGuide';
+import RequireAuth from './components/auth/RequireAuth';
 import { registerServiceWorker } from './utils/notifications';
 
 
@@ -138,32 +139,32 @@ function AppRoutes() {
     <>
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
-          {/* Landing Page - Standalone without app layout */}
+          {/* Landing Page - Standalone without app layout, NO LOGIN REQUIRED */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/landing" element={<LandingPage />} />
 
 
-          {/* App Pages - With layout */}
-          <Route path="/app" element={<AppLayout><Dashboard /></AppLayout>} />
-          <Route path="/chat" element={<AppLayout><Chat /></AppLayout>} />
-          <Route path="/breathing" element={<AppLayout><BreathingBubble /></AppLayout>} />
-          <Route path="/gratitude" element={<AppLayout><GratitudeJar /></AppLayout>} />
-          <Route path="/games" element={<AppLayout><Games /></AppLayout>} />
-          <Route path="/games/reflex" element={<AppLayout><ReflexGame /></AppLayout>} />
-          <Route path="/games/bee" element={<AppLayout><BeeGame /></AppLayout>} />
-          <Route path="/games/bubble" element={<AppLayout><BubblePop /></AppLayout>} />
-          <Route path="/games/memory" element={<AppLayout><ColorMatch /></AppLayout>} />
-          <Route path="/games/doodle" element={<AppLayout><DoodleCanvas /></AppLayout>} />
-          <Route path="/games/space-pilot" element={<AppLayout><SpacePilot /></AppLayout>} />
-          <Route path="/games/match-shape" element={<AppLayout><MatchShape /></AppLayout>} />
-          <Route path="/games/bee-flying" element={<AppLayout><BeeFlying /></AppLayout>} />
-          <Route path="/corner" element={<AppLayout><Corner /></AppLayout>} />
-          <Route path="/wellness" element={<AppLayout><Wellness /></AppLayout>} />
-          <Route path="/stories" element={<AppLayout><Stories /></AppLayout>} />
-          <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
+          {/* App Pages - With layout, REQUIRE LOGIN */}
+          <Route path="/app" element={<AppLayout><RequireAuth featureName="Dashboard"><Dashboard /></RequireAuth></AppLayout>} />
+          <Route path="/chat" element={<AppLayout><RequireAuth featureName="Trò chuyện AI"><Chat /></RequireAuth></AppLayout>} />
+          <Route path="/breathing" element={<AppLayout><RequireAuth featureName="Góc an yên"><BreathingBubble /></RequireAuth></AppLayout>} />
+          <Route path="/gratitude" element={<AppLayout><RequireAuth featureName="Lọ biết ơn"><GratitudeJar /></RequireAuth></AppLayout>} />
+          <Route path="/games" element={<AppLayout><RequireAuth featureName="Games"><Games /></RequireAuth></AppLayout>} />
+          <Route path="/games/reflex" element={<AppLayout><RequireAuth featureName="Game Reflex"><ReflexGame /></RequireAuth></AppLayout>} />
+          <Route path="/games/bee" element={<AppLayout><RequireAuth featureName="Game Ong Bay"><BeeGame /></RequireAuth></AppLayout>} />
+          <Route path="/games/bubble" element={<AppLayout><RequireAuth featureName="Game Bong Bóng"><BubblePop /></RequireAuth></AppLayout>} />
+          <Route path="/games/memory" element={<AppLayout><RequireAuth featureName="Game Ghép Màu"><ColorMatch /></RequireAuth></AppLayout>} />
+          <Route path="/games/doodle" element={<AppLayout><RequireAuth featureName="Vẽ Doodle"><DoodleCanvas /></RequireAuth></AppLayout>} />
+          <Route path="/games/space-pilot" element={<AppLayout><RequireAuth featureName="Game Space Pilot"><SpacePilot /></RequireAuth></AppLayout>} />
+          <Route path="/games/match-shape" element={<AppLayout><RequireAuth featureName="Game Match Shape"><MatchShape /></RequireAuth></AppLayout>} />
+          <Route path="/games/bee-flying" element={<AppLayout><RequireAuth featureName="Game Ong Tập Bay"><BeeFlying /></RequireAuth></AppLayout>} />
+          <Route path="/corner" element={<AppLayout><RequireAuth featureName="Góc riêng tư"><Corner /></RequireAuth></AppLayout>} />
+          <Route path="/wellness" element={<AppLayout><RequireAuth featureName="Wellness"><Wellness /></RequireAuth></AppLayout>} />
+          <Route path="/stories" element={<AppLayout><RequireAuth featureName="Câu chuyện"><Stories /></RequireAuth></AppLayout>} />
+          <Route path="/settings" element={<AppLayout><RequireAuth featureName="Cài đặt"><Settings /></RequireAuth></AppLayout>} />
 
 
-          {/* Admin Dashboard - Standalone layout */}
+          {/* Admin Dashboard - Standalone layout, has its own auth */}
           <Route path="/admin" element={<AdminDashboard />} />
 
           {/* Fallback - Redirect unknown paths to landing */}

@@ -687,7 +687,7 @@ export async function importData(request, env) {
                          WHERE user_id = ? AND content = ? 
                          AND date(created_at) = date(?)`
                     ).bind(userId, item.content, createdAt).first();
-                    
+
                     if (!existing) {
                         await env.ban_dong_hanh_db.prepare(
                             'INSERT INTO gratitude (user_id, content, created_at) VALUES (?, ?, ?)'
@@ -710,7 +710,7 @@ export async function importData(request, env) {
                          WHERE user_id = ? AND content = ? 
                          AND date(created_at) = date(?)`
                     ).bind(userId, item.content, createdAt).first();
-                    
+
                     if (!existing) {
                         await env.ban_dong_hanh_db.prepare(
                             'INSERT INTO journal (user_id, content, mood, tags, created_at) VALUES (?, ?, ?, ?, ?)'
@@ -1376,3 +1376,137 @@ export async function getChatMetrics(request, env) {
     }
 }
 
+// =============================================================================
+// BOOKMARKS ENDPOINTS
+// =============================================================================
+
+/**
+ * GET /api/data/bookmarks - Lấy danh sách bookmarks
+ * Query params: ?type=story (optional filter)
+ */
+export async function getBookmarks(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ items: [] }); // Guest: return empty
+
+    const url = new URL(request.url);
+    const bookmarkType = url.searchParams.get('type');
+
+    try {
+        let query = 'SELECT id, bookmark_type, item_id, metadata, created_at FROM user_bookmarks WHERE user_id = ?';
+        const params = [userId];
+
+        if (bookmarkType) {
+            query += ' AND bookmark_type = ?';
+            params.push(bookmarkType);
+        }
+
+        query += ' ORDER BY created_at DESC';
+
+        const result = await env.ban_dong_hanh_db.prepare(query).bind(...params).all();
+        return json({ items: result.results || [], count: result.results?.length || 0 });
+    } catch (error) {
+        console.error('[Data] getBookmarks error:', error.message);
+        return json({ items: [], error: 'server_error' });
+    }
+}
+
+/**
+ * POST /api/data/bookmarks - Thêm bookmark
+ * Body: { bookmark_type: 'story'|'resource', item_id: string, metadata?: object }
+ */
+export async function addBookmark(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    try {
+        const { bookmark_type, item_id, metadata } = await request.json();
+
+        if (!bookmark_type || !item_id) {
+            return json({ error: 'bookmark_type và item_id bắt buộc' }, 400);
+        }
+
+        const validTypes = ['story', 'resource'];
+        if (!validTypes.includes(bookmark_type)) {
+            return json({ error: 'bookmark_type không hợp lệ' }, 400);
+        }
+
+        // Upsert - nếu đã tồn tại thì cập nhật metadata
+        const existing = await env.ban_dong_hanh_db.prepare(
+            'SELECT id FROM user_bookmarks WHERE user_id = ? AND bookmark_type = ? AND item_id = ?'
+        ).bind(userId, bookmark_type, item_id).first();
+
+        if (existing) {
+            // Update metadata nếu đã có
+            if (metadata) {
+                await env.ban_dong_hanh_db.prepare(
+                    'UPDATE user_bookmarks SET metadata = ? WHERE id = ?'
+                ).bind(JSON.stringify(metadata), existing.id).run();
+            }
+            return json({ success: true, alreadyExists: true, id: existing.id });
+        }
+
+        const result = await env.ban_dong_hanh_db.prepare(
+            'INSERT INTO user_bookmarks (user_id, bookmark_type, item_id, metadata) VALUES (?, ?, ?, ?) RETURNING id, bookmark_type, item_id, created_at'
+        ).bind(userId, bookmark_type, item_id, metadata ? JSON.stringify(metadata) : null).first();
+
+        return json({ success: true, item: result }, 201);
+    } catch (error) {
+        console.error('[Data] addBookmark error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+/**
+ * DELETE /api/data/bookmarks/:id - Xóa bookmark bằng ID
+ */
+export async function deleteBookmarkById(request, env, id) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    try {
+        const result = await env.ban_dong_hanh_db.prepare(
+            'DELETE FROM user_bookmarks WHERE id = ? AND user_id = ?'
+        ).bind(parseInt(id), userId).run();
+
+        if (result.changes === 0) {
+            return json({ error: 'not_found' }, 404);
+        }
+
+        return json({ success: true });
+    } catch (error) {
+        console.error('[Data] deleteBookmarkById error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+/**
+ * DELETE /api/data/bookmarks - Xóa bookmark theo type và item_id
+ * Query params: ?type=story&item_id=abc123
+ */
+export async function deleteBookmark(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    const url = new URL(request.url);
+    const bookmarkType = url.searchParams.get('type');
+    const itemId = url.searchParams.get('item_id');
+
+    if (!bookmarkType || !itemId) {
+        return json({ error: 'type và item_id bắt buộc' }, 400);
+    }
+
+    try {
+        const result = await env.ban_dong_hanh_db.prepare(
+            'DELETE FROM user_bookmarks WHERE user_id = ? AND bookmark_type = ? AND item_id = ?'
+        ).bind(userId, bookmarkType, itemId).run();
+
+        if (result.changes === 0) {
+            return json({ error: 'not_found' }, 404);
+        }
+
+        return json({ success: true });
+    } catch (error) {
+        console.error('[Data] deleteBookmark error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}

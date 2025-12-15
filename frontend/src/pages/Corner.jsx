@@ -11,11 +11,12 @@ import { Bell, Clock, Plus, X, CheckCircle2, Settings, Calendar, Heart, BookOpen
 const STORAGE_KEY = 'corner_activities_v1';
 const REMINDERS_KEY = 'corner_reminders_v1';
 
-// Các hoạt động mặc định
+// Các hoạt động mặc định - Theo yêu cầu KH
 const DEFAULT_ACTIVITIES = [
-  { id: 'gratitude', label: 'Viết Lọ Biết Ơn', icon: Heart, color: 'from-pink-400 to-rose-400', path: '/app/gratitude' },
-  { id: 'breathing', label: 'Bài tập thở', icon: Sparkles, color: 'from-blue-400 to-cyan-400', path: '/app/breathing' },
-  { id: 'journal', label: 'Ghi nhật ký cảm xúc', icon: BookOpen, color: 'from-purple-400 to-indigo-400', path: '/app/journal' },
+  { id: 'gratitude', label: 'Viết Lọ Biết Ơn', icon: Heart, color: 'from-pink-400 to-rose-400', path: '/gratitude' },
+  { id: 'breathing', label: 'Bài tập thở', icon: Sparkles, color: 'from-blue-400 to-cyan-400', path: '/breathing' },
+  { id: 'wellness', label: 'Liều thuốc tinh thần', icon: Heart, color: 'from-purple-400 to-indigo-400', path: '/wellness' },
+  { id: 'stories', label: 'Kể chuyện', icon: BookOpen, color: 'from-amber-400 to-orange-400', path: '/stories' },
 ];
 
 export default function Corner() {

@@ -7,6 +7,7 @@ import Button from '../ui/Button';
 import Badge from '../ui/Badge';
 import GlowOrbs from '../ui/GlowOrbs';
 import { Play, RotateCcw, Trophy, Gamepad2, Star, Info } from 'lucide-react';
+import { isLoggedIn, saveGameScore, rewardXP } from '../../utils/api';
 
 const WIDTH = 800;
 const HEIGHT = 500;
@@ -196,7 +197,8 @@ export default function BeeGame() {
     // Check collision
     if (checkCollision()) {
       // Save high score
-      if (scoreRef.current > highScore) {
+      const isNewRecord = scoreRef.current > highScore;
+      if (isNewRecord) {
         setHighScore(scoreRef.current);
         try {
           localStorage.setItem('bee_high_score', String(scoreRef.current));
@@ -204,6 +206,22 @@ export default function BeeGame() {
       }
       setGameOver(true);
       setRunning(false);
+
+      // Sync to server if logged in
+      if (isLoggedIn() && scoreRef.current > 0) {
+        (async () => {
+          try {
+            await saveGameScore('bee_game', scoreRef.current, 1);
+            await rewardXP('game_play');
+            if (isNewRecord) {
+              await rewardXP('game_new_record');
+            }
+            console.log('[BeeGame] Synced score to server:', scoreRef.current);
+          } catch (e) {
+            console.warn('[BeeGame] Sync failed:', e.message);
+          }
+        })();
+      }
       return;
     }
 
