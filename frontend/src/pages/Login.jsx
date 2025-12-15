@@ -94,35 +94,32 @@ export default function Login() {
                     transition={{ duration: 0.5 }}
                 >
                     {/* Logo và title */}
-                    <div className="text-center mb-8">
-                        <Link to="/" className="inline-block mb-4">
+                    <div className="text-center mb-10">
+                        <Link to="/" className="inline-block mb-6">
                             <img
                                 src="/logo.png"
                                 alt="Bạn Đồng Hành"
-                                className="w-16 h-16 rounded-2xl shadow-lg mx-auto"
+                                className="w-20 h-20 rounded-2xl shadow-lg mx-auto"
                             />
                         </Link>
-                        <h1 className="text-4xl md:text-5xl font-bold mb-3 leading-tight">
-                            <span className="gradient-text">Chào bạn!</span>
-                        </h1>
-                        <p className="text-base md:text-lg text-[--text] font-medium">
+                        <h1 className="text-3xl md:text-4xl font-bold mb-4 leading-tight text-[--text]">
                             Nhập tên của bạn để bắt đầu
-                        </p>
+                        </h1>
                     </div>
 
                     {/* Login/Register form */}
-                    <Card className="p-8">
+                    <Card className="p-8 md:p-10">
                         {/* Mode toggle */}
-                        <div className="flex gap-2 mb-6 p-1 bg-[--surface] rounded-xl">
+                        <div className="flex gap-3 mb-8 p-1.5 bg-[--surface] rounded-xl">
                             <button
                                 type="button"
                                 onClick={() => {
                                     setMode('login');
                                     setError('');
                                 }}
-                                className={`flex-1 py-3 px-4 rounded-lg text-base font-semibold transition-all ${
+                                className={`flex-1 py-3.5 px-5 rounded-lg text-lg font-bold transition-all ${
                                     mode === 'login'
-                                        ? 'bg-[--brand] text-white shadow-md'
+                                        ? 'bg-[--brand] text-white shadow-lg'
                                         : 'text-[--text] hover:text-[--brand] hover:bg-[--surface-border]'
                                 }`}
                             >
@@ -134,9 +131,9 @@ export default function Login() {
                                     setMode('register');
                                     setError('');
                                 }}
-                                className={`flex-1 py-3 px-4 rounded-lg text-base font-semibold transition-all ${
+                                className={`flex-1 py-3.5 px-5 rounded-lg text-lg font-bold transition-all ${
                                     mode === 'register'
-                                        ? 'bg-[--brand] text-white shadow-md'
+                                        ? 'bg-[--brand] text-white shadow-lg'
                                         : 'text-[--text] hover:text-[--brand] hover:bg-[--surface-border]'
                                 }`}
                             >
@@ -146,7 +143,7 @@ export default function Login() {
 
                         <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="space-y-6">
                             <div>
-                                <label htmlFor="username" className="block text-base font-semibold text-[--text] mb-3">
+                                <label htmlFor="username" className="block text-lg font-bold text-[--text] mb-4">
                                     Tên của bạn
                                 </label>
                                 <input
@@ -158,11 +155,11 @@ export default function Login() {
                                         setError('');
                                     }}
                                     placeholder="Ví dụ: Minh, Lan, Hùng..."
-                                    className="w-full px-4 py-3.5 text-base rounded-xl bg-[--surface] border-2 border-[--surface-border] text-[--text] placeholder-[--text-secondary]/60 focus:outline-none focus:ring-2 focus:ring-[--brand] focus:border-[--brand] transition-all"
+                                    className="w-full px-5 py-4 text-lg rounded-xl bg-[--surface] border-2 border-[--surface-border] text-[--text] placeholder-[--text-secondary]/60 focus:outline-none focus:ring-2 focus:ring-[--brand] focus:border-[--brand] transition-all"
                                     disabled={isLoading}
                                     autoFocus
                                 />
-                                <p className="mt-3 text-sm text-[--text-secondary] leading-relaxed">
+                                <p className="mt-4 text-base text-[--text-secondary] leading-relaxed font-medium">
                                     Chỉ cần tên, không cần mật khẩu. Dữ liệu của bạn được bảo mật.
                                 </p>
                             </div>
@@ -171,7 +168,7 @@ export default function Login() {
                                 <motion.div
                                     initial={{ opacity: 0, y: -10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="p-4 rounded-xl bg-red-500/10 border-2 border-red-500/30 text-red-600 text-base font-medium leading-relaxed"
+                                    className="p-5 rounded-xl bg-red-500/10 border-2 border-red-500/30 text-red-600 text-lg font-semibold leading-relaxed"
                                 >
                                     {error}
                                 </motion.div>
@@ -203,14 +200,14 @@ export default function Login() {
                             </div>
                         </form>
 
-                        <div className="mt-6 pt-6 border-t border-[--surface-border]">
-                            <p className="text-sm text-[--text-secondary] text-center leading-relaxed">
+                        <div className="mt-8 pt-6 border-t-2 border-[--surface-border]">
+                            <p className="text-base text-[--text-secondary] text-center leading-relaxed">
                                 Bằng cách tiếp tục, bạn đồng ý với{' '}
-                                <Link to="#" className="text-[--brand] font-semibold hover:underline">
+                                <Link to="#" className="text-[--brand] font-bold hover:underline">
                                     Điều khoản sử dụng
                                 </Link>{' '}
                                 và{' '}
-                                <Link to="#" className="text-[--brand] font-semibold hover:underline">
+                                <Link to="#" className="text-[--brand] font-bold hover:underline">
                                     Chính sách bảo mật
                                 </Link>
                             </p>
@@ -219,10 +216,10 @@ export default function Login() {
 
 
                     {/* Back to landing */}
-                    <div className="mt-6 text-center">
+                    <div className="mt-8 text-center">
                         <Link
                             to="/"
-                            className="text-base text-[--text-secondary] font-medium hover:text-[--brand] transition-colors"
+                            className="text-lg text-[--text-secondary] font-semibold hover:text-[--brand] transition-colors"
                         >
                             ← Quay lại trang chủ
                         </Link>

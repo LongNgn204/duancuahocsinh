@@ -92,29 +92,29 @@ async function apiRequest(endpoint, options = {}) {
     }
 
     try {
-        const response = await fetch(url, {
-            ...options,
-            headers: {
-                ...getHeaders(),
-                ...options.headers,
-            },
-        });
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            ...getHeaders(),
+            ...options.headers,
+        },
+    });
 
-        const data = await response.json();
+    const data = await response.json();
 
-        if (!response.ok) {
-            const error = new Error(data.message || data.error || 'Lỗi không xác định');
-            error.status = response.status;
-            error.data = data;
-            throw error;
-        }
+    if (!response.ok) {
+        const error = new Error(data.message || data.error || 'Lỗi không xác định');
+        error.status = response.status;
+        error.data = data;
+        throw error;
+    }
 
         // Cache successful GET responses
         if ((!options.method || options.method === 'GET') && !options.skipCache) {
             await setCache(cacheKey, data);
         }
 
-        return data;
+    return data;
     } catch (error) {
         // If offline and GET, try cache as fallback
         if (!navigator.onLine && (!options.method || options.method === 'GET')) {
