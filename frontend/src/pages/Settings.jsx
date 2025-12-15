@@ -73,6 +73,10 @@ export default function Settings() {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [highContrast, setHighContrast] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [systemSound, setSystemSound] = useState(true);
+  const [sleepReminder, setSleepReminder] = useState(true);
+  const [incognitoMode, setIncognitoMode] = useState(false);
+  const [syncEnabled, setSyncEnabled] = useState(isLoggedIn);
 
   const resetAll = () => {
     if (confirm('Bạn có chắc muốn khôi phục tất cả cài đặt về mặc định?')) {
@@ -311,8 +315,8 @@ export default function Settings() {
               description="Bật/tắt tất cả âm thanh trong ứng dụng"
             >
               <Toggle
-                checked={true}
-                onChange={() => {}}
+                checked={systemSound}
+                onChange={setSystemSound}
               />
             </SettingRow>
 
@@ -322,8 +326,8 @@ export default function Settings() {
               description="Nhắc bạn ghi lại giấc ngủ mỗi ngày"
             >
               <Toggle
-                checked={true}
-                onChange={() => {}}
+                checked={sleepReminder}
+                onChange={setSleepReminder}
               />
             </SettingRow>
           </Card.Content>
@@ -405,8 +409,8 @@ export default function Settings() {
               description="Không lưu lịch sử hoạt động"
             >
               <Toggle
-                checked={false}
-                onChange={() => {}}
+                checked={incognitoMode}
+                onChange={setIncognitoMode}
               />
             </SettingRow>
 
@@ -416,8 +420,8 @@ export default function Settings() {
               description="Tự động đồng bộ với máy chủ"
             >
               <Toggle
-                checked={isLoggedIn}
-                onChange={() => {}}
+                checked={syncEnabled && isLoggedIn}
+                onChange={setSyncEnabled}
                 disabled={!isLoggedIn}
               />
             </SettingRow>
