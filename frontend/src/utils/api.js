@@ -1,6 +1,8 @@
 // src/utils/api.js
 // Chú thích: API client cho giao tiếp với backend
-// Quản lý: auth state, request headers, error handling
+// Quản lý: auth state, request headers, error handling, offline support, caching
+
+import { getCache, setCache } from '../services/cache.js';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://ban-dong-hanh-worker.stu725114073.workers.dev';
 
@@ -67,29 +69,62 @@ function getHeaders() {
 }
 
 /**
- * Wrapper cho fetch với error handling
+ * Wrapper cho fetch với error handling, caching, và offline support
  */
 async function apiRequest(endpoint, options = {}) {
     const url = `${API_BASE}${endpoint}`;
+    const cacheKey = `${options.method || 'GET'}:${endpoint}`;
 
-    const response = await fetch(url, {
-        ...options,
-        headers: {
-            ...getHeaders(),
-            ...options.headers,
-        },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        const error = new Error(data.message || data.error || 'Lỗi không xác định');
-        error.status = response.status;
-        error.data = data;
-        throw error;
+    // GET requests: Check cache first
+    if ((!options.method || options.method === 'GET') && !options.skipCache) {
+        const cached = await getCache(cacheKey);
+        if (cached) {
+            return cached;
+        }
     }
 
-    return data;
+    // Check if offline
+    if (!navigator.onLine && options.method && options.method !== 'GET') {
+        // Queue for sync when online
+        // Note: Would need to import useOffline hook, but avoiding circular deps
+        console.warn('[API] Offline, request will be queued');
+        throw new Error('offline');
+    }
+
+    try {
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                ...getHeaders(),
+                ...options.headers,
+            },
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            const error = new Error(data.message || data.error || 'Lỗi không xác định');
+            error.status = response.status;
+            error.data = data;
+            throw error;
+        }
+
+        // Cache successful GET responses
+        if ((!options.method || options.method === 'GET') && !options.skipCache) {
+            await setCache(cacheKey, data);
+        }
+
+        return data;
+    } catch (error) {
+        // If offline and GET, try cache as fallback
+        if (!navigator.onLine && (!options.method || options.method === 'GET')) {
+            const cached = await getCache(cacheKey);
+            if (cached) {
+                return cached;
+            }
+        }
+        throw error;
+    }
 }
 
 // =============================================================================

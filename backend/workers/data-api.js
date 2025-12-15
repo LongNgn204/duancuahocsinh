@@ -1022,7 +1022,15 @@ export async function logSOSEvent(request, env) {
             metadata ? JSON.stringify(metadata) : null
         ).run();
 
-        console.log('[SOS] Event logged:', { event_type, risk_level, hashedUserId });
+        // Log với observability (structured logging)
+        // Note: Import observability nếu cần, nhưng tránh circular dependency
+        console.log(JSON.stringify({
+            type: 'sos_event',
+            event_type,
+            risk_level,
+            hashed_user_id: hashedUserId,
+            timestamp: new Date().toISOString(),
+        }));
 
         return json({ success: true });
     } catch (error) {

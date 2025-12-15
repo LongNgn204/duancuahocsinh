@@ -8,12 +8,27 @@ export default defineConfig({
     target: 'esnext',
     sourcemap: false,
     minify: 'esbuild',
+    // Code splitting optimization
     rollupOptions: {
+      output: {
+        // Manual chunks để tối ưu bundle size
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['framer-motion', 'lucide-react'],
+          'utils-vendor': ['zustand', 'react-markdown'],
+        },
+      },
       onwarn(warning, warn) {
         // Suppress circular dependency warnings
         if (warning.code === 'CIRCULAR_DEPENDENCY') return;
         warn(warning);
       },
     },
+    // Chunk size warnings
+    chunkSizeWarningLimit: 1000,
+  },
+  // Optimize dependencies
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', 'framer-motion'],
   },
 })

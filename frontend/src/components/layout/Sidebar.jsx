@@ -61,10 +61,10 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile Toggle Button */}
+      {/* Mobile Toggle Button - Đặt ngay dưới header để tránh bị logo đè */}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-xl bg-[--surface] border border-[--surface-border] shadow-lg hover:shadow-xl transition-all"
+        className="md:hidden fixed top-20 left-4 z-50 p-2.5 rounded-xl bg-[--surface] border border-[--surface-border] shadow-lg hover:shadow-xl transition-all"
         aria-label={mobileOpen ? 'Đóng sidebar' : 'Mở sidebar'}
       >
         {mobileOpen ? <X size={20} /> : <Menu size={20} />}

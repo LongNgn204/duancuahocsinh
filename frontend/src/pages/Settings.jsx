@@ -6,12 +6,12 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import { useSettings } from '../hooks/useSettings';
-import { useTheme } from '../hooks/useTheme';
+// import { useTheme } from '../hooks/useTheme'; // Đã ẩn dark mode
 import { useTourStatus } from '../components/tour/TourGuide';
 import { useAuth } from '../hooks/useAuth';
 import { exportAllData, importData, deleteAccount } from '../utils/api';
 import {
-  Settings as SettingsIcon, Type, Globe, Sun, Moon,
+  Settings as SettingsIcon, Type, Globe, Sun, Moon, // Moon/Sun giữ lại cho icon khác
   Bell, Shield, Info, Heart, Sparkles, RotateCcw,
   ChevronRight, ExternalLink, HelpCircle, Download, Upload,
   Trash2, Database, User, Eye, EyeOff, Volume2, VolumeX,
@@ -60,7 +60,7 @@ function Toggle({ checked, onChange }) {
 
 export default function Settings() {
   const { settings, setFontScale, setLang, setNotifications, setSoundEffects, resetSettings } = useSettings();
-  const { theme, toggle: toggleTheme } = useTheme();
+  // const { theme, toggle: toggleTheme } = useTheme(); // Đã ẩn dark mode
   const { resetTour } = useTourStatus();
   const { user, isLoggedIn } = useAuth();
   const [isExporting, setIsExporting] = useState(false);
@@ -190,13 +190,14 @@ export default function Settings() {
           </Card.Header>
 
           <Card.Content>
-            <SettingRow
+            {/* Dark mode toggle đã được ẩn - nhiều trang web vẫn bị lẫn lộn */}
+            {/* <SettingRow
               icon={theme === 'dark' ? Moon : Sun}
               title="Chế độ tối"
               description="Dễ nhìn hơn trong môi trường thiếu sáng"
             >
               <Toggle checked={theme === 'dark'} onChange={toggleTheme} />
-            </SettingRow>
+            </SettingRow> */}
 
             <SettingRow
               icon={Type}

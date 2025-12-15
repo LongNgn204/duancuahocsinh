@@ -85,6 +85,16 @@ CREATE TABLE IF NOT EXISTS token_usage (
   updated_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Bảng rate_limits: rate limiting cho API requests
+CREATE TABLE IF NOT EXISTS rate_limits (
+  key TEXT PRIMARY KEY, -- Format: 'user:123' hoặc 'ip:1.2.3.4'
+  count INTEGER DEFAULT 1,
+  reset_at INTEGER NOT NULL, -- Timestamp (milliseconds)
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_rate_limits_reset ON rate_limits(reset_at);
+
 -- Bảng settings: cài đặt user
 CREATE TABLE IF NOT EXISTS user_settings (
   user_id INTEGER PRIMARY KEY,

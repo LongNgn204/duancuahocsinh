@@ -7,6 +7,7 @@ import { classifyRiskRules, getRedTierResponse } from './risk.js';
 import { sanitizeInput } from './sanitize.js';
 import { formatMessagesForLLM, getRecentMessages, createMemorySummary } from './memory.js';
 import { checkTokenLimit, addTokenUsage, estimateTokens } from './token-tracker.js';
+import { createTraceContext, logModelCall } from './observability.js';
 
 // ============================================================================
 // SYSTEM INSTRUCTIONS - Mentor tâm lý học đường v2.0 (Phase 4 Enhanced)
@@ -147,7 +148,7 @@ function sseHeaders(origin = '*', traceId) {
     ...corsHeaders(origin),
     'Content-Type': 'text/event-stream; charset=utf-8',
     'Cache-Control': 'no-cache',
-    'X-Trace-Id': traceId
+    'X-Trace-Id': traceId || ''
   };
 }
 
@@ -300,8 +301,9 @@ Nếu cần sửa, trả về JSON hoàn chỉnh. Nếu không cần sửa, tr�
 // ============================================================================
 export default {
   async fetch(request, env) {
+    // Tạo trace context cho observability
+    const trace = createTraceContext(request, env);
     const startTime = Date.now();
-    const traceId = (crypto && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).slice(2);
     const origin = getAllowedOrigin(request, env);
 
     // CORS preflight
@@ -309,7 +311,8 @@ export default {
 
     // Only POST allowed
     if (request.method !== 'POST') {
-      return json({ error: 'method_not_allowed' }, 405, origin, traceId);
+      trace.logResponse(405);
+      return addTraceHeader(json({ error: 'method_not_allowed' }, 405, origin), trace.traceId);
     }
 
     // Parse body
@@ -317,14 +320,16 @@ export default {
     try {
       body = await request.json();
     } catch (_) {
-      return json({ error: 'invalid_json' }, 400, origin, traceId);
+      trace.logResponse(400);
+      return addTraceHeader(json({ error: 'invalid_json' }, 400, origin), trace.traceId);
     }
 
     const { message, history = [], memorySummary = '' } = body || {};
 
     // Validate message
     if (!message || typeof message !== 'string') {
-      return json({ error: 'missing_message' }, 400, origin, traceId);
+      trace.logResponse(400);
+      return addTraceHeader(json({ error: 'missing_message' }, 400, origin), trace.traceId);
     }
 
     // Sanitize input
@@ -332,34 +337,41 @@ export default {
     try {
       sanitizedMessage = sanitizeInput(message);
     } catch (e) {
-      console.log(`[Sanitize] Blocked: ${e.message}`, { traceId });
-      return json({ error: 'invalid_input', reason: e.message }, 400, origin, traceId);
+      trace.log('warn', 'input_sanitized', { reason: e.message });
+      trace.logResponse(400);
+      return addTraceHeader(json({ error: 'invalid_input', reason: e.message }, 400, origin), trace.traceId);
     }
 
     // ========================================================================
-    // SOS CLASSIFICATION (RULES-FIRST)
+    // SOS CLASSIFICATION (RULES-FIRST) - Enhanced với context-aware
     // ========================================================================
     const riskLevel = classifyRiskRules(sanitizedMessage, history);
 
-    // Log observability (không log raw message)
-    console.log(JSON.stringify({
-      type: 'request',
-      traceId,
-      riskLevel,
+    // Log request với observability
+    trace.log('info', 'chat_request', {
+      risk_level: riskLevel,
       model: env.MODEL || '@cf/meta/llama-3.1-8b-instruct',
-      historyCount: history.length,
-    }));
+      history_count: history.length,
+      has_memory_summary: !!memorySummary,
+    });
+
+    // Real-time monitoring: Log SOS events với structured logging
+    if (riskLevel === 'red' || riskLevel === 'yellow') {
+      trace.log('warn', 'sos_detected', {
+        risk_level: riskLevel,
+        message_length: sanitizedMessage.length,
+        history_count: history.length,
+        // Không log raw message để bảo vệ privacy
+      });
+      
+      // Có thể gửi alert đến admin nếu cần (future enhancement)
+      // await sendAdminAlert(env, { riskLevel, traceId: trace.traceId });
+    }
 
     // RED tier: trả response chuẩn, không gọi LLM
     if (riskLevel === 'red') {
       const redResponse = getRedTierResponse();
-      console.log(JSON.stringify({
-        type: 'response',
-        traceId,
-        riskLevel: 'red',
-        latencyMs: Date.now() - startTime,
-        status: 200,
-      }));
+      trace.logResponse(200, { risk_level: 'red', sos: true });
 
       // Check if streaming requested - emit SSE format
       const url = new URL(request.url);
@@ -375,7 +387,7 @@ export default {
 
             // Meta event
             send(`event: meta\n`);
-            send(`data: ${JSON.stringify({ trace_id: traceId, riskLevel: 'red', sos: true })}\n\n`);
+            send(`data: ${JSON.stringify({ trace_id: trace.traceId, riskLevel: 'red', sos: true })}\n\n`);
 
             // Send the reply text
             const replyText = redResponse.reply + '\n\n📞 ' + redResponse.actions.join('\n📞 ');
@@ -387,10 +399,10 @@ export default {
             controller.close();
           },
         });
-        return new Response(stream, { status: 200, headers: sseHeaders(origin, traceId) });
+        return new Response(stream, { status: 200, headers: sseHeaders(origin, trace.traceId) });
       }
 
-      return json(redResponse, 200, origin, traceId);
+      return addTraceHeader(json(redResponse, 200, origin), trace.traceId);
     }
 
 
@@ -399,28 +411,61 @@ export default {
     // ========================================================================
     const tokenCheck = await checkTokenLimit(env);
     if (!tokenCheck.allowed) {
-      console.warn(`[AI-Proxy] Token limit exceeded: ${tokenCheck.tokens}/${tokenCheck.limit}`);
-      return json({
+      trace.log('warn', 'token_limit_exceeded', {
+        tokens: tokenCheck.tokens,
+        limit: tokenCheck.limit,
+      });
+      trace.logResponse(429);
+      return addTraceHeader(json({
         error: 'token_limit_exceeded',
         message: 'Đã đạt giới hạn sử dụng tháng này. Vui lòng thử lại vào tháng sau.',
         tokens: tokenCheck.tokens,
         limit: tokenCheck.limit,
-      }, 429, origin, traceId);
+      }, 429, origin), trace.traceId);
     }
 
     // ========================================================================
-    // PREPARE MESSAGES FOR LLM
+    // RAG: Retrieve relevant context (nếu có knowledge base)
     // ========================================================================
+    let ragContext = '';
+    try {
+      // TODO: Lấy documents từ knowledge base (có thể từ D1 hoặc vector DB)
+      // Hiện tại: placeholder cho RAG integration
+      const knowledgeBase = []; // Sẽ được populate từ DB/vector store
+      
+      if (knowledgeBase.length > 0) {
+        const retrievedDocs = await hybridSearch(
+          sanitizedMessage,
+          knowledgeBase,
+          env,
+          { topK: 3, bm25Weight: 0.6, denseWeight: 0.4 }
+        );
+        ragContext = formatRAGContext(retrievedDocs);
+      }
+    } catch (error) {
+      // RAG là optional, không block nếu lỗi
+      trace.log('warn', 'rag_retrieval_failed', { error: error.message });
+    }
+
+    // ========================================================================
+    // PREPARE MESSAGES FOR LLM (với RAG context)
+    // ========================================================================
+    // Thêm RAG context vào system prompt nếu có
+    const systemPromptWithRAG = ragContext 
+      ? SYSTEM_INSTRUCTIONS + ragContext
+      : SYSTEM_INSTRUCTIONS;
+    
     const messages = formatMessagesForLLM(
-      SYSTEM_INSTRUCTIONS,
+      systemPromptWithRAG,
       getRecentMessages(history, 8),
       sanitizedMessage,
       memorySummary
     );
 
-    // Estimate tokens for this request
-    const estimatedTokens = estimateTokens(
-      JSON.stringify(messages) + sanitizedMessage
+    // Estimate tokens for this request (cải thiện accuracy)
+    const estimatedTokens = countTokensAccurate(
+      JSON.stringify(messages) + sanitizedMessage,
+      env.MODEL || '@cf/meta/llama-3.1-8b-instruct'
     );
 
     // ========================================================================
@@ -444,7 +489,7 @@ export default {
 
             // Send meta event
             send(`event: meta\n`);
-            send(`data: ${JSON.stringify({ trace_id: traceId, riskLevel })}\n\n`);
+            send(`data: ${JSON.stringify({ trace_id: trace.traceId, riskLevel })}\n\n`);
 
             try {
               let fullText = '';
@@ -491,21 +536,30 @@ export default {
               // Update token usage (estimate từ full text)
               const responseTokens = estimateTokens(fullText);
               const totalTokens = estimatedTokens + responseTokens;
-              await addTokenUsage(env, totalTokens);
-
+              const tokenUsageResult = await addTokenUsage(env, totalTokens);
+              
+              // Tính cost (ước tính: $0.0005 per 1k tokens cho llama-3.1-8b)
+              const costUsd = (totalTokens / 1000) * 0.0005;
+              const model = env.MODEL || '@cf/meta/llama-3.1-8b-instruct';
+              const modelVersion = model.split('@cf/')[1] || 'llama-3.1-8b-instruct';
+              
+              // Log model call với tokens và cost
+              trace.logModelCall(model, modelVersion, estimatedTokens, responseTokens, costUsd, Date.now() - startTime);
+              
               // Log completion
-              console.log(JSON.stringify({
-                type: 'response',
-                traceId,
-                riskLevel,
-                latencyMs: Date.now() - startTime,
-                tokens: totalTokens,
-                tokenUsage: tokenCheck.tokens + totalTokens,
-                status: 200,
+              trace.logResponse(200, {
+                risk_level: riskLevel,
+                tokens_in: estimatedTokens,
+                tokens_out: responseTokens,
+                tokens_total: totalTokens,
+                cost_usd: costUsd,
                 stream: true,
-              }));
+                token_usage: tokenUsageResult.tokens,
+                token_warning: tokenUsageResult.warning,
+              });
 
             } catch (err) {
+              trace.logError(err, { stream: true });
               const errPayload = { type: 'error', error: 'model_error', note: String(err?.message || err) };
               send(`data: ${JSON.stringify(errPayload)}\n\n`);
             } finally {
@@ -514,7 +568,7 @@ export default {
           },
         });
 
-        return new Response(stream, { status: 200, headers: sseHeaders(origin, traceId) });
+        return new Response(stream, { status: 200, headers: sseHeaders(origin, trace.traceId) });
 
       } else {
         // ====================================================================
@@ -537,32 +591,36 @@ export default {
         // Update token usage (estimate từ response)
         const responseTokens = estimateTokens(parsed.reply || '');
         const totalTokens = estimatedTokens + responseTokens;
-        await addTokenUsage(env, totalTokens);
-
+        const tokenUsageResult = await addTokenUsage(env, totalTokens);
+        
+        // Tính cost (ước tính: $0.0005 per 1k tokens cho llama-3.1-8b)
+        const costUsd = (totalTokens / 1000) * 0.0005;
+        const model = env.MODEL || '@cf/meta/llama-3.1-8b-instruct';
+        const modelVersion = model.split('@cf/')[1] || 'llama-3.1-8b-instruct';
+        
+        // Log model call với tokens và cost
+        trace.logModelCall(model, modelVersion, estimatedTokens, responseTokens, costUsd, Date.now() - startTime);
+        
         // Log completion
-        console.log(JSON.stringify({
-          type: 'response',
-          traceId,
-          riskLevel: parsed.riskLevel,
+        trace.logResponse(200, {
+          risk_level: parsed.riskLevel,
           confidence: parsed.confidence,
-          latencyMs: Date.now() - startTime,
-          tokens: totalTokens,
-          tokenUsage: tokenCheck.tokens + totalTokens,
-          status: 200,
+          tokens_in: estimatedTokens,
+          tokens_out: responseTokens,
+          tokens_total: totalTokens,
+          cost_usd: costUsd,
           stream: false,
-        }));
+          token_usage: tokenUsageResult.tokens,
+          token_warning: tokenUsageResult.warning,
+        });
 
-        return json(parsed, 200, origin, traceId);
+        return addTraceHeader(json(parsed, 200, origin), trace.traceId);
       }
 
     } catch (e) {
-      console.error(JSON.stringify({
-        type: 'error',
-        traceId,
-        error: e.message,
-        latencyMs: Date.now() - startTime,
-      }));
-      return json({ error: 'model_error', note: String(e?.message || e) }, 502, origin, traceId);
+      trace.logError(e, { route: 'ai:chat' });
+      trace.logResponse(502);
+      return addTraceHeader(json({ error: 'model_error', note: String(e?.message || e) }, 502, origin), trace.traceId);
     }
   },
 };

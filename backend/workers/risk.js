@@ -41,6 +41,21 @@ const RED_PATTERNS = [
     'có dao', 'có thuốc', 'có dây',
     'lần cuối', 'lời cuối', 'tạm biệt',
     'không còn cách nào', 'hết cách',
+    // Patterns mới - Phase 5 nâng cấp
+    'muốn ngủ không dậy', 'ngủ mãi mãi',
+    'không muốn tồn tại', 'tồn tại làm gì',
+    'sống vô nghĩa', 'cuộc sống vô nghĩa',
+    'muốn biến mất hoàn toàn', 'biến mất mãi mãi',
+    'không còn lý do', 'hết lý do',
+    'tốt nhất là chết', 'chết là giải pháp duy nhất',
+    'sẽ không còn ở đây', 'sẽ rời đi',
+    'có kế hoạch cụ thể', 'đã chuẩn bị xong',
+    // Emoji patterns (Gen-Z)
+    '💀💀💀', '😵💀', '💀🔚',
+    // English patterns
+    'want to die', 'wanna die', 'wish i was dead',
+    'kill myself', 'end my life', 'suicide',
+    'no point living', 'life is pointless',
 ];
 
 // Từ khóa YELLOW - cần theo dõi
@@ -81,6 +96,23 @@ const YELLOW_PATTERNS = [
     'cảm thấy vô dụng', 'mình vô dụng',
     'không ai cần mình', 'thừa thãi',
     'muốn biến mất', 'muốn tan biến',
+    // Patterns mới - Phase 5 nâng cấp
+    'mất hết ý nghĩa', 'cuộc sống vô nghĩa',
+    'không còn mục đích', 'hết mục đích sống',
+    'cảm thấy bị bỏ rơi', 'bị bỏ rơi hoàn toàn',
+    'không ai thấu hiểu', 'không ai hiểu mình',
+    'cô đơn tuyệt đối', 'cô đơn hoàn toàn',
+    'stress quá mức', 'stress không chịu nổi',
+    'áp lực quá lớn', 'áp lực không thể chịu',
+    'mất kiểm soát', 'không kiểm soát được',
+    'cảm thấy bế tắc', 'bế tắc hoàn toàn',
+    'không có lối thoát', 'hết lối thoát',
+    // English patterns
+    'hopeless', 'no hope', 'give up',
+    'lonely', 'isolated', 'abandoned',
+    'worthless', 'useless', 'pointless',
+    'depressed', 'sad all the time',
+    'no one cares', 'nobody understands',
 ];
 
 /**

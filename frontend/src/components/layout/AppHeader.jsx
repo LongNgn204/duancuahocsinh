@@ -11,8 +11,8 @@ export default function AppHeader() {
     <header className="sticky top-0 z-50 glass-strong">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="h-16 flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/app" className="flex items-center gap-3 group">
+          {/* Logo - Thêm padding-left trên mobile để tránh đè vào nút sidebar (nút ở top-20) */}
+          <Link to="/app" className="flex items-center gap-3 group pl-14 md:pl-0">
             <div className="relative">
               <img
                 src="/logo.png"

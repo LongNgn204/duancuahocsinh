@@ -58,9 +58,21 @@ export async function addTokenUsage(env, tokensToAdd = 0) {
         const exceeded = newTotal >= MONTHLY_TOKEN_LIMIT;
 
         if (exceeded) {
-            console.warn(`[TokenTracker] Monthly limit exceeded: ${newTotal}/${MONTHLY_TOKEN_LIMIT}`);
+            console.warn(JSON.stringify({
+                type: 'token_limit_exceeded',
+                tokens: newTotal,
+                limit: MONTHLY_TOKEN_LIMIT,
+                percentage: Math.round((newTotal / MONTHLY_TOKEN_LIMIT) * 100),
+                month,
+            }));
         } else if (warning) {
-            console.warn(`[TokenTracker] Approaching limit: ${newTotal}/${MONTHLY_TOKEN_LIMIT} (${Math.round((newTotal / MONTHLY_TOKEN_LIMIT) * 100)}%)`);
+            console.warn(JSON.stringify({
+                type: 'token_limit_warning',
+                tokens: newTotal,
+                limit: MONTHLY_TOKEN_LIMIT,
+                percentage: Math.round((newTotal / MONTHLY_TOKEN_LIMIT) * 100),
+                month,
+            }));
         }
 
         return {
@@ -99,11 +111,29 @@ export async function checkTokenLimit(env) {
 
 /**
  * Estimate tokens từ text (rough estimate: ~4 chars = 1 token)
+ * Có thể cải thiện với tiktoken nếu cần chính xác hơn
  * @param {string} text 
  * @returns {number}
  */
 export function estimateTokens(text) {
     if (!text) return 0;
-    return Math.ceil(text.length / 4);
+    // Improved estimate: tiếng Việt có thể ~3 chars = 1 token
+    // Tiếng Anh ~4 chars = 1 token
+    // Mixed: dùng 3.5 làm trung bình
+    return Math.ceil(text.length / 3.5);
+}
+
+/**
+ * Accurate token counting (nếu có tiktoken library)
+ * Fallback về estimateTokens nếu không có
+ * @param {string} text 
+ * @param {string} model - Model name để chọn tokenizer
+ * @returns {number}
+ */
+export function countTokensAccurate(text, model = 'llama-3.1-8b') {
+    // Note: Cloudflare Workers không hỗ trợ tiktoken trực tiếp
+    // Có thể implement với WebAssembly hoặc dùng estimate
+    // Hiện tại dùng estimateTokens
+    return estimateTokens(text);
 }
 

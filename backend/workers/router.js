@@ -37,6 +37,8 @@ import {
 import { classifyRiskRules, getRedTierResponse } from './risk.js';
 import { sanitizeInput } from './sanitize.js';
 import { formatMessagesForLLM, getRecentMessages } from './memory.js';
+import { createTraceContext, addTraceHeader } from './observability.js';
+import { rateLimitMiddleware } from './rate-limiter.js';
 
 // =============================================================================
 // CORS HELPERS
@@ -190,20 +192,38 @@ function extractId(pathname) {
 // =============================================================================
 export default {
     async fetch(request, env, ctx) {
+        // Tạo trace context cho observability
+        const trace = createTraceContext(request, env);
+        
         const origin = getAllowedOrigin(request, env);
 
         // CORS preflight
         if (request.method === 'OPTIONS') {
-            return handleOptions(request, env);
+            const response = handleOptions(request, env);
+            trace.logResponse(204);
+            return addTraceHeader(response, trace.traceId);
         }
 
         const url = new URL(request.url);
         const route = matchRoute(url.pathname, request.method);
 
-        // Wrap response with CORS headers
+        // Rate limiting (skip cho OPTIONS)
+        if (request.method !== 'OPTIONS') {
+            const rateLimitResponse = await rateLimitMiddleware(request, env, url.pathname);
+            if (rateLimitResponse) {
+                trace.log('warn', 'rate_limit_exceeded', { path: url.pathname });
+                trace.logResponse(429);
+                const wrapped = wrapResponse(rateLimitResponse);
+                return wrapped;
+            }
+        }
+
+        // Wrap response with CORS headers và trace ID
         const wrapResponse = (response) => {
             const newHeaders = new Headers(response.headers);
             Object.entries(corsHeaders(origin)).forEach(([k, v]) => newHeaders.set(k, v));
+            newHeaders.set('X-Trace-Id', trace.traceId);
+            
             return new Response(response.body, {
                 status: response.status,
                 headers: newHeaders
@@ -632,11 +652,16 @@ export default {
                     response = json({ error: 'not_found', path: url.pathname }, 404);
             }
 
+            // Log response với metrics
+            trace.logResponse(response.status);
             return wrapResponse(response);
 
         } catch (error) {
-            console.error('[Router] Error:', error.message);
-            return json({ error: 'server_error', message: error.message }, 500, origin);
+            // Log error với trace context
+            trace.logError(error, { route: route || 'unknown' });
+            const errorResponse = json({ error: 'server_error', message: error.message }, 500, origin);
+            trace.logResponse(500);
+            return wrapResponse(errorResponse);
         }
     }
 };

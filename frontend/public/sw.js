@@ -1,170 +1,126 @@
-// Service Worker cho Push Notifications
-// Chú thích: Xử lý push notifications và background sync
+// frontend/public/sw.js
+// Service Worker cho offline support và caching
+// Chú thích: Lightweight service worker cho PWA features
 
 const CACHE_NAME = 'ban-dong-hanh-v1';
-const API_BASE = 'https://ban-dong-hanh-worker.stu725114073.workers.dev';
+const STATIC_CACHE = 'static-v1';
+const API_CACHE = 'api-v1';
 
-// Install event - Cache static assets
+// Assets to cache on install
+const STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/logo.png',
+];
+
+// Install event - cache static assets
 self.addEventListener('install', (event) => {
-    console.log('[SW] Installing...');
-    self.skipWaiting();
+  event.waitUntil(
+    caches.open(STATIC_CACHE).then((cache) => {
+      return cache.addAll(STATIC_ASSETS).catch((err) => {
+        console.warn('[SW] Cache install failed:', err);
+      });
+    })
+  );
+  self.skipWaiting();
 });
 
-// Activate event - Clean old caches
+// Activate event - clean old caches
 self.addEventListener('activate', (event) => {
-    console.log('[SW] Activating...');
-    event.waitUntil(
-        caches.keys().then((cacheNames) => {
-            return Promise.all(
-                cacheNames.map((cacheName) => {
-                    if (cacheName !== CACHE_NAME) {
-                        console.log('[SW] Deleting old cache:', cacheName);
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        })
-    );
-    return self.clients.claim();
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames
+          .filter((name) => name !== STATIC_CACHE && name !== API_CACHE)
+          .map((name) => caches.delete(name))
+      );
+    })
+  );
+  self.clients.claim();
 });
 
-// Push event - Xử lý push notifications từ server
-self.addEventListener('push', (event) => {
-    console.log('[SW] Push received:', event);
+// Fetch event - cache strategy
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
 
-    let notificationData = {
-        title: 'Bạn Đồng Hành',
-        body: 'Bạn có thông báo mới',
-        icon: '/logo.png',
-        badge: '/logo.png',
-        tag: 'default',
-        requireInteraction: false,
-        data: {}
-    };
+  // Skip non-GET requests
+  if (request.method !== 'GET') {
+    return;
+  }
 
-    // Parse push data nếu có
-    if (event.data) {
-        try {
-            const data = event.data.json();
-            notificationData = {
-                ...notificationData,
-                ...data,
-                data: data.data || {}
-            };
-        } catch (e) {
-            // Nếu không phải JSON, dùng text
-            notificationData.body = event.data.text();
-        }
-    }
-
-    event.waitUntil(
-        self.registration.showNotification(notificationData.title, {
-            body: notificationData.body,
-            icon: notificationData.icon,
-            badge: notificationData.badge,
-            tag: notificationData.tag,
-            requireInteraction: notificationData.requireInteraction,
-            data: notificationData.data,
-            actions: notificationData.actions || [],
-            vibrate: [200, 100, 200],
-            timestamp: Date.now()
-        })
-    );
-});
-
-// Notification click event - Xử lý khi user click vào notification
-self.addEventListener('notificationclick', (event) => {
-    console.log('[SW] Notification clicked:', event);
-
-    event.notification.close();
-
-    const data = event.notification.data || {};
-    const action = event.action || 'default';
-
-    // Xử lý các action khác nhau
-    if (action === 'open') {
-        // Mở app
-        event.waitUntil(
-            clients.openWindow(data.url || '/')
-        );
-    } else if (action === 'breathing') {
-        // Mở trang thở
-        event.waitUntil(
-            clients.openWindow('/breathing')
-        );
-    } else if (action === 'gratitude') {
-        // Mở lọ biết ơn
-        event.waitUntil(
-            clients.openWindow('/gratitude')
-        );
-    } else {
-        // Default: mở app
-        event.waitUntil(
-            clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-                // Nếu đã có window mở, focus vào đó
-                for (const client of clientList) {
-                    if (client.url.includes(self.location.origin) && 'focus' in client) {
-                        return client.focus();
-                    }
-                }
-                // Nếu chưa có, mở window mới
-                if (clients.openWindow) {
-                    return clients.openWindow(data.url || '/');
-                }
-            })
-        );
-    }
-});
-
-// Background sync - Đồng bộ dữ liệu khi online
-self.addEventListener('sync', (event) => {
-    console.log('[SW] Background sync:', event.tag);
-
-    if (event.tag === 'sync-data') {
-        event.waitUntil(
-            syncLocalData()
-        );
-    }
-});
-
-// Helper: Sync local data to server
-async function syncLocalData() {
-    try {
-        // Lấy user từ IndexedDB hoặc cache
-        const cache = await caches.open(CACHE_NAME);
-        const response = await cache.match('/user');
-        
-        if (!response) return;
-
-        const user = await response.json();
-        if (!user || !user.id) return;
-
-        // Gọi API sync (giả sử có endpoint này)
-        const syncResponse = await fetch(`${API_BASE}/api/data/sync`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-User-Id': String(user.id)
-            },
-            body: JSON.stringify({
-                // Data to sync
-            })
+  // Static assets: Cache First
+  if (url.pathname.startsWith('/assets/') || url.pathname.endsWith('.png') || url.pathname.endsWith('.jpg')) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        return cached || fetch(request).then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(STATIC_CACHE).then((cache) => {
+              cache.put(request, clone);
+            });
+          }
+          return response;
         });
+      })
+    );
+    return;
+  }
 
-        if (syncResponse.ok) {
-            console.log('[SW] Sync successful');
-        }
-    } catch (error) {
-        console.error('[SW] Sync error:', error);
-    }
-}
+  // API requests: Network First với fallback
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Cache successful GET requests
+          if (response.ok && request.method === 'GET') {
+            const clone = response.clone();
+            caches.open(API_CACHE).then((cache) => {
+              cache.put(request, clone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // Fallback to cache if network fails
+          return caches.match(request).then((cached) => {
+            if (cached) {
+              return cached;
+            }
+            // Return offline response
+            return new Response(
+              JSON.stringify({ error: 'offline', message: 'Không có kết nối mạng' }),
+              {
+                status: 503,
+                headers: { 'Content-Type': 'application/json' },
+              }
+            );
+          });
+        })
+    );
+    return;
+  }
 
-// Message event - Xử lý messages từ main thread
-self.addEventListener('message', (event) => {
-    console.log('[SW] Message received:', event.data);
+  // HTML pages: Network First
+  if (request.headers.get('accept')?.includes('text/html')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(STATIC_CACHE).then((cache) => {
+              cache.put(request, clone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          return caches.match('/index.html') || new Response('Offline', { status: 503 });
+        })
+    );
+    return;
+  }
 
-    if (event.data && event.data.type === 'SKIP_WAITING') {
-        self.skipWaiting();
-    }
+  // Default: Network only
+  event.respondWith(fetch(request));
 });
-
