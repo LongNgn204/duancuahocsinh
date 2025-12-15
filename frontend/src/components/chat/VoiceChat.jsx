@@ -1,14 +1,16 @@
 // src/components/chat/VoiceChat.jsx
 // Chú thích: VoiceChat v3.0 - Sử dụng Web Speech API (browser-native)
 // STT: SpeechRecognition (vi-VN)
-// TTS: SpeechSynthesis (vi-VN) với Play/Stop
+// TTS: SpeechSynthesis (vi-VN) với Play/Stop - KHÔNG ĐỌC EMOJI
 // LLM: Workers AI qua backend SSE streaming
-import { useState, useEffect, useRef } from 'react';
+// SOS: Phát hiện từ khóa tiêu cực và hiện cảnh báo khẩn cấp
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVoiceAgentCF } from '../../hooks/useVoiceAgentCF';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
+import SOSOverlay from '../sos/SOSOverlay';
 import {
     Mic, MicOff, Volume2, VolumeX,
     MessageCircle, AlertCircle, Sparkles, Send, X,
@@ -76,6 +78,19 @@ function AudioBars({ isActive, audioLevel = 0 }) {
 }
 
 export default function VoiceChat() {
+    // ==========================================================
+    // SOS STATE - Quan trọng: Phát hiện và hiện cảnh báo khẩn cấp
+    // ==========================================================
+    const [showSOS, setShowSOS] = useState(false);
+    const [sosLevel, setSosLevel] = useState(null);
+
+    // Callback khi phát hiện SOS từ voice input
+    const handleSOS = useCallback((level, message) => {
+        console.log('[VoiceChat] SOS DETECTED:', level);
+        setSosLevel(level);
+        setShowSOS(true);
+    }, []);
+
     const {
         status,           // 'idle' | 'listening' | 'thinking' | 'speaking'
         transcript,
@@ -87,7 +102,9 @@ export default function VoiceChat() {
         stopSpeaking,
         stop,
         speak,
-    } = useVoiceAgentCF();
+        sosDetected,
+        clearSOS,
+    } = useVoiceAgentCF({ onSOS: handleSOS });
 
     const [textInput, setTextInput] = useState('');
     const [showTextInput, setShowTextInput] = useState(false);
@@ -97,6 +114,14 @@ export default function VoiceChat() {
     const audioContextRef = useRef(null);
     const analyserRef = useRef(null);
     const animationFrameRef = useRef(null);
+
+    // Tự động hiện SOS overlay khi hook phát hiện
+    useEffect(() => {
+        if (sosDetected && sosDetected.level) {
+            setSosLevel(sosDetected.level);
+            setShowSOS(true);
+        }
+    }, [sosDetected]);
 
     // Sync response to displayed response
     useEffect(() => {
@@ -113,14 +138,14 @@ export default function VoiceChat() {
                     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     const analyser = audioContext.createAnalyser();
                     const microphone = audioContext.createMediaStreamSource(stream);
-                    
+
                     analyser.fftSize = 256;
                     analyser.smoothingTimeConstant = 0.8;
                     microphone.connect(analyser);
-                    
+
                     audioContextRef.current = audioContext;
                     analyserRef.current = analyser;
-                    
+
                     // Update audio level
                     const dataArray = new Uint8Array(analyser.frequencyBinCount);
                     const updateLevel = () => {
@@ -136,7 +161,7 @@ export default function VoiceChat() {
                     console.warn('[VoiceChat] Audio visualization setup failed:', err);
                 }
             };
-            
+
             setupAudioVisualization();
         } else {
             // Cleanup
@@ -145,19 +170,19 @@ export default function VoiceChat() {
                 animationFrameRef.current = null;
             }
             if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-                audioContextRef.current.close().catch(() => {});
+                audioContextRef.current.close().catch(() => { });
             }
             audioContextRef.current = null;
             setAudioLevel(0);
         }
-        
+
         return () => {
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
                 animationFrameRef.current = null;
             }
             if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-                audioContextRef.current.close().catch(() => {});
+                audioContextRef.current.close().catch(() => { });
             }
             audioContextRef.current = null;
         };
@@ -215,6 +240,20 @@ export default function VoiceChat() {
 
     return (
         <div className="min-h-[60vh] flex flex-col">
+            {/* =========================================================== */}
+            {/* SOS OVERLAY - Hiển thị khi phát hiện từ khóa tiêu cực */}
+            {/* =========================================================== */}
+            <SOSOverlay
+                isOpen={showSOS}
+                onClose={() => {
+                    setShowSOS(false);
+                    setSosLevel(null);
+                    clearSOS();
+                }}
+                riskLevel={sosLevel || 'high'}
+                triggerText={transcript}
+            />
+
             {/* Warning nếu browser không hỗ trợ */}
             {!isSupported && (
                 <motion.div
@@ -515,7 +554,7 @@ export default function VoiceChat() {
                 <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-[--brand]/5 to-[--secondary]/5 border border-[--brand]/10">
                     <Heart className="w-5 h-5 text-[--brand] shrink-0" />
                     <p className="text-sm text-[--text-secondary]">
-                        <span className="font-medium text-[--text]">Mẹo:</span> Nói tự nhiên như đang tâm sự với bạn bè. 
+                        <span className="font-medium text-[--text]">Mẹo:</span> Nói tự nhiên như đang tâm sự với bạn bè.
                         Trên mobile, bạn có thể giữ nút để nói, thả ra để gửi. AI sẽ lắng nghe và đáp lại.
                     </p>
                 </div>

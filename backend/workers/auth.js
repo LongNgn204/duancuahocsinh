@@ -1,6 +1,63 @@
 // backend/workers/auth.js
-// Chú thích: Simple username-based authentication cho học sinh
-// Không cần password - chỉ username để dễ sử dụng
+// Chú thích: Authentication với username + password
+// Password được hash với SHA-256 + salt
+
+/**
+ * Hash password với SHA-256 (Cloudflare Workers compatible)
+ * @param {string} password - Raw password
+ * @param {string} salt - Salt (optional, sẽ generate nếu không có)
+ * @returns {Promise<{hash: string, salt: string}>}
+ */
+async function hashPassword(password, salt = null) {
+    // Generate salt nếu không có
+    if (!salt) {
+        const array = new Uint8Array(16);
+        crypto.getRandomValues(array);
+        salt = Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // Hash password với salt
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password + salt);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    return { hash, salt };
+}
+
+/**
+ * Verify password
+ * @param {string} password - Raw password từ user
+ * @param {string} storedHash - Hash đã lưu
+ * @param {string} salt - Salt đã lưu
+ * @returns {Promise<boolean>}
+ */
+async function verifyPassword(password, storedHash, salt) {
+    const { hash } = await hashPassword(password, salt);
+    return hash === storedHash;
+}
+
+/**
+ * Validate password
+ * @param {string} password
+ * @returns {Object} { valid: boolean, error?: string }
+ */
+function validatePassword(password) {
+    if (!password || typeof password !== 'string') {
+        return { valid: false, error: 'Mật khẩu không được để trống' };
+    }
+
+    if (password.length < 6) {
+        return { valid: false, error: 'Mật khẩu phải có ít nhất 6 ký tự' };
+    }
+
+    if (password.length > 100) {
+        return { valid: false, error: 'Mật khẩu không quá 100 ký tự' };
+    }
+
+    return { valid: true };
+}
 
 /**
  * Kiểm tra username hợp lệ
@@ -49,16 +106,23 @@ function generateUsernameSuggestions(username) {
 /**
  * Handler đăng ký tài khoản mới
  * POST /api/auth/register
+ * Body: { username, password }
  */
 export async function handleRegister(request, env) {
     try {
         const body = await request.json();
-        const { username } = body;
+        const { username, password } = body;
 
         // Validate username
-        const validation = validateUsername(username);
-        if (!validation.valid) {
-            return createJsonResponse({ error: validation.error }, 400);
+        const usernameValidation = validateUsername(username);
+        if (!usernameValidation.valid) {
+            return createJsonResponse({ error: usernameValidation.error }, 400);
+        }
+
+        // Validate password
+        const passwordValidation = validatePassword(password);
+        if (!passwordValidation.valid) {
+            return createJsonResponse({ error: passwordValidation.error }, 400);
         }
 
         const trimmedUsername = username.trim();
@@ -77,10 +141,13 @@ export async function handleRegister(request, env) {
             }, 409);
         }
 
-        // Create new user
+        // Hash password
+        const { hash, salt } = await hashPassword(password);
+
+        // Create new user với password_hash và password_salt
         const result = await env.ban_dong_hanh_db.prepare(
-            'INSERT INTO users (username) VALUES (?) RETURNING id, username, created_at'
-        ).bind(trimmedUsername).first();
+            'INSERT INTO users (username, password_hash, password_salt) VALUES (?, ?, ?) RETURNING id, username, created_at'
+        ).bind(trimmedUsername, hash, salt).first();
 
         // Create default settings
         await env.ban_dong_hanh_db.prepare(
@@ -138,9 +205,9 @@ export async function handleLogin(request, env) {
             const updateResult = await env.ban_dong_hanh_db.prepare(
                 "UPDATE users SET last_login = datetime('now') WHERE id = ?"
             ).bind(user.id).run();
-            
+
             console.log('[Auth] UPDATE executed - changes:', updateResult.changes, 'success:', updateResult.success);
-            
+
             if (updateResult.changes === 0) {
                 console.warn('[Auth] WARNING: UPDATE affected 0 rows for user', user.id);
             }
@@ -154,7 +221,7 @@ export async function handleLogin(request, env) {
         const updatedUser = await env.ban_dong_hanh_db.prepare(
             'SELECT id, username, created_at, COALESCE(last_login, NULL) as last_login FROM users WHERE id = ?'
         ).bind(user.id).first();
-        
+
         console.log('[Auth] SELECT result:', {
             id: updatedUser?.id,
             username: updatedUser?.username,
@@ -168,7 +235,7 @@ export async function handleLogin(request, env) {
             username: updatedUser.username,
             created_at: updatedUser.created_at,
         };
-        
+
         // Explicitly add last_login (có thể null hoặc undefined)
         if ('last_login' in updatedUser) {
             responseUser.last_login = updatedUser.last_login;
@@ -179,9 +246,9 @@ export async function handleLogin(request, env) {
             ).bind(user.id).first();
             responseUser.last_login = lastLoginCheck?.last_login || null;
         }
-        
+
         console.log('[Auth] Final response user:', responseUser);
-        
+
         return createJsonResponse({
             success: true,
             user: responseUser

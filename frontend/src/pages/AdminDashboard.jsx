@@ -524,6 +524,193 @@ function DatabaseStatsTab() {
 }
 
 // =============================================================================
+// CHAT METRICS TAB - Enhanced with comprehensive analytics
+// =============================================================================
+
+function ChatMetricsTab({ onRefresh }) {
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        loadChatAnalytics();
+    }, []);
+
+    const loadChatAnalytics = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const token = localStorage.getItem('admin_token');
+            const API_BASE = import.meta.env.VITE_API_URL || 'https://ban-dong-hanh-worker.stu725114073.workers.dev';
+
+            const response = await fetch(`${API_BASE}/api/admin/chat-analytics`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                setData(await response.json());
+            } else {
+                setError('Không thể tải dữ liệu chat analytics');
+            }
+        } catch (e) {
+            setError(e.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <RefreshCw className="w-8 h-8 animate-spin text-blue-500" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-6 bg-red-50 dark:bg-red-900/20 rounded-2xl text-red-600 dark:text-red-400">
+                Lỗi: {error}
+            </div>
+        );
+    }
+
+    const riskColors = {
+        'green': 'bg-green-500',
+        'yellow': 'bg-yellow-500',
+        'red': 'bg-red-500',
+        'critical': 'bg-red-700'
+    };
+
+    return (
+        <div className="space-y-6">
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <StatCard
+                    icon={MessageSquare}
+                    label="Tổng AI Responses"
+                    value={data?.stats?.total || 0}
+                    color="bg-blue-500"
+                />
+                <StatCard
+                    icon={Activity}
+                    label="Avg Latency"
+                    value={`${data?.stats?.avgLatencyMs || 0}ms`}
+                    color="bg-green-500"
+                />
+                <StatCard
+                    icon={BarChart3}
+                    label="Avg Confidence"
+                    value={`${((data?.stats?.avgConfidence || 0) * 100).toFixed(1)}%`}
+                    color="bg-purple-500"
+                />
+                <StatCard
+                    icon={FileText}
+                    label="RAG Usage"
+                    value={`${((data?.stats?.ragUsageRate || 0) * 100).toFixed(1)}%`}
+                    color="bg-orange-500"
+                />
+            </div>
+
+            {/* Feedback Stats */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                    👍 Phản hồi người dùng
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Tổng feedback</p>
+                        <p className="text-3xl font-bold text-gray-900 dark:text-white">{data?.feedback?.total || 0}</p>
+                    </div>
+                    <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 text-center">
+                        <p className="text-sm text-green-600 dark:text-green-400">Tỷ lệ hữu ích</p>
+                        <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+                            {((data?.feedback?.helpfulRate || 0) * 100).toFixed(1)}%
+                        </p>
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 text-center">
+                        <p className="text-sm text-blue-600 dark:text-blue-400">Avg Quality</p>
+                        <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                            {data?.feedback?.avgQuality || 0}/5
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Risk Distribution */}
+            {data?.riskDistribution && data.riskDistribution.length > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                    <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                        Phân bố mức độ rủi ro
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {data.riskDistribution.map((item) => (
+                            <div
+                                key={item.risk_level}
+                                className="text-center p-4 rounded-xl bg-gray-50 dark:bg-gray-700"
+                            >
+                                <div className={`w-4 h-4 rounded-full mx-auto mb-2 ${riskColors[item.risk_level] || 'bg-gray-500'}`}></div>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{item.risk_level}</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{item.count}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Recent Responses */}
+            {data?.recentResponses && data.recentResponses.length > 0 && (
+                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                    <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                        <MessageSquare className="w-5 h-5 text-blue-500" />
+                        Các responses gần đây
+                    </h3>
+                    <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                        {data.recentResponses.slice(0, 10).map((response, idx) => (
+                            <div key={idx} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className="text-xs text-gray-400">
+                                        {formatDate(response.created_at)}
+                                    </span>
+                                    {response.risk_level && (
+                                        <span className={`px-2 py-0.5 text-xs rounded-full text-white ${riskColors[response.risk_level] || 'bg-gray-500'}`}>
+                                            {response.risk_level}
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white mb-1 line-clamp-2">
+                                    <strong>User:</strong> {response.user_message || '(empty)'}
+                                </p>
+                                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+                                    <strong>AI:</strong> {response.ai_response?.substring(0, 150) || '(no response)'}...
+                                </p>
+                                {response.confidence !== null && (
+                                    <p className="text-xs text-gray-400 mt-1">
+                                        Confidence: {(response.confidence * 100).toFixed(1)}%
+                                    </p>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Refresh Button */}
+            <div className="text-center">
+                <button
+                    onClick={loadChatAnalytics}
+                    className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors flex items-center gap-2 mx-auto"
+                >
+                    <RefreshCw className="w-4 h-4" />
+                    Làm mới
+                </button>
+            </div>
+        </div>
+    );
+}
+
+// =============================================================================
 // POSTS MANAGEMENT TAB
 // =============================================================================
 
