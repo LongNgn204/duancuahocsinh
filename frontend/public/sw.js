@@ -2,9 +2,13 @@
 // Service Worker cho offline support và caching
 // Chú thích: Lightweight service worker cho PWA features
 
-const CACHE_NAME = 'ban-dong-hanh-v1';
-const STATIC_CACHE = 'static-v1';
-const API_CACHE = 'api-v1';
+// Version được inject khi build (vite plugin replace-sw-version)
+// Fallback 'dev' để tránh lỗi ReferenceError khi preview cũ
+const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? '__APP_VERSION__' : 'dev';
+
+const CACHE_NAME = `ban-dong-hanh-v${APP_VERSION}`;
+const STATIC_CACHE = `static-v${APP_VERSION}`;
+const API_CACHE = `api-v${APP_VERSION}`;
 
 // Assets to cache on install
 const STATIC_ASSETS = [

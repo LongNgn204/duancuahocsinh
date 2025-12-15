@@ -6,7 +6,7 @@
 import { classifyRiskRules, getRedTierResponse } from './risk.js';
 import { sanitizeInput } from './sanitize.js';
 import { formatMessagesForLLM, getRecentMessages, createMemorySummary } from './memory.js';
-import { checkTokenLimit, addTokenUsage, estimateTokens } from './token-tracker.js';
+import { checkTokenLimit, addTokenUsage, estimateTokens, countTokensAccurate } from './token-tracker.js';
 import { createTraceContext, logModelCall, addTraceHeader } from './observability.js';
 
 // ============================================================================
