@@ -1250,3 +1250,129 @@ export async function addUserXP(request, env) {
     }
 }
 
+// =============================================================================
+// CHAT FEEDBACK & METRICS ENDPOINTS
+// =============================================================================
+
+/**
+ * POST /api/data/chat/feedback - Submit feedback về AI response
+ * Body: { message_id: string, helpful: 0|1, reason?: string, response_quality?: 1-5 }
+ */
+export async function submitChatFeedback(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    try {
+        const { message_id, helpful, reason, response_quality } = await request.json();
+
+        if (!message_id || typeof message_id !== 'string') {
+            return json({ error: 'message_id is required' }, 400);
+        }
+
+        if (helpful !== 0 && helpful !== 1) {
+            return json({ error: 'helpful must be 0 or 1' }, 400);
+        }
+
+        if (response_quality && (response_quality < 1 || response_quality > 5)) {
+            return json({ error: 'response_quality must be 1-5' }, 400);
+        }
+
+        const result = await env.ban_dong_hanh_db.prepare(
+            `INSERT INTO chat_feedback 
+             (user_id, message_id, helpful, reason, response_quality)
+             VALUES (?, ?, ?, ?, ?)
+             RETURNING id, message_id, helpful, reason, response_quality, created_at`
+        ).bind(
+            userId,
+            message_id,
+            helpful,
+            reason || null,
+            response_quality || null
+        ).first();
+
+        return json({ success: true, feedback: result }, 201);
+    } catch (error) {
+        console.error('[Data] submitChatFeedback error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+/**
+ * GET /api/data/chat/metrics - Lấy metrics về chat quality (admin only hoặc user's own)
+ * Query params: ?days=7&user_id=123 (optional, admin only)
+ */
+export async function getChatMetrics(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    const url = new URL(request.url);
+    const days = parseInt(url.searchParams.get('days') || '7');
+    const targetUserId = url.searchParams.get('user_id'); // Admin only
+
+    // TODO: Check admin permission if targetUserId is provided
+    const queryUserId = targetUserId ? parseInt(targetUserId) : userId;
+
+    try {
+        const sinceDate = new Date();
+        sinceDate.setDate(sinceDate.getDate() - days);
+        const sinceDateStr = sinceDate.toISOString();
+
+        // Get feedback stats
+        const feedbackStats = await env.ban_dong_hanh_db.prepare(
+            `SELECT 
+                COUNT(*) as total_feedback,
+                SUM(CASE WHEN helpful = 1 THEN 1 ELSE 0 END) as helpful_count,
+                AVG(response_quality) as avg_quality
+             FROM chat_feedback
+             WHERE user_id = ? AND created_at >= ?`
+        ).bind(queryUserId, sinceDateStr).first();
+
+        // Get response stats
+        const responseStats = await env.ban_dong_hanh_db.prepare(
+            `SELECT 
+                COUNT(*) as total_responses,
+                AVG(confidence) as avg_confidence,
+                AVG(latency_ms) as avg_latency,
+                SUM(CASE WHEN used_rag = 1 THEN 1 ELSE 0 END) as rag_used_count,
+                SUM(CASE WHEN risk_level = 'red' THEN 1 ELSE 0 END) as sos_count,
+                SUM(CASE WHEN risk_level = 'yellow' THEN 1 ELSE 0 END) as yellow_count,
+                AVG(tokens_used) as avg_tokens
+             FROM chat_responses
+             WHERE user_id = ? AND created_at >= ?`
+        ).bind(queryUserId, sinceDateStr).first();
+
+        // Calculate helpful rate
+        const totalFeedback = feedbackStats?.total_feedback || 0;
+        const helpfulCount = feedbackStats?.helpful_count || 0;
+        const helpfulRate = totalFeedback > 0 ? (helpfulCount / totalFeedback) : null;
+
+        // Calculate RAG usage rate
+        const totalResponses = responseStats?.total_responses || 0;
+        const ragUsedCount = responseStats?.rag_used_count || 0;
+        const ragUsageRate = totalResponses > 0 ? (ragUsedCount / totalResponses) : null;
+
+        return json({
+            period_days: days,
+            user_id: queryUserId,
+            feedback: {
+                total: totalFeedback,
+                helpful_count: helpfulCount,
+                helpful_rate: helpfulRate,
+                avg_quality: feedbackStats?.avg_quality || null,
+            },
+            responses: {
+                total: totalResponses,
+                avg_confidence: responseStats?.avg_confidence || null,
+                avg_latency_ms: responseStats?.avg_latency || null,
+                avg_tokens: responseStats?.avg_tokens || null,
+                rag_usage_rate: ragUsageRate,
+                sos_count: responseStats?.sos_count || 0,
+                yellow_count: responseStats?.yellow_count || 0,
+            },
+        });
+    } catch (error) {
+        console.error('[Data] getChatMetrics error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+

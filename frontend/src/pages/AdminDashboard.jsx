@@ -12,7 +12,8 @@ import {
 import {
     getForumStats, getAdminLogs, getBannedUsers, getForumPosts,
     deleteForumPost, toggleLockPost, banUser, unbanUser,
-    adminLogin, isAdminLoggedIn, adminLogout, getSOSLogs, getAllUsers
+    adminLogin, isAdminLoggedIn, adminLogout, getSOSLogs, getAllUsers,
+    getChatMetrics
 } from '../utils/api';
 
 // =============================================================================
@@ -41,6 +42,7 @@ function AdminSidebar({ activeTab, setActiveTab, collapsed, setCollapsed }) {
         { id: 'posts', label: 'Quản lý bài viết', icon: FileText },
         { id: 'users', label: 'Người dùng bị cấm', icon: Ban },
         { id: 'sos', label: 'SOS Logs', icon: AlertTriangle },
+        { id: 'chat-metrics', label: 'Chat Metrics', icon: MessageSquare },
         { id: 'logs', label: 'Nhật ký hoạt động', icon: Activity },
     ];
 
@@ -1089,6 +1091,7 @@ export default function AdminDashboard() {
                                 {activeTab === 'posts' && 'Quản lý bài viết'}
                                 {activeTab === 'users' && 'Người dùng bị cấm'}
                                 {activeTab === 'sos' && 'SOS Logs'}
+                                {activeTab === 'chat-metrics' && 'Chat Metrics'}
                                 {activeTab === 'logs' && 'Nhật ký hoạt động'}
                             </h1>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -1163,6 +1166,16 @@ export default function AdminDashboard() {
                                 exit={{ opacity: 0, y: -10 }}
                             >
                                 <BannedUsersTab bannedUsers={bannedUsers} onUnban={handleUnban} onRefresh={loadData} />
+                            </motion.div>
+                        )}
+                        {activeTab === 'chat-metrics' && (
+                            <motion.div
+                                key="chat-metrics"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                            >
+                                <ChatMetricsTab onRefresh={() => {}} />
                             </motion.div>
                         )}
                         {activeTab === 'logs' && (

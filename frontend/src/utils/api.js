@@ -834,3 +834,39 @@ export async function rewardXP(action) {
     }
 }
 
+// =============================================================================
+// CHAT FEEDBACK API
+// =============================================================================
+
+/**
+ * Submit feedback về AI response
+ * @param {string} messageId - Trace ID từ response
+ * @param {0|1} helpful - 1 = helpful, 0 = not helpful
+ * @param {string} reason - Optional text feedback
+ * @param {number} responseQuality - Optional 1-5 rating
+ */
+export async function submitChatFeedback(messageId, helpful, reason = null, responseQuality = null) {
+    return apiRequest('/api/data/chat/feedback', {
+        method: 'POST',
+        body: JSON.stringify({
+            message_id: messageId,
+            helpful,
+            reason,
+            response_quality: responseQuality,
+        }),
+    });
+}
+
+/**
+ * Get chat metrics (admin only hoặc user's own)
+ * @param {number} days - Number of days to look back
+ * @param {number} userId - Optional user ID (admin only)
+ */
+export async function getChatMetrics(days = 7, userId = null) {
+    const params = new URLSearchParams({ days: String(days) });
+    if (userId) params.set('user_id', String(userId));
+    return apiRequest(`/api/data/chat/metrics?${params}`, {
+        method: 'GET',
+    });
+}
+

@@ -10,8 +10,10 @@ import { checkTokenLimit, addTokenUsage, estimateTokens } from './token-tracker.
 import { createTraceContext, logModelCall } from './observability.js';
 
 // ============================================================================
-// SYSTEM INSTRUCTIONS - Mentor tâm lý học đường v2.0 (Phase 4 Enhanced)
+// SYSTEM INSTRUCTIONS - Mentor tâm lý học đường v2.1.0 (Phase 7 Enhanced)
 // ============================================================================
+const PROMPT_VERSION = 'mentor-v2.1.0'; // Semver cho versioning và A/B testing
+
 const SYSTEM_INSTRUCTIONS = `Bạn là "Bạn Đồng Hành" - một mentor tâm lý ấm áp, tôn trọng, không phán xét cho học sinh Việt Nam (12-18 tuổi).
 
 VAI TRÒ: MENTOR TÂM LÝ (KHÔNG PHẢI BÁC SĨ)
@@ -425,22 +427,55 @@ export default {
     }
 
     // ========================================================================
-    // RAG: Retrieve relevant context (nếu có knowledge base)
+    // RAG: Retrieve relevant context từ knowledge base
     // ========================================================================
     let ragContext = '';
+    let usedRAG = 0;
     try {
-      // TODO: Lấy documents từ knowledge base (có thể từ D1 hoặc vector DB)
-      // Hiện tại: placeholder cho RAG integration
-      const knowledgeBase = []; // Sẽ được populate từ DB/vector store
-      
+      // Query knowledge base từ D1
+      const kbResult = await env.ban_dong_hanh_db.prepare(
+        `SELECT id, title, content, category, tags FROM knowledge_base 
+         WHERE content LIKE ? OR title LIKE ? OR tags LIKE ?
+         LIMIT 20`
+      ).bind(
+        `%${sanitizedMessage.slice(0, 50)}%`, // Search trong content
+        `%${sanitizedMessage.slice(0, 30)}%`, // Search trong title
+        `%${sanitizedMessage.slice(0, 30)}%`  // Search trong tags
+      ).all().catch(() => ({ results: [] }));
+
+      const knowledgeBase = kbResult.results.map(doc => ({
+        id: doc.id,
+        content: `${doc.title}\n${doc.content}`,
+        category: doc.category,
+        source: 'knowledge_base',
+        tags: doc.tags ? JSON.parse(doc.tags) : [],
+        // Note: embedding sẽ được load từ DB trong hybridSearch nếu có
+      }));
+
       if (knowledgeBase.length > 0) {
+        // Import RAG functions
+        const { hybridSearch, formatRAGContext } = await import('./rag.js');
+        
         const retrievedDocs = await hybridSearch(
           sanitizedMessage,
           knowledgeBase,
           env,
           { topK: 3, bm25Weight: 0.6, denseWeight: 0.4 }
-        );
-        ragContext = formatRAGContext(retrievedDocs);
+        ).catch(() => {
+          // Fallback to BM25 only nếu hybrid search fail
+          const { bm25Search } = await import('./rag.js');
+          return bm25Search(sanitizedMessage, knowledgeBase).slice(0, 3);
+        });
+
+        if (retrievedDocs && retrievedDocs.length > 0) {
+          const { formatRAGContext } = await import('./rag.js');
+          ragContext = formatRAGContext(retrievedDocs);
+          usedRAG = 1;
+          trace.log('info', 'rag_used', { 
+            docs_retrieved: retrievedDocs.length,
+            categories: retrievedDocs.map(d => d.category).join(',')
+          });
+        }
       }
     } catch (error) {
       // RAG là optional, không block nếu lỗi
@@ -544,7 +579,8 @@ export default {
               const modelVersion = model.split('@cf/')[1] || 'llama-3.1-8b-instruct';
               
               // Log model call với tokens và cost
-              trace.logModelCall(model, modelVersion, estimatedTokens, responseTokens, costUsd, Date.now() - startTime);
+              const streamLatencyMs = Date.now() - startTime;
+              trace.logModelCall(model, modelVersion, estimatedTokens, responseTokens, costUsd, streamLatencyMs);
               
               // Log completion
               trace.logResponse(200, {
@@ -557,6 +593,32 @@ export default {
                 token_usage: tokenUsageResult.tokens,
                 token_warning: tokenUsageResult.warning,
               });
+
+              // Log streaming response vào chat_responses (sau khi stream complete)
+              // Note: Với streaming, chúng ta log sau khi có full response
+              // Để đơn giản, log với partial response và update sau nếu cần
+              try {
+                await env.ban_dong_hanh_db.prepare(
+                  `INSERT INTO chat_responses 
+                   (user_id, message_id, user_message, ai_response, risk_level, confidence, tokens_used, latency_ms, used_rag, prompt_version)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+                ).bind(
+                  userId || null,
+                  trace.traceId,
+                  sanitizedMessage.slice(0, 1000),
+                  '[STREAMING]', // Placeholder, có thể update sau
+                  riskLevel || 'green',
+                  0.8, // Default confidence
+                  totalTokens,
+                  streamLatencyMs,
+                  usedRAG,
+                  PROMPT_VERSION
+                ).run().catch(err => {
+                  trace.log('warn', 'stream_response_log_failed', { error: err.message });
+                });
+              } catch (err) {
+                trace.log('warn', 'stream_response_log_error', { error: err.message });
+              }
 
             } catch (err) {
               trace.logError(err, { stream: true });

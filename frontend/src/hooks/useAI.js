@@ -123,6 +123,7 @@ export function useAI() {
     });
 
     const traceId = res.headers.get('X-Trace-Id') || undefined;
+    // Store traceId as message_id for feedback
 
     if (!res.body || typeof res.body.getReader !== 'function') {
       const data = await res.json();
@@ -242,8 +243,14 @@ export function useAI() {
         if (data?.sos) {
           setSos(data.message || 'Tín hiệu SOS');
         } else {
-          const bot = { role: 'assistant', content: data?.text || '...', ts: nowISO() };
-          setThreads((prev) => prev.map((t) => (t.id === currentId ? { ...t, messages: [...t.messages, bot], updatedAt: nowISO() } : t)));
+          const bot = { 
+            role: 'assistant', 
+            content: data?.text || data?.reply || '...', 
+            ts: nowISO(),
+            messageId: stream.traceId || stream.messageId, // Store traceId as messageId for feedback
+            traceId: stream.traceId
+          };
+          setThreads((prev) => prev.map((t) => (t.id === currentId ? { ...t, messages: [...t.messages, bot], updatedAt: nowISO() } : t))); 
         }
         return;
       }
@@ -282,13 +289,29 @@ export function useAI() {
           setThreads((prev) => prev.map((t) => {
             if (t.id !== currentId) return t;
             assistantIndex = t.messages.length;
-            return { ...t, messages: [...t.messages, { role: 'assistant', content: chunk, ts: nowISO() }], updatedAt: nowISO() };
+            return { 
+              ...t, 
+              messages: [...t.messages, { 
+                role: 'assistant', 
+                content: chunk, 
+                ts: nowISO(),
+                messageId: stream.traceId, // Store traceId as messageId for feedback
+                traceId: stream.traceId
+              }], 
+              updatedAt: nowISO() 
+            };
           }));
         } else {
           setThreads((prev) => prev.map((t) => {
             if (t.id !== currentId) return t;
             const copy = t.messages.slice();
-            copy[assistantIndex] = { ...copy[assistantIndex], content: (copy[assistantIndex].content || '') + chunk };
+            // Preserve messageId when updating content
+            copy[assistantIndex] = { 
+              ...copy[assistantIndex], 
+              content: (copy[assistantIndex].content || '') + chunk,
+              messageId: copy[assistantIndex].messageId || stream.traceId,
+              traceId: copy[assistantIndex].traceId || stream.traceId
+            };
             return { ...t, messages: copy, updatedAt: nowISO() };
           }));
         }

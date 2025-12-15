@@ -2,6 +2,7 @@
 // Chú thích: RAG (Retrieval-Augmented Generation) implementation
 // Hybrid search: BM25 (keyword) + Dense embeddings (semantic)
 // Sử dụng Cloudflare Workers AI cho embeddings
+// Embeddings được cache trong DB để tối ưu performance
 
 /**
  * Simple BM25 scoring (keyword-based search)
@@ -118,15 +119,40 @@ export async function hybridSearch(query, documents, env, options = {}) {
     return acc;
   }, {});
 
-  // Dense search (nếu có embeddings)
+  // Dense search (nếu có embeddings) - với caching
   let denseScores = {};
   try {
-    const queryEmbedding = await generateEmbedding(env, query);
+    const queryEmbedding = await generateEmbedding(env, query); // Query embedding không cache
     
     if (queryEmbedding) {
       for (const doc of documents) {
-        if (doc.embedding) {
-          const similarity = cosineSimilarity(queryEmbedding, doc.embedding);
+        // Try to get cached embedding from DB
+        let docEmbedding = null;
+        if (doc.id && env.ban_dong_hanh_db) {
+          try {
+            const cached = await env.ban_dong_hanh_db.prepare(
+              'SELECT embedding FROM knowledge_base WHERE id = ? AND embedding IS NOT NULL AND embedding != ""'
+            ).bind(doc.id).first();
+            
+            if (cached?.embedding) {
+              try {
+                docEmbedding = JSON.parse(cached.embedding);
+              } catch (_) {
+                // Invalid JSON, generate new
+              }
+            }
+          } catch (_) {
+            // DB error, continue
+          }
+        }
+        
+        // Generate embedding if not cached (và cache nó)
+        if (!docEmbedding) {
+          docEmbedding = await generateEmbedding(env, doc.content, doc.id);
+        }
+        
+        if (docEmbedding) {
+          const similarity = cosineSimilarity(queryEmbedding, docEmbedding);
           denseScores[doc.id] = similarity * denseWeight;
         }
       }

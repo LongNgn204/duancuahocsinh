@@ -296,6 +296,64 @@ CREATE TABLE IF NOT EXISTS random_cards_history (
 
 CREATE INDEX IF NOT EXISTS idx_random_cards_user ON random_cards_history(user_id);
 
+-- =============================================================================
+-- PHASE 7 ADDITIONS: Knowledge Base cho RAG, Chat Feedback & Evaluation
+-- =============================================================================
+
+-- Bảng knowledge_base: Tài liệu tâm lý học đường cho RAG
+CREATE TABLE IF NOT EXISTS knowledge_base (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  category TEXT NOT NULL, -- 'breathing', 'stress', 'friendship', 'family', 'selfcare', 'study', 'emotions'
+  embedding TEXT, -- JSON array của embedding vector (hoặc null nếu chưa generate)
+  source TEXT DEFAULT 'manual', -- 'manual', 'ai_generated', 'external'
+  tags TEXT, -- JSON array: ["học tập", "stress", "thi cử"]
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_kb_category ON knowledge_base(category);
+CREATE INDEX IF NOT EXISTS idx_kb_source ON knowledge_base(source);
+
+-- Bảng chat_responses: Log tất cả AI responses để evaluation
+CREATE TABLE IF NOT EXISTS chat_responses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
+  message_id TEXT UNIQUE, -- Trace ID từ observability
+  user_message TEXT, -- User message (có thể redact PII)
+  ai_response TEXT, -- AI response text
+  risk_level TEXT, -- 'green', 'yellow', 'red'
+  confidence REAL, -- 0.0-1.0
+  tokens_used INTEGER,
+  latency_ms INTEGER,
+  used_rag INTEGER DEFAULT 0, -- 1 = used RAG context
+  prompt_version TEXT, -- 'mentor-v2.1.0'
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_responses_user ON chat_responses(user_id);
+CREATE INDEX IF NOT EXISTS idx_responses_date ON chat_responses(created_at);
+CREATE INDEX IF NOT EXISTS idx_responses_risk ON chat_responses(risk_level);
+CREATE INDEX IF NOT EXISTS idx_responses_version ON chat_responses(prompt_version);
+
+-- Bảng chat_feedback: Feedback từ users về chất lượng responses
+CREATE TABLE IF NOT EXISTS chat_feedback (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
+  message_id TEXT, -- Trace ID hoặc reference đến chat_responses
+  helpful INTEGER DEFAULT 0, -- 1 = helpful, 0 = not helpful
+  reason TEXT, -- Optional text feedback
+  response_quality INTEGER, -- 1-5 rating (optional)
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_feedback_user ON chat_feedback(user_id);
+CREATE INDEX IF NOT EXISTS idx_feedback_helpful ON chat_feedback(helpful);
+CREATE INDEX IF NOT EXISTS idx_feedback_message ON chat_feedback(message_id);
+
 -- Bảng user_stats: thống kê tổng hợp cho gamification
 CREATE TABLE IF NOT EXISTS user_stats (
   user_id INTEGER PRIMARY KEY,

@@ -23,7 +23,8 @@ import {
     getNotificationSettings, saveNotificationSettings,
     logSOSEvent, getSOSLogs,
     getRandomCardsHistory, addRandomCardHistory,
-    getUserStats, addUserXP
+    getUserStats, addUserXP,
+    submitChatFeedback, getChatMetrics
 } from './data-api.js';
 
 import {
@@ -145,6 +146,10 @@ function matchRoute(pathname, method) {
     // Data routes - Random Cards History
     if (pathname === '/api/data/random-cards-history' && method === 'GET') return 'data:cards:list';
     if (pathname === '/api/data/random-cards-history' && method === 'POST') return 'data:cards:add';
+
+    // Data routes - Chat Feedback & Metrics
+    if (pathname === '/api/data/chat/feedback' && method === 'POST') return 'data:chat:feedback';
+    if (pathname === '/api/data/chat/metrics' && method === 'GET') return 'data:chat:metrics';
 
     // Data routes - User Stats / Gamification
     if (pathname === '/api/data/user-stats' && method === 'GET') return 'data:user-stats:get';
@@ -348,6 +353,14 @@ export default {
                     break;
                 case 'data:cards:add':
                     response = await addRandomCardHistory(request, env);
+                    break;
+
+                // Chat Feedback & Metrics endpoints
+                case 'data:chat:feedback':
+                    response = await submitChatFeedback(request, env);
+                    break;
+                case 'data:chat:metrics':
+                    response = await getChatMetrics(request, env);
                     break;
 
                 // User Stats / Gamification endpoints

@@ -465,8 +465,16 @@ export default function Chat() {
                   m.role === 'assistant' ? (
                     <Feedback
                       value={m.feedback}
-                      onUp={() => { setFeedback(i, 'up'); setInfo('Cảm ơn!'); setTimeout(() => setInfo(''), 1200); }}
-                      onDown={() => { setFeedback(i, 'down'); setInfo('Đã ghi nhận!'); setTimeout(() => setInfo(''), 1200); }}
+                      onUp={() => { 
+                        setFeedback(i, 'up', m.messageId || m.traceId); 
+                        setInfo('Cảm ơn bạn!'); 
+                        setTimeout(() => setInfo(''), 1200); 
+                      }}
+                      onDown={() => { 
+                        setFeedback(i, 'down', m.messageId || m.traceId); 
+                        setInfo('Đã ghi nhận!'); 
+                        setTimeout(() => setInfo(''), 1200); 
+                      }}
                     />
                   ) : null
                 }
