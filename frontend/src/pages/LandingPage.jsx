@@ -140,7 +140,7 @@ export default function LandingPage() {
                         </p>
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                            <Link to="/login">
+                            <Link to="/app">
                                 <Button size="xl" iconRight={<ArrowRight size={20} />}>
                                     Bắt đầu ngay
                                 </Button>
@@ -366,7 +366,7 @@ export default function LandingPage() {
                                 chăm sóc sức khỏe tâm thần.
                             </p>
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                                <Link to="/login">
+                                <Link to="/app">
                                     <Button size="xl" iconRight={<ArrowRight size={20} />}>
                                         Trải nghiệm ngay
                                     </Button>

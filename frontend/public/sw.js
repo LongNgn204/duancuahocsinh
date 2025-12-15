@@ -25,16 +25,31 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activate event - clean old caches
+// Activate event - clean old caches và clear storage
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name !== STATIC_CACHE && name !== API_CACHE)
-          .map((name) => caches.delete(name))
-      );
-    })
+    Promise.all([
+      // Xóa tất cả cache cũ
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames
+            .filter((name) => !name.includes(APP_VERSION))
+            .map((name) => {
+              console.log('[SW] Deleting old cache:', name);
+              return caches.delete(name);
+            })
+        );
+      }),
+      // Thông báo cho tất cả clients để clear storage
+      self.clients.matchAll({ includeUncontrolled: true }).then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({
+            type: 'CLEAR_STORAGE',
+            version: APP_VERSION,
+          });
+        });
+      }),
+    ])
   );
   self.clients.claim();
 });
