@@ -221,12 +221,12 @@ export default function Dashboard() {
                   <>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-[--brand]">{stats.streak}</div>
-                      <div className="text-xs text-[--muted]">Ngày streak</div>
+                      <div className="text-sm text-[--text-secondary] font-medium">Ngày streak</div>
                     </div>
                     <div className="w-px h-10 bg-[--surface-border]" />
                     <div className="text-center">
                       <div className="text-2xl font-bold text-[--accent]">{stats.chatCount}</div>
-                      <div className="text-xs text-[--muted]">Cuộc chat</div>
+                      <div className="text-sm text-[--text-secondary] font-medium">Cuộc chat</div>
                     </div>
                     {isUserLoggedIn && (
                       <>
@@ -236,7 +236,7 @@ export default function Dashboard() {
                             <Star size={16} />
                             {stats.xp}
                           </div>
-                          <div className="text-xs text-[--muted]">XP (Lv.{stats.level})</div>
+                          <div className="text-sm text-[--text-secondary] font-medium">XP (Lv.{stats.level})</div>
                         </div>
                       </>
                     )}
@@ -269,7 +269,7 @@ export default function Dashboard() {
                     />
                   )}
                   <div className="text-3xl mb-2">{mood.emoji}</div>
-                  <div className={`text-xs font-medium ${selectedMood === mood.id ? 'text-[--text]' : 'text-[--muted]'}`}>
+                  <div className={`text-sm font-semibold ${selectedMood === mood.id ? 'text-[--text]' : 'text-[--text-secondary]'}`}>
                     {mood.label}
                   </div>
                 </motion.button>
@@ -353,7 +353,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <h3 className="font-semibold">Mẹo hôm nay</h3>
-                <p className="text-xs text-[--muted]">Wellbeing tip</p>
+                <p className="text-sm text-[--text-secondary] font-semibold uppercase tracking-wide">Wellbeing tip</p>
               </div>
             </div>
             <p className="text-[--text-secondary] leading-relaxed">{todayTip}</p>
@@ -373,7 +373,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <h3 className="font-semibold">Tiến độ tuần này</h3>
-                <p className="text-xs text-[--muted]">Bạn đang làm rất tốt!</p>
+                <p className="text-sm text-[--text-secondary] font-medium">Bạn đang làm rất tốt!</p>
               </div>
             </div>
 

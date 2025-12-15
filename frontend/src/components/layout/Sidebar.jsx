@@ -113,7 +113,7 @@ export default function Sidebar() {
         {/* Brand - Only show when not collapsed */}
         {!collapsed && (
           <div className="px-3 mb-6">
-            <div className="text-xs uppercase tracking-widest text-[--muted] font-semibold">
+            <div className="text-sm uppercase tracking-wider text-[--text-secondary] font-semibold">
               Bạn Đồng Hành
             </div>
           </div>
@@ -124,7 +124,7 @@ export default function Sidebar() {
           <div key={sec.label} className={secIdx > 0 ? 'mt-6' : ''}>
             {/* Section Label */}
             {!collapsed && (
-              <div className="px-3 mb-2 text-xs uppercase tracking-wide text-[--muted] font-medium">
+              <div className="px-3 mb-2 text-sm uppercase tracking-wide text-[--text-secondary] font-semibold">
                 {sec.label}
               </div>
             )}
@@ -161,13 +161,13 @@ export default function Sidebar() {
                         <Icon size={20} />
                       </div>
                       {!collapsed && (
-                        <span className={`truncate text-sm font-medium ${isActive ? 'font-semibold' : ''}`}>
+                        <span className={`truncate text-base font-medium ${isActive ? 'font-semibold text-[--brand]' : 'text-[--text]'}`}>
                           {label}
                         </span>
                       )}
                       {/* Badge for new items */}
                       {badge && !collapsed && (
-                        <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-[--accent] text-white font-medium">
+                        <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-[--accent] text-white font-semibold">
                           {badge}
                         </span>
                       )}
@@ -203,7 +203,7 @@ export default function Sidebar() {
           `}
         >
           <Settings size={20} />
-          {!collapsed && <span className="text-sm font-medium">Cài đặt</span>}
+          {!collapsed && <span className="text-base font-medium text-[--text]">Cài đặt</span>}
         </NavLink>
       </div>
     </aside>

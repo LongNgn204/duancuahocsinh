@@ -22,7 +22,7 @@ export default function AppHeader() {
             </div>
             <div className="hidden sm:block">
               <div className="font-bold text-lg gradient-text tracking-tight">Bạn Đồng Hành</div>
-              <div className="text-[10px] text-[--muted] -mt-1">Trường học hạnh phúc</div>
+              <div className="text-xs text-[--text-secondary] -mt-0.5 font-medium">Trường học Hạnh phúc</div>
             </div>
           </Link>
 
@@ -33,7 +33,7 @@ export default function AppHeader() {
               <div className="flex items-center gap-2">
                 <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-[--surface-border] rounded-full">
                   <User size={16} className="text-[--brand]" />
-                  <span className="text-sm font-medium">{user?.username}</span>
+                  <span className="text-base font-semibold text-[--text]">{user?.username}</span>
                 </div>
                 <button
                   onClick={logout}
@@ -47,7 +47,7 @@ export default function AppHeader() {
             ) : (
               <button
                 onClick={openAuthModal}
-                className="flex items-center gap-2 px-3 py-1.5 bg-[--brand]/20 text-[--brand] rounded-full hover:bg-[--brand]/30 transition-colors text-sm font-medium"
+                className="flex items-center gap-2 px-3 py-1.5 bg-[--brand]/20 text-[--brand] rounded-full hover:bg-[--brand]/30 transition-colors text-base font-semibold"
               >
                 <User size={16} />
                 <span className="hidden sm:inline">Đăng nhập</span>

@@ -102,10 +102,10 @@ export default function Login() {
                                 className="w-16 h-16 rounded-2xl shadow-lg mx-auto"
                             />
                         </Link>
-                        <h1 className="text-3xl font-bold mb-2">
+                        <h1 className="text-4xl md:text-5xl font-bold mb-3 leading-tight">
                             <span className="gradient-text">Chào bạn!</span>
                         </h1>
-                        <p className="text-[--text-secondary]">
+                        <p className="text-base md:text-lg text-[--text] font-medium">
                             Nhập tên của bạn để bắt đầu
                         </p>
                     </div>
@@ -120,10 +120,10 @@ export default function Login() {
                                     setMode('login');
                                     setError('');
                                 }}
-                                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                                className={`flex-1 py-3 px-4 rounded-lg text-base font-semibold transition-all ${
                                     mode === 'login'
                                         ? 'bg-[--brand] text-white shadow-md'
-                                        : 'text-[--text-secondary] hover:text-[--text]'
+                                        : 'text-[--text] hover:text-[--brand] hover:bg-[--surface-border]'
                                 }`}
                             >
                                 Đăng nhập
@@ -134,10 +134,10 @@ export default function Login() {
                                     setMode('register');
                                     setError('');
                                 }}
-                                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                                className={`flex-1 py-3 px-4 rounded-lg text-base font-semibold transition-all ${
                                     mode === 'register'
                                         ? 'bg-[--brand] text-white shadow-md'
-                                        : 'text-[--text-secondary] hover:text-[--text]'
+                                        : 'text-[--text] hover:text-[--brand] hover:bg-[--surface-border]'
                                 }`}
                             >
                                 Đăng ký
@@ -146,7 +146,7 @@ export default function Login() {
 
                         <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="space-y-6">
                             <div>
-                                <label htmlFor="username" className="block text-sm font-medium text-[--text] mb-2">
+                                <label htmlFor="username" className="block text-base font-semibold text-[--text] mb-3">
                                     Tên của bạn
                                 </label>
                                 <input
@@ -158,11 +158,11 @@ export default function Login() {
                                         setError('');
                                     }}
                                     placeholder="Ví dụ: Minh, Lan, Hùng..."
-                                    className="w-full px-4 py-3 rounded-xl bg-[--surface] border border-[--surface-border] text-[--text] placeholder-[--muted] focus:outline-none focus:ring-2 focus:ring-[--brand] focus:border-transparent transition-all"
+                                    className="w-full px-4 py-3.5 text-base rounded-xl bg-[--surface] border-2 border-[--surface-border] text-[--text] placeholder-[--text-secondary]/60 focus:outline-none focus:ring-2 focus:ring-[--brand] focus:border-[--brand] transition-all"
                                     disabled={isLoading}
                                     autoFocus
                                 />
-                                <p className="mt-2 text-xs text-[--muted]">
+                                <p className="mt-3 text-sm text-[--text-secondary] leading-relaxed">
                                     Chỉ cần tên, không cần mật khẩu. Dữ liệu của bạn được bảo mật.
                                 </p>
                             </div>
@@ -171,7 +171,7 @@ export default function Login() {
                                 <motion.div
                                     initial={{ opacity: 0, y: -10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm"
+                                    className="p-4 rounded-xl bg-red-500/10 border-2 border-red-500/30 text-red-600 text-base font-medium leading-relaxed"
                                 >
                                     {error}
                                 </motion.div>
@@ -204,13 +204,13 @@ export default function Login() {
                         </form>
 
                         <div className="mt-6 pt-6 border-t border-[--surface-border]">
-                            <p className="text-xs text-[--muted] text-center">
+                            <p className="text-sm text-[--text-secondary] text-center leading-relaxed">
                                 Bằng cách tiếp tục, bạn đồng ý với{' '}
-                                <Link to="#" className="text-[--brand] hover:underline">
+                                <Link to="#" className="text-[--brand] font-semibold hover:underline">
                                     Điều khoản sử dụng
                                 </Link>{' '}
                                 và{' '}
-                                <Link to="#" className="text-[--brand] hover:underline">
+                                <Link to="#" className="text-[--brand] font-semibold hover:underline">
                                     Chính sách bảo mật
                                 </Link>
                             </p>
@@ -222,7 +222,7 @@ export default function Login() {
                     <div className="mt-6 text-center">
                         <Link
                             to="/"
-                            className="text-sm text-[--muted] hover:text-[--brand] transition-colors"
+                            className="text-base text-[--text-secondary] font-medium hover:text-[--brand] transition-colors"
                         >
                             ← Quay lại trang chủ
                         </Link>

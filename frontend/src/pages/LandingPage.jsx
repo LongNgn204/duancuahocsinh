@@ -291,7 +291,7 @@ export default function LandingPage() {
                                         <div key={item.label} className="glass-card p-4 rounded-xl text-center">
                                             <item.icon className="w-8 h-8 mx-auto mb-2 text-[--brand]" />
                                             <div className="font-semibold text-sm text-[--text]">{item.label}</div>
-                                            <div className="text-xs text-[--muted]">{item.desc}</div>
+                                            <div className="text-sm text-[--text-secondary] font-medium">{item.desc}</div>
                                         </div>
                                     ))}
                                 </div>
@@ -372,7 +372,7 @@ export default function LandingPage() {
                                     </Button>
                                 </Link>
                             </div>
-                            <p className="text-xs text-[--muted] mt-6">
+                            <p className="text-sm text-[--text-secondary] mt-6">
                                 Hoàn toàn miễn phí • Không cần đăng ký phức tạp • Bảo mật tuyệt đối
                             </p>
                         </Card>
@@ -393,7 +393,7 @@ export default function LandingPage() {
                                 />
                                 <div>
                                     <div className="font-bold text-lg gradient-text">Bạn Đồng Hành</div>
-                                    <div className="text-xs text-[--muted]">Trường học Hạnh phúc</div>
+                                    <div className="text-sm text-[--text-secondary] font-medium">Trường học Hạnh phúc</div>
                                 </div>
                             </div>
                             <p className="text-sm text-[--text-secondary]">
