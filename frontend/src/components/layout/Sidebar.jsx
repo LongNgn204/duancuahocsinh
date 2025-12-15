@@ -50,26 +50,25 @@ export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Close mobile sidebar when route changes
+  // Close mobile sidebar when route changes + listen for toggle events from header
   useEffect(() => {
-    const handleRouteChange = () => {
-      setMobileOpen(false);
-    };
+    const handleRouteChange = () => setMobileOpen(false);
+    const handleToggle = () => setMobileOpen(prev => !prev);
+    const handleClose = () => setMobileOpen(false);
+
     window.addEventListener('popstate', handleRouteChange);
-    return () => window.removeEventListener('popstate', handleRouteChange);
+    window.addEventListener('toggle-sidebar', handleToggle);
+    window.addEventListener('close-sidebar', handleClose);
+
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+      window.removeEventListener('toggle-sidebar', handleToggle);
+      window.removeEventListener('close-sidebar', handleClose);
+    };
   }, []);
 
   return (
     <>
-      {/* Mobile Toggle Button - Đặt ngay dưới header để tránh bị logo đè */}
-      <button
-        onClick={() => setMobileOpen(!mobileOpen)}
-        className="md:hidden fixed top-20 left-4 z-50 p-2.5 rounded-xl bg-[--surface] border border-[--surface-border] shadow-lg hover:shadow-xl transition-all"
-        aria-label={mobileOpen ? 'Đóng sidebar' : 'Mở sidebar'}
-      >
-        {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-      </button>
-
       {/* Mobile Overlay */}
       {mobileOpen && (
         <div

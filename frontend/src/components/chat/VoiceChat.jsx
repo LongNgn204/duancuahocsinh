@@ -142,20 +142,24 @@ export default function VoiceChat() {
             // Cleanup
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
+                animationFrameRef.current = null;
             }
-            if (audioContextRef.current) {
-                audioContextRef.current.close();
+            if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+                audioContextRef.current.close().catch(() => {});
             }
+            audioContextRef.current = null;
             setAudioLevel(0);
         }
         
         return () => {
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
+                animationFrameRef.current = null;
             }
-            if (audioContextRef.current) {
-                audioContextRef.current.close();
+            if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+                audioContextRef.current.close().catch(() => {});
             }
+            audioContextRef.current = null;
         };
     }, [status, isSupported]);
 

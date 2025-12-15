@@ -7,7 +7,7 @@ import { classifyRiskRules, getRedTierResponse } from './risk.js';
 import { sanitizeInput } from './sanitize.js';
 import { formatMessagesForLLM, getRecentMessages, createMemorySummary } from './memory.js';
 import { checkTokenLimit, addTokenUsage, estimateTokens } from './token-tracker.js';
-import { createTraceContext, logModelCall } from './observability.js';
+import { createTraceContext, logModelCall, addTraceHeader } from './observability.js';
 
 // ============================================================================
 // SYSTEM INSTRUCTIONS - Mentor tâm lý học đường v2.1.0 (Phase 7 Enhanced)
