@@ -112,7 +112,7 @@ async function apiRequest(endpoint, options = {}) {
         // Cache successful GET responses
         if ((!options.method || options.method === 'GET') && !options.skipCache) {
             await setCache(cacheKey, data);
-        }
+    }
 
     return data;
     } catch (error) {

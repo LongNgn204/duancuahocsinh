@@ -1,11 +1,12 @@
 // src/pages/LandingPage.jsx
-// Chú thích: Landing Page đơn giản, tập trung vào chức năng
+// Chú thích: Landing Page - Design mới với hero, features, benefits, testimonials
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     Bot, Heart, Sparkles, Gamepad2, Brain, Shield,
     Users, Clock, Award, ArrowRight, CheckCircle, Star,
-    BookOpen, TrendingUp, Moon, Target, Mail, Phone
+    BookOpen, TrendingUp, Moon, Target, Mail, Phone,
+    RefreshCw, Headphones, Smile
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
@@ -88,30 +89,68 @@ const stats = [
 
 // Benefits data
 const benefits = [
-    'Hoàn toàn miễn phí cho cộng đồng giáo dục',
-    'Bảo mật tuyệt đối, không lưu thông tin cá nhân',
-    'Nội dung phù hợp văn hóa Việt Nam',
-    'Được tư vấn bởi chuyên gia tâm lý',
-    'Hỗ trợ đa nền tảng (Web, Mobile)',
-    'Cập nhật tính năng liên tục',
+    'Hoàn toàn miễn phí',
+    'Phù hợp văn hóa Việt',
+    'Hỗ trợ đa nền tảng',
+    'Bảo mật tuyệt đối',
+    'Tư vấn bởi chuyên gia',
+    'AI Thông minh',
+];
+
+// Benefit cards
+const benefitCards = [
+    {
+        icon: Shield,
+        title: 'An toàn',
+        description: 'Bảo mật dữ liệu tuyệt đối cho người dùng.',
+        color: 'bg-pink-100 dark:bg-pink-900/20',
+        iconColor: 'text-purple-600 dark:text-purple-400',
+    },
+    {
+        icon: RefreshCw,
+        title: 'Cập nhật',
+        description: 'Tính năng mới được cập nhật liên tục.',
+        color: 'bg-purple-100 dark:bg-purple-900/20',
+        iconColor: 'text-purple-600 dark:text-purple-400',
+    },
+    {
+        icon: Headphones,
+        title: 'Hỗ trợ 24/7',
+        description: 'Luôn sẵn sàng khi bạn cần giúp đỡ.',
+        color: 'bg-blue-100 dark:bg-blue-900/20',
+        iconColor: 'text-blue-600 dark:text-blue-400',
+    },
+    {
+        icon: Smile,
+        title: 'Thân thiện',
+        description: 'Giao diện dễ dùng, ấm áp.',
+        color: 'bg-orange-100 dark:bg-orange-900/20',
+        iconColor: 'text-orange-600 dark:text-orange-400',
+    },
 ];
 
 // Testimonials
 const testimonials = [
     {
-        content: '"Mình hay lo lắng về điểm số nhưng không biết nói với ai. Bạn Đồng Hành giúp mình thấy thoải mái hơn khi chia sẻ."',
-        author: 'Người dùng tại Hà Nội',
-        avatar: '🧑‍🎓',
+        content: 'Mình hay lo lắng về điểm số nhưng không biết nói với ai. Bạn Đồng Hành giúp mình thấy thoải mái hơn khi chia sẻ.',
+        author: 'Học sinh',
+        location: 'Hà Nội',
+        avatar: 'H',
+        color: 'bg-pink-100 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400',
     },
     {
-        content: '"Bài tập thở thực sự hiệu quả! Mỗi khi căng thẳng trước kỳ thi, mình dùng app này để bình tĩnh lại."',
-        author: 'Người dùng tại TP.HCM',
-        avatar: '👩‍🎓',
+        content: 'Bài tập thở thực sự hiệu quả! Mỗi khi căng thẳng trước kỳ thi, mình dùng app này để bình tĩnh lại.',
+        author: 'Học sinh',
+        location: 'TP.HCM',
+        avatar: 'T',
+        color: 'bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400',
     },
     {
-        content: '"Tính năng Lọ Biết Ơn giúp mình nhìn cuộc sống tích cực hơn. Đây là thói quen mình duy trì mỗi ngày."',
-        author: 'Người dùng tại Đà Nẵng',
-        avatar: '🎓',
+        content: 'Tính năng Lọ Biết Ơn giúp mình nhìn cuộc sống tích cực hơn. Đây là thói quen mình duy trì mỗi ngày.',
+        author: 'Giáo viên',
+        location: 'Đà Nẵng',
+        avatar: 'D',
+        color: 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
     },
 ];
 
@@ -141,14 +180,23 @@ export default function LandingPage() {
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <Link to="/app">
-                                <Button size="xl" iconRight={<ArrowRight size={20} />}>
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+                                >
                                     Bắt đầu ngay
-                                </Button>
+                                    <ArrowRight size={20} />
+                                </motion.button>
                             </Link>
                             <Link to="#features">
-                                <Button variant="outline" size="xl">
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="px-8 py-4 bg-white dark:bg-gray-800 border-2 border-pink-300 dark:border-pink-700 text-pink-600 dark:text-pink-400 rounded-xl font-semibold text-lg hover:bg-pink-50 dark:hover:bg-pink-900/20 transition-all"
+                                >
                                     Tìm hiểu thêm
-                                </Button>
+                                </motion.button>
                             </Link>
                         </div>
                     </motion.div>
@@ -156,51 +204,11 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* ===== STATS SECTION ===== */}
-            <section className="py-20 px-4 bg-gradient-to-b from-transparent to-[--surface]/50">
-                <div className="max-w-6xl mx-auto">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        {stats.map((stat, idx) => (
-                            <motion.div
-                                key={stat.label}
-                                className="text-center"
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                transition={{ delay: idx * 0.1 }}
-                                viewport={{ once: true }}
-                            >
-                                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[--brand]/10 text-[--brand] mb-3">
-                                    <stat.icon size={24} />
-                                </div>
-                                <div className="text-3xl md:text-4xl font-bold gradient-text mb-1">
-                                    {stat.value}
-                                </div>
-                                <div className="text-sm text-[--muted]">{stat.label}</div>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            </section>
 
             {/* ===== FEATURES SECTION ===== */}
-            <section id="features" className="py-20 px-4">
+            <section id="features" className="py-20 px-4 bg-gradient-to-b from-transparent to-pink-50/30 dark:to-gray-900/50">
                 <div className="max-w-6xl mx-auto">
-                    <motion.div
-                        className="text-center mb-16"
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                    >
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                            Tính năng <span className="gradient-text">Nổi bật</span>
-                        </h2>
-                        <p className="text-[--text-secondary] max-w-2xl mx-auto">
-                            Được thiết kế đặc biệt cho cộng đồng giáo dục Việt Nam, kết hợp công nghệ AI
-                            và kiến thức tâm lý học hiện đại.
-                        </p>
-                    </motion.div>
-
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {features.map((feature, idx) => (
                             <motion.div
                                 key={feature.title}
@@ -210,25 +218,25 @@ export default function LandingPage() {
                                 viewport={{ once: true }}
                             >
                                 <Link to={feature.route}>
-                                    <Card variant="interactive" className="h-full hover:scale-105 transition-transform">
+                                    <Card className="h-full bg-white dark:bg-gray-800 rounded-2xl p-6 hover:shadow-lg transition-all cursor-pointer">
                                         <div className="flex items-start gap-4 mb-4">
                                             <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center shadow-lg shrink-0`}>
-                                                <feature.icon className="w-6 h-6 text-white" />
-                                            </div>
+                                            <feature.icon className="w-6 h-6 text-white" />
+                                        </div>
                                             <div className="flex-1">
-                                                <h3 className="text-lg font-semibold text-[--text] mb-2">
-                                                    {feature.title}
-                                                </h3>
+                                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                        {feature.title}
+                                    </h3>
                                             </div>
                                         </div>
-                                        <p className="text-[--text-secondary] text-sm leading-relaxed">
-                                            {feature.description}
-                                        </p>
-                                        <div className="mt-4 flex items-center gap-2 text-[--brand] text-sm font-medium">
+                                        <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-4">
+                                        {feature.description}
+                                    </p>
+                                        <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 text-sm font-medium">
                                             <span>Khám phá ngay</span>
                                             <ArrowRight size={16} />
                                         </div>
-                                    </Card>
+                                </Card>
                                 </Link>
                             </motion.div>
                         ))}
@@ -237,25 +245,33 @@ export default function LandingPage() {
             </section>
 
             {/* ===== BENEFITS SECTION ===== */}
-            <section className="py-20 px-4 relative overflow-hidden">
-                <GlowOrbs className="opacity-50" />
+            <section className="py-20 px-4 bg-white dark:bg-gray-900">
+                <div className="max-w-6xl mx-auto">
+                    <motion.div
+                        className="text-center mb-4"
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                    >
+                        <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold uppercase tracking-wide mb-2">
+                            LỢI ÍCH
+                        </p>
+                        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-8">
+                            Tại sao chọn Bạn Đồng Hành?
+                        </h2>
+                        <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-12">
+                            Chúng tôi tin rằng một môi trường giáo dục hạnh phúc là nền tảng
+                            cho sự phát triển toàn diện. Bạn Đồng Hành được xây dựng với
+                            tâm huyết và sự tận tâm.
+                        </p>
+                    </motion.div>
 
-                <div className="max-w-6xl mx-auto relative z-10">
-                    <div className="grid lg:grid-cols-2 gap-12 items-center">
+                    <div className="grid lg:grid-cols-2 gap-12 items-start">
                         <motion.div
                             initial={{ opacity: 0, x: -30 }}
                             whileInView={{ opacity: 1, x: 0 }}
                             viewport={{ once: true }}
                         >
-                            <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                                Tại sao chọn <span className="gradient-text">Bạn Đồng Hành?</span>
-                            </h2>
-                            <p className="text-[--text-secondary] mb-8">
-                                Chúng tôi tin rằng một môi trường giáo dục hạnh phúc là nền tảng
-                                cho sự phát triển toàn diện. Bạn Đồng Hành được xây dựng với
-                                tâm huyết và sự tận tâm.
-                            </p>
-
                             <ul className="space-y-4">
                                 {benefits.map((benefit, idx) => (
                                     <motion.li
@@ -266,10 +282,10 @@ export default function LandingPage() {
                                         transition={{ delay: idx * 0.1 }}
                                         viewport={{ once: true }}
                                     >
-                                        <div className="shrink-0 w-6 h-6 rounded-full bg-[--brand]/10 flex items-center justify-center mt-0.5">
-                                            <CheckCircle className="w-4 h-4 text-[--brand]" />
+                                        <div className="shrink-0 w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mt-0.5">
+                                            <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                                         </div>
-                                        <span className="text-[--text]">{benefit}</span>
+                                        <span className="text-gray-900 dark:text-white text-lg">{benefit}</span>
                                     </motion.li>
                                 ))}
                             </ul>
@@ -279,30 +295,29 @@ export default function LandingPage() {
                             initial={{ opacity: 0, x: 30 }}
                             whileInView={{ opacity: 1, x: 0 }}
                             viewport={{ once: true }}
+                            className="grid grid-cols-2 gap-4"
                         >
-                            <Card variant="highlight" className="p-8">
-                                <div className="grid grid-cols-2 gap-4">
-                                    {[
-                                        { icon: Brain, label: 'AI Thông minh', desc: 'Hiểu context & cảm xúc' },
-                                        { icon: Shield, label: 'An toàn', desc: 'Bảo mật dữ liệu' },
-                                        { icon: Bot, label: 'Hỗ trợ 24/7', desc: 'Luôn sẵn sàng' },
-                                        { icon: Heart, label: 'Thân thiện', desc: 'Giao diện dễ dùng' },
-                                    ].map((item) => (
-                                        <div key={item.label} className="glass-card p-4 rounded-xl text-center">
-                                            <item.icon className="w-8 h-8 mx-auto mb-2 text-[--brand]" />
-                                            <div className="font-semibold text-sm text-[--text]">{item.label}</div>
-                                            <div className="text-sm text-[--text-secondary] font-medium">{item.desc}</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </Card>
-                        </motion.div>
+                            {benefitCards.map((card, idx) => (
+                    <motion.div
+                                    key={card.title}
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: idx * 0.1 }}
+                                viewport={{ once: true }}
+                                    className={`${card.color} rounded-2xl p-6 text-center`}
+                    >
+                                    <card.icon className={`w-8 h-8 mx-auto mb-3 ${card.iconColor}`} />
+                                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2">{card.title}</h3>
+                                    <p className="text-sm text-gray-600 dark:text-gray-300">{card.description}</p>
+                            </motion.div>
+                        ))}
+                            </motion.div>
                     </div>
                 </div>
             </section>
 
             {/* ===== TESTIMONIALS SECTION ===== */}
-            <section className="py-20 px-4">
+            <section className="py-20 px-4 bg-gradient-to-b from-pink-50/30 dark:from-gray-900/50 to-transparent">
                 <div className="max-w-6xl mx-auto">
                     <motion.div
                         className="text-center mb-12"
@@ -310,8 +325,8 @@ export default function LandingPage() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                     >
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                            Người dùng <span className="gradient-text">Nói gì?</span>
+                        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                            Người dùng nói gì?
                         </h2>
                     </motion.div>
 
@@ -324,20 +339,18 @@ export default function LandingPage() {
                                 transition={{ delay: idx * 0.1 }}
                                 viewport={{ once: true }}
                             >
-                                <Card className="h-full">
-                                    <div className="flex items-center gap-1 mb-4">
-                                        {[...Array(5)].map((_, i) => (
-                                            <Star key={i} className="w-4 h-4 fill-[--accent] text-[--accent]" />
-                                        ))}
-                                    </div>
-                                    <p className="text-[--text-secondary] italic mb-4">
-                                        {item.content}
+                                <Card className="h-full bg-white dark:bg-gray-800 rounded-2xl p-6">
+                                    <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
+                                        "{item.content}"
                                     </p>
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-[--surface-border] flex items-center justify-center text-xl">
+                                        <div className={`w-12 h-12 rounded-full ${item.color} flex items-center justify-center font-bold text-lg`}>
                                             {item.avatar}
                                         </div>
-                                        <div className="text-sm text-[--muted]">{item.author}</div>
+                                        <div>
+                                            <div className="font-semibold text-gray-900 dark:text-white">{item.author}</div>
+                                            <div className="text-sm text-gray-500 dark:text-gray-400">{item.location}</div>
+                                        </div>
                                     </div>
                                 </Card>
                             </motion.div>

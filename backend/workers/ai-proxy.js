@@ -461,7 +461,7 @@ export default {
           knowledgeBase,
           env,
           { topK: 3, bm25Weight: 0.6, denseWeight: 0.4 }
-        ).catch(() => {
+        ).catch(async () => {
           // Fallback to BM25 only nếu hybrid search fail
           const { bm25Search } = await import('./rag.js');
           return bm25Search(sanitizedMessage, knowledgeBase).slice(0, 3);
@@ -581,7 +581,7 @@ export default {
               // Log model call với tokens và cost
               const streamLatencyMs = Date.now() - startTime;
               trace.logModelCall(model, modelVersion, estimatedTokens, responseTokens, costUsd, streamLatencyMs);
-              
+
               // Log completion
               trace.logResponse(200, {
                 risk_level: riskLevel,
@@ -662,7 +662,7 @@ export default {
         
         // Log model call với tokens và cost
         trace.logModelCall(model, modelVersion, estimatedTokens, responseTokens, costUsd, Date.now() - startTime);
-        
+
         // Log completion
         trace.logResponse(200, {
           risk_level: parsed.riskLevel,
