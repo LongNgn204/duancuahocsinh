@@ -1,61 +1,85 @@
 // src/pages/Login.jsx
-// Chú thích: Trang đăng nhập thân thiện, không giống AI code
+// Chú thích: Trang đăng nhập thân thiện với nút đăng ký và đăng nhập riêng biệt
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Bot, Heart, Sparkles, ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2, LogIn, UserPlus } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import GlowOrbs from '../components/ui/GlowOrbs';
-import { login, register, checkUsername } from '../utils/api';
+import { login, register } from '../utils/api';
 
 export default function Login() {
     const navigate = useNavigate();
     const [username, setUsername] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
-    const [isChecking, setIsChecking] = useState(false);
+    const [mode, setMode] = useState('login'); // 'login' hoặc 'register'
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const validateUsername = () => {
         if (!username.trim()) {
             setError('Vui lòng nhập tên của bạn');
-            return;
+            return false;
         }
 
         if (username.trim().length < 3) {
             setError('Tên phải có ít nhất 3 ký tự');
-            return;
+            return false;
         }
+
+        if (username.trim().length > 30) {
+            setError('Tên không được quá 30 ký tự');
+            return false;
+        }
+
+        return true;
+    };
+
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        if (!validateUsername()) return;
 
         setIsLoading(true);
         setError('');
 
         try {
-            // Kiểm tra username có tồn tại không
-            setIsChecking(true);
-            const checkResult = await checkUsername(username.trim());
-            
-            let result;
-            if (checkResult.exists) {
-                // Đăng nhập
-                result = await login(username.trim());
-            } else {
-                // Đăng ký mới
-                result = await register(username.trim());
-            }
+            const result = await login(username.trim());
 
             if (result.success) {
-                // Chuyển đến dashboard
                 navigate('/app');
             } else {
-                setError(result.message || 'Có lỗi xảy ra, vui lòng thử lại');
+                setError(result.message || 'Tên đăng nhập không tồn tại. Bạn có muốn đăng ký không?');
             }
         } catch (err) {
             setError(err.message || 'Không thể kết nối. Vui lòng thử lại sau');
         } finally {
             setIsLoading(false);
-            setIsChecking(false);
+        }
+    };
+
+    const handleRegister = async (e) => {
+        e.preventDefault();
+        if (!validateUsername()) return;
+
+        setIsLoading(true);
+        setError('');
+
+        try {
+            const result = await register(username.trim());
+
+            if (result.success) {
+                navigate('/app');
+            } else {
+                if (result.error === 'username_taken') {
+                    setError(`Tên "${username.trim()}" đã được sử dụng. Vui lòng chọn tên khác hoặc đăng nhập.`);
+                } else {
+                    setError(result.message || 'Có lỗi xảy ra, vui lòng thử lại');
+                }
+            }
+        } catch (err) {
+            setError(err.message || 'Không thể kết nối. Vui lòng thử lại sau');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -86,9 +110,41 @@ export default function Login() {
                         </p>
                     </div>
 
-                    {/* Login form */}
+                    {/* Login/Register form */}
                     <Card className="p-8">
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Mode toggle */}
+                        <div className="flex gap-2 mb-6 p-1 bg-[--surface] rounded-xl">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setMode('login');
+                                    setError('');
+                                }}
+                                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                                    mode === 'login'
+                                        ? 'bg-[--brand] text-white shadow-md'
+                                        : 'text-[--text-secondary] hover:text-[--text]'
+                                }`}
+                            >
+                                Đăng nhập
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setMode('register');
+                                    setError('');
+                                }}
+                                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                                    mode === 'register'
+                                        ? 'bg-[--brand] text-white shadow-md'
+                                        : 'text-[--text-secondary] hover:text-[--text]'
+                                }`}
+                            >
+                                Đăng ký
+                            </button>
+                        </div>
+
+                        <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="space-y-6">
                             <div>
                                 <label htmlFor="username" className="block text-sm font-medium text-[--text] mb-2">
                                     Tên của bạn
@@ -121,21 +177,30 @@ export default function Login() {
                                 </motion.div>
                             )}
 
-                            <Button
-                                type="submit"
-                                size="lg"
-                                className="w-full"
-                                disabled={isLoading || !username.trim()}
-                                iconRight={
-                                    isLoading ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                    ) : (
-                                        <ArrowRight size={20} />
-                                    )
-                                }
-                            >
-                                {isChecking ? 'Đang kiểm tra...' : isLoading ? 'Đang xử lý...' : 'Bắt đầu'}
-                            </Button>
+                            {/* Action buttons */}
+                            <div className="flex gap-3">
+                                <Button
+                                    type="submit"
+                                    size="lg"
+                                    className="flex-1"
+                                    disabled={isLoading || !username.trim()}
+                                    iconRight={
+                                        isLoading ? (
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                        ) : mode === 'login' ? (
+                                            <LogIn size={20} />
+                                        ) : (
+                                            <UserPlus size={20} />
+                                        )
+                                    }
+                                >
+                                    {isLoading 
+                                        ? 'Đang xử lý...' 
+                                        : mode === 'login' 
+                                            ? 'Đăng nhập' 
+                                            : 'Đăng ký'}
+                                </Button>
+                            </div>
                         </form>
 
                         <div className="mt-6 pt-6 border-t border-[--surface-border]">
