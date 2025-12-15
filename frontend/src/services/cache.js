@@ -12,7 +12,15 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 export async function getCache(key) {
   try {
     const db = await openDB();
+    if (!db) {
+      return null;
+    }
+    
     const tx = db.transaction('cache', 'readonly');
+    if (!tx || !tx.store) {
+      return null;
+    }
+    
     const cached = await tx.store.get(key);
     await tx.done;
 
@@ -22,9 +30,16 @@ export async function getCache(key) {
 
     // Expired, remove it
     if (cached) {
-      const deleteTx = db.transaction('cache', 'readwrite');
-      await deleteTx.store.delete(key);
-      await deleteTx.done;
+      try {
+        const deleteTx = db.transaction('cache', 'readwrite');
+        if (deleteTx && deleteTx.store) {
+          await deleteTx.store.delete(key);
+          await deleteTx.done;
+        }
+      } catch (deleteError) {
+        // Ignore delete errors
+        console.warn('[Cache] Delete expired cache failed:', deleteError);
+      }
     }
 
     return null;
@@ -42,7 +57,15 @@ export async function getCache(key) {
 export async function setCache(key, data) {
   try {
     const db = await openDB();
+    if (!db) {
+      return;
+    }
+    
     const tx = db.transaction('cache', 'readwrite');
+    if (!tx || !tx.store) {
+      return;
+    }
+    
     await tx.store.put({
       key,
       data,
@@ -72,19 +95,40 @@ export async function clearCache() {
  * Open IndexedDB
  */
 async function openDB() {
+  // Check if IndexedDB is available
+  if (typeof indexedDB === 'undefined') {
+    console.warn('[Cache] IndexedDB not available');
+    return null;
+  }
+
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('ban-dong-hanh-cache', 1);
+    try {
+      const request = indexedDB.open('ban-dong-hanh-cache', 1);
 
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
+      request.onerror = () => {
+        console.warn('[Cache] IndexedDB open error:', request.error);
+        resolve(null); // Return null instead of rejecting
+      };
+      
+      request.onsuccess = () => {
+        resolve(request.result);
+      };
 
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains('cache')) {
-        const store = db.createObjectStore('cache', { keyPath: 'key' });
-        store.createIndex('timestamp', 'timestamp');
-      }
-    };
+      request.onupgradeneeded = (event) => {
+        try {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains('cache')) {
+            const store = db.createObjectStore('cache', { keyPath: 'key' });
+            store.createIndex('timestamp', 'timestamp');
+          }
+        } catch (upgradeError) {
+          console.warn('[Cache] Upgrade error:', upgradeError);
+        }
+      };
+    } catch (error) {
+      console.warn('[Cache] IndexedDB initialization error:', error);
+      resolve(null); // Return null instead of rejecting
+    }
   });
 }
 

@@ -3,6 +3,8 @@
 // Tạo trace_id, structured logging, metrics tracking (latency, tokens, cost)
 // Tương thích với Workers environment (không dùng OpenTelemetry full vì không hỗ trợ đầy đủ)
 
+import { redactPII, redactPIIFromObject } from './pii-redactor.js';
+
 /**
  * Generate unique trace ID cho mỗi request
  * Format: timestamp-random (ví dụ: 1703123456789-a1b2c3d4)

@@ -207,17 +207,6 @@ export default {
         const url = new URL(request.url);
         const route = matchRoute(url.pathname, request.method);
 
-        // Rate limiting (skip cho OPTIONS)
-        if (request.method !== 'OPTIONS') {
-            const rateLimitResponse = await rateLimitMiddleware(request, env, url.pathname);
-            if (rateLimitResponse) {
-                trace.log('warn', 'rate_limit_exceeded', { path: url.pathname });
-                trace.logResponse(429);
-                const wrapped = wrapResponse(rateLimitResponse);
-                return wrapped;
-            }
-        }
-
         // Wrap response with CORS headers và trace ID
         const wrapResponse = (response) => {
             const newHeaders = new Headers(response.headers);
@@ -229,6 +218,16 @@ export default {
                 headers: newHeaders
             });
         };
+
+        // Rate limiting (skip cho OPTIONS)
+        if (request.method !== 'OPTIONS') {
+            const rateLimitResponse = await rateLimitMiddleware(request, env, url.pathname);
+            if (rateLimitResponse) {
+                trace.log('warn', 'rate_limit_exceeded', { path: url.pathname });
+                trace.logResponse(429);
+                return wrapResponse(rateLimitResponse);
+            }
+        }
 
         try {
             let response;

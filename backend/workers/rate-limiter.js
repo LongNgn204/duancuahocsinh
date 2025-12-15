@@ -160,6 +160,7 @@ export async function rateLimitMiddleware(request, env, endpoint = '') {
         'X-RateLimit-Remaining': String(limit.remaining),
         'X-RateLimit-Reset': String(limit.resetAt),
         'Retry-After': String(Math.ceil((limit.resetAt - Date.now()) / 1000)),
+        // CORS headers sẽ được thêm bởi router.js wrapResponse
       },
     });
   }

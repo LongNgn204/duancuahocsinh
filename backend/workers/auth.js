@@ -260,6 +260,7 @@ export async function handleGetMe(request, env) {
 
 /**
  * Helper tạo JSON response
+ * Note: CORS headers sẽ được thêm bởi router.js wrapResponse
  */
 function createJsonResponse(data, status = 200) {
     return new Response(JSON.stringify(data), {
