@@ -22,7 +22,7 @@ export default function AppHeader() {
             </div>
             <div className="hidden sm:block">
               <div className="font-bold text-lg gradient-text tracking-tight">Bạn Đồng Hành</div>
-              <div className="text-[10px] text-[--muted] -mt-1">Hỗ trợ Tâm lý Học đường</div>
+              <div className="text-[10px] text-[--muted] -mt-1">Trường học hạnh phúc</div>
             </div>
           </Link>
 

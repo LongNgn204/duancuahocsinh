@@ -20,6 +20,7 @@ import { registerServiceWorker } from './utils/notifications';
 
 // Lazy load pages
 const LandingPage = lazy(() => import('./pages/LandingPage'));
+const Login = lazy(() => import('./pages/Login'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Chat = lazy(() => import('./pages/Chat'));
 const BreathingBubble = lazy(() => import('./components/breathing/BreathingBubble'));
@@ -145,6 +146,9 @@ function AppRoutes() {
           {/* Landing Page - Standalone without app layout */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/landing" element={<LandingPage />} />
+
+          {/* Login Page - Standalone */}
+          <Route path="/login" element={<Login />} />
 
           {/* App Pages - With layout */}
           <Route path="/app" element={<AppLayout><Dashboard /></AppLayout>} />

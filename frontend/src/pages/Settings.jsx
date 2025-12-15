@@ -622,15 +622,15 @@ export default function Settings() {
               <div>
                 <h3 className="font-bold text-lg gradient-text">Bạn Đồng Hành</h3>
                 <p className="text-sm text-[--muted]">Phiên bản 1.15.dev</p>
-                <p className="text-xs text-[--muted] mt-1">Hỗ trợ Tâm lý Học đường</p>
+                <p className="text-xs text-[--muted] mt-1">Cùng nhau phát triển Trường học Hạnh Phúc!</p>
               </div>
             </div>
 
             <div className="py-4 text-sm text-[--text-secondary] space-y-2">
               <p>
-                Bạn Đồng Hành là ứng dụng hỗ trợ sức khỏe tâm thần dành riêng cho
-                học sinh Việt Nam. Được phát triển với mục tiêu mang đến một không
-                gian an toàn, thân thiện để các bạn chia sẻ và cải thiện sức khỏe tinh thần.
+                Bạn Đồng Hành là nền tảng hỗ trợ phát triển toàn diện cho
+                cộng đồng giáo dục Việt Nam. Được phát triển với mục tiêu mang đến một không
+                gian an toàn, thân thiện để mọi người chia sẻ và cải thiện sức khỏe tinh thần.
               </p>
               <p className="flex items-center gap-1">
                 Được phát triển với <Heart size={14} className="text-red-500" fill="currentColor" /> tại Việt Nam
@@ -681,7 +681,7 @@ export default function Settings() {
                   Phát triển bởi <span className="font-semibold text-[--brand]">Long Nguyễn</span>
                 </p>
                 <p className="text-xs text-[--muted] text-center mt-1">
-                  © 2025 Bạn Đồng Hành. Được phát triển với tình yêu quý dành cho tất cả học sinh Việt Nam.
+                  © 2025 Bạn Đồng Hành. Được phát triển với tình yêu quý dành cho cộng đồng giáo dục Việt Nam.
                 </p>
               </div>
             </div>
