@@ -194,7 +194,7 @@ export default function MoodJournal() {
 
         const today = new Date();
         const todayStr = today.toISOString().split('T')[0];
-        
+
         // Check if already has entry
         const existing = entries.find(e => {
             const entryDate = e.date ? new Date(e.date).toISOString().split('T')[0] : null;
@@ -282,14 +282,14 @@ export default function MoodJournal() {
         });
         const recent7 = last14Days.slice(0, 7);
         const previous7 = last14Days.slice(7, 14);
-        
-        const recentAvg = recent7.length > 0 
+
+        const recentAvg = recent7.length > 0
             ? recent7.reduce((sum, e) => {
                 const idx = MOODS.findIndex(m => m.id === e.mood);
                 return sum + (idx >= 0 ? idx : 2.5);
             }, 0) / recent7.length
             : null;
-        
+
         const previousAvg = previous7.length > 0
             ? previous7.reduce((sum, e) => {
                 const idx = MOODS.findIndex(m => m.id === e.mood);
@@ -442,14 +442,14 @@ export default function MoodJournal() {
             try {
                 const backendMood = MOOD_MAP[mood] || mood;
                 await addJournalEntry(content, backendMood, []);
-                
+
                 // Thưởng XP khi thêm entry
                 try {
                     await rewardXP('journal_add');
                 } catch (xpError) {
                     console.warn('[Journal] XP reward failed:', xpError);
                 }
-                
+
                 // Mark as synced
                 entry.synced = true;
                 const syncedUpdated = updated.map(e => e.id === entry.id ? entry : e);
@@ -518,7 +518,7 @@ export default function MoodJournal() {
     };
 
     return (
-        <div className="min-h-[70vh] relative pb-20 md:pb-0">
+        <div className="min-h-[70vh] relative">
             <GlowOrbs className="opacity-30" />
 
             <div className="relative z-10 max-w-4xl mx-auto space-y-6">
@@ -898,15 +898,14 @@ export default function MoodJournal() {
                                     const hasEntry = d.moodValue !== null;
                                     const height = hasEntry ? ((d.moodValue + 1) / MOODS.length) * 100 : 10;
                                     const moodData = d.mood ? MOODS.find(m => m.id === d.mood) : null;
-                                    
+
                                     return (
                                         <div key={d.date} className="flex-1 flex flex-col items-center group relative">
                                             <motion.div
-                                                className={`w-full rounded-t transition-all ${
-                                                    hasEntry 
+                                                className={`w-full rounded-t transition-all ${hasEntry
                                                         ? moodData?.color || 'bg-gray-400'
                                                         : 'bg-[--surface-border]'
-                                                }`}
+                                                    }`}
                                                 initial={{ height: 0 }}
                                                 animate={{ height: `${height}%` }}
                                                 transition={{ delay: i * 0.05 }}
@@ -945,10 +944,10 @@ export default function MoodJournal() {
                                 {(chartPeriod === 'week' ? weeklyChartData : monthlyChartData).map((d, i) => {
                                     const score = d.sentimentScore;
                                     const height = score !== null ? score * 100 : 5;
-                                    const color = score !== null 
+                                    const color = score !== null
                                         ? (score >= 0.6 ? 'bg-emerald-500' : score <= 0.4 ? 'bg-red-500' : 'bg-amber-500')
                                         : 'bg-[--surface-border]';
-                                    
+
                                     return (
                                         <div key={d.date} className="flex-1 flex flex-col items-center group relative">
                                             <motion.div

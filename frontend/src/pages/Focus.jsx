@@ -4,7 +4,7 @@ import FocusTimer from '../components/focus/FocusTimer';
 
 export default function Focus() {
     return (
-        <div className="pb-20 md:pb-0">
+        <div>
             <FocusTimer />
         </div>
     );

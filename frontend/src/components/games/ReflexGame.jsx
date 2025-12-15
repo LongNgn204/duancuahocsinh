@@ -355,7 +355,7 @@ export default function ReflexGame() {
     }, [gameState, score]);
 
     return (
-        <div className="min-h-[70vh] relative pb-20 md:pb-0">
+        <div className="min-h-[70vh] relative">
             <div className="max-w-4xl mx-auto space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -395,11 +395,10 @@ export default function ReflexGame() {
                                 <button
                                     key={key}
                                     onClick={() => setGameMode(key)}
-                                    className={`p-4 rounded-xl border-2 transition-all ${
-                                        gameMode === key
+                                    className={`p-4 rounded-xl border-2 transition-all ${gameMode === key
                                             ? 'border-[--brand] bg-[--brand]/10'
                                             : 'border-[--surface-border] hover:border-[--brand]/50'
-                                    }`}
+                                        }`}
                                 >
                                     <div className="text-3xl mb-2">{mode.icon}</div>
                                     <div className="font-medium text-[--text]">{mode.label}</div>
@@ -502,11 +501,10 @@ export default function ReflexGame() {
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={() => setPlaySound(!playSound)}
-                                className={`p-2 rounded-lg transition-colors ${
-                                    playSound
+                                className={`p-2 rounded-lg transition-colors ${playSound
                                         ? 'bg-[--brand]/10 text-[--brand]'
                                         : 'bg-[--surface-border] text-[--muted]'
-                                }`}
+                                    }`}
                                 title={playSound ? 'Tắt âm thanh' : 'Bật âm thanh'}
                             >
                                 {playSound ? <Volume2 size={18} /> : <VolumeX size={18} />}

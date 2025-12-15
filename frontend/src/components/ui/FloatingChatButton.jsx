@@ -28,8 +28,8 @@ export default function FloatingChatButton() {
                 )}
             </AnimatePresence>
 
-            {/* Floating button container */}
-            <div className="fixed bottom-28 right-4 z-50 md:bottom-24 md:right-6">
+            {/* Floating button container - positioned bottom-right */}
+            <div className="fixed bottom-6 right-4 z-50 md:bottom-6 md:right-6">
                 <AnimatePresence mode="wait">
                     {isExpanded ? (
                         // Expanded menu

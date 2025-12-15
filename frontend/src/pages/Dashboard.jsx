@@ -23,38 +23,40 @@ const moods = [
   { id: 'stressed', label: 'Căng thẳng', emoji: '😤', icon: Zap, color: 'from-red-400 to-rose-400' },
 ];
 
-// Quick actions
+// Quick actions - Theo yêu cầu khách hàng
 const quickActions = [
   {
     path: '/chat',
-    label: 'Tâm sự với AI',
+    label: 'Trò chuyện AI',
     icon: Bot,
-    description: 'Chat văn bản hoặc nói chuyện với AI',
+    description: 'Tâm sự với bạn đồng hành AI',
     color: 'from-teal-500 to-cyan-500',
     badge: 'HOT'
   },
   {
-    path: '/breathing',
-    label: 'Thở & Thư giãn',
-    icon: Heart,
-    description: 'Giảm stress trong 5 phút',
+    path: '/wellness',
+    label: 'Liều thuốc tinh thần',
+    icon: Sparkles,
+    description: 'Bài tập thở và động viên',
     color: 'from-pink-500 to-rose-500',
+    badge: 'MỚI'
   },
   {
-    path: '/gratitude',
-    label: 'Lọ Biết Ơn',
-    icon: Sparkles,
-    description: 'Ghi lại điều tốt đẹp hôm nay',
-    color: 'from-amber-500 to-orange-500',
+    path: '/breathing',
+    label: 'Góc An Yên',
+    icon: Heart,
+    description: 'Thư giãn và bình tĩnh',
+    color: 'from-purple-500 to-indigo-500',
   },
   {
     path: '/games',
-    label: 'Giải trí',
+    label: 'Nhanh tay lẹ mắt',
     icon: Gamepad2,
-    description: 'Thư giãn với mini games',
-    color: 'from-purple-500 to-indigo-500',
+    description: 'Mini games rèn luyện',
+    color: 'from-amber-500 to-orange-500',
   },
 ];
+
 
 // Tips of the day
 const tips = [
@@ -179,9 +181,14 @@ export default function Dashboard() {
     return streak;
   };
 
-  // Lấy giờ hiện tại để chào
+  // Lấy giờ hiện tại để chào - Theo yêu cầu KH với lời chúc tích cực
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Chào buổi sáng' : hour < 18 ? 'Chào buổi chiều' : 'Chào buổi tối';
+  const greetingMessage = hour < 12
+    ? 'Chúc bạn một ngày tốt lành 🌤️'
+    : hour < 18
+      ? 'Chúc bạn buổi chiều vui vẻ ☀️'
+      : 'Chúc bạn ngủ ngon 🌙';
 
   // Random tip
   const todayTip = tips[Math.floor(Math.random() * tips.length)];
@@ -208,6 +215,7 @@ export default function Dashboard() {
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold">
                   {greeting}, <span className="gradient-text">{userName}</span>! 👋
                 </h1>
+                <p className="text-[--brand] font-medium mt-1">{greetingMessage}</p>
                 <p className="text-[--text-secondary] mt-2 max-w-md">
                   Hôm nay bạn cảm thấy thế nào? Hãy chọn tâm trạng của bạn bên dưới.
                 </p>

@@ -4,7 +4,7 @@ import SleepHelper from '../components/sleep/SleepHelper';
 
 export default function Sleep() {
     return (
-        <div className="pb-20 md:pb-0">
+        <div>
             <SleepHelper />
         </div>
     );

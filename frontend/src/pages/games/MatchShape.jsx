@@ -124,7 +124,7 @@ export default function MatchShape() {
   const accuracy = round > 0 ? Math.round((score / round) * 100) : 0;
 
   return (
-    <div className="min-h-[70vh] relative pb-20 md:pb-0">
+    <div className="min-h-[70vh] relative">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center">

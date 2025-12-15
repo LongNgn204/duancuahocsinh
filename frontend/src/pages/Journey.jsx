@@ -264,8 +264,8 @@ export default function Journey() {
                                 key={cat}
                                 onClick={() => setSelectedCategory(cat)}
                                 className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${selectedCategory === cat
-                                        ? 'bg-purple-500 text-white'
-                                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300'
+                                    ? 'bg-purple-500 text-white'
+                                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300'
                                     }`}
                             >
                                 {cat === 'all' ? 'Tất cả' :
@@ -297,8 +297,8 @@ export default function Journey() {
                   `}
                                 >
                                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-2 ${isUnlocked
-                                            ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white'
-                                            : 'bg-gray-200 dark:bg-gray-700 text-gray-400'
+                                        ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white'
+                                        : 'bg-gray-200 dark:bg-gray-700 text-gray-400'
                                         }`}>
                                         <Icon className="w-6 h-6" />
                                     </div>

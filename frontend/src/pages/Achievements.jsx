@@ -4,7 +4,7 @@ import AchievementSystem from '../components/achievements/AchievementSystem';
 
 export default function Achievements() {
     return (
-        <div className="pb-20 md:pb-0">
+        <div>
             <AchievementSystem />
         </div>
     );

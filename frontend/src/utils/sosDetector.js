@@ -16,8 +16,9 @@ const CRITICAL_PATTERNS = [
   // Ý định tự tử rõ ràng
   'tự tử', 'tự vẫn', 'tự sát',
   'muốn chết', 'mún chết', 'muon chet',
+  'chết rồi', 'chết mất', 'chết thôi', 'chết quách',
   'kết thúc cuộc đời', 'kết thúc tất cả',
-  'chết đi cho rồi', 'chết đi', 'chết đc rồi',
+  'chết đi cho rồi', 'chết đi', 'chết đc rồi', 'chết cho xong',
   'không muốn sống', 'k muốn sống', 'ko muon song',
   'sống làm gì', 'sống để làm gì', 'sống chi',
   'muốn biến mất', 'biến mất khỏi đời',

@@ -32,14 +32,14 @@ export default function Corner() {
         const parsed = JSON.parse(saved);
         setActivities(parsed.length > 0 ? parsed : DEFAULT_ACTIVITIES);
       }
-    } catch (_) {}
+    } catch (_) { }
 
     try {
       const saved = localStorage.getItem(REMINDERS_KEY);
       if (saved) {
         setReminders(JSON.parse(saved));
       }
-    } catch (_) {}
+    } catch (_) { }
   }, []);
 
   // Save to localStorage
@@ -47,21 +47,21 @@ export default function Corner() {
     setActivities(newActivities);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newActivities));
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const saveReminders = (newReminders) => {
     setReminders(newReminders);
     try {
       localStorage.setItem(REMINDERS_KEY, JSON.stringify(newReminders));
-    } catch (_) {}
+    } catch (_) { }
   };
 
   // Get pending activities (chưa làm hôm nay)
   const pendingActivities = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
     const completed = JSON.parse(localStorage.getItem('corner_completed_' + today) || '[]');
-    
+
     return activities.filter(act => !completed.includes(act.id));
   }, [activities]);
 
@@ -98,7 +98,7 @@ export default function Corner() {
 
   // Toggle reminder
   const toggleReminder = (id) => {
-    const updated = reminders.map(r => 
+    const updated = reminders.map(r =>
       r.id === id ? { ...r, enabled: !r.enabled } : r
     );
     saveReminders(updated);
@@ -179,9 +179,9 @@ export default function Corner() {
   }, [reminders]);
 
   return (
-    <div className="min-h-[70vh] relative pb-20 md:pb-0">
+    <div className="min-h-[70vh] relative">
       <GlowOrbs className="opacity-30" />
-      
+
       <div className="relative z-10 max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <motion.div

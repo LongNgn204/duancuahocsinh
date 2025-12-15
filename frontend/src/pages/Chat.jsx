@@ -12,7 +12,7 @@ import { useSpeech } from '../hooks/useSpeech';
 import MicVisualizer from '../components/chat/MicVisualizer';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import ChatList from '../components/chat/ChatList';
-import EmergencyOverlay from '../components/modals/EmergencyOverlay';
+import SOSOverlay from '../components/sos/SOSOverlay';
 import VoiceChat from '../components/chat/VoiceChat';
 import {
   Send, Mic, MicOff, Image, RotateCcw, Edit3,
@@ -301,11 +301,10 @@ export default function Chat() {
           <div className="flex-1 flex gap-1.5 p-1 bg-[--surface-border] rounded-xl">
             <button
               onClick={() => setChatMode('text')}
-              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg transition-all relative ${
-                chatMode === 'text'
-                  ? 'bg-[--surface] text-[--brand] shadow-sm font-medium'
-                  : 'text-[--muted] hover:text-[--text]'
-              }`}
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg transition-all relative ${chatMode === 'text'
+                ? 'bg-[--surface] text-[--brand] shadow-sm font-medium'
+                : 'text-[--muted] hover:text-[--text]'
+                }`}
             >
               <MessageCircle size={18} />
               <span className="text-sm hidden sm:inline">Chat văn bản</span>
@@ -313,11 +312,10 @@ export default function Chat() {
             </button>
             <button
               onClick={() => setChatMode('voice')}
-              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg transition-all relative ${
-                chatMode === 'voice'
-                  ? 'bg-[--surface] text-[--brand] shadow-sm font-medium'
-                  : 'text-[--muted] hover:text-[--text]'
-              }`}
+              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg transition-all relative ${chatMode === 'voice'
+                ? 'bg-[--surface] text-[--brand] shadow-sm font-medium'
+                : 'text-[--muted] hover:text-[--text]'
+                }`}
             >
               <Headphones size={18} />
               <span className="text-sm hidden sm:inline">Nói chuyện</span>
@@ -346,402 +344,402 @@ export default function Chat() {
           exit={{ opacity: 0, y: 10 }}
           className="h-[calc(100vh-20rem)] md:h-[calc(100vh-18rem)] flex flex-col lg:grid lg:grid-cols-[320px_1fr] gap-4"
         >
-      {/* A11y live region */}
-      <div aria-live="polite" aria-atomic="false" className="sr-only" ref={liveRegionRef} />
+          {/* A11y live region */}
+          <div aria-live="polite" aria-atomic="false" className="sr-only" ref={liveRegionRef} />
 
-      {/* Left: Conversation List */}
-      <div className="hidden lg:block">
-        <Card className="h-full flex flex-col overflow-hidden">
-          {/* Header */}
-          <div className="p-4 border-b border-[--surface-border] bg-gradient-to-r from-[--brand]/5 to-transparent">
-            <h3 className="font-semibold text-[--text] mb-3 flex items-center gap-2">
-              <MessageCircle size={18} className="text-[--brand]" />
-              Hội thoại
-            </h3>
-            <Button
-              onClick={() => { newChat(); setText(''); setImages([]); }}
-              variant="primary"
-              className="w-full"
-              icon={<Plus size={18} />}
-            >
-              Chat mới
-            </Button>
-          </div>
-          
-          {/* List */}
-          <div className="flex-1 overflow-y-auto p-2">
-            <ChatList
-              threads={threads}
-              currentId={currentId}
-              onNew={() => { newChat(); setText(''); setImages([]); }}
-              onSelect={(id) => setCurrentThread(id)}
-              onRename={(id, name) => renameChat(id, name)}
-              onDelete={(id) => deleteChat(id)}
-              minimal
-            />
-          </div>
-        </Card>
-      </div>
-
-      {/* Right: Chat Thread */}
-      <Card className="flex flex-col h-full overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-[--surface-border] bg-gradient-to-r from-[--brand]/5 to-transparent">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[--brand] to-[--brand-light] flex items-center justify-center shadow-lg shrink-0">
-              <Bot className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="font-semibold text-[--text] truncate">{currentThread?.title || 'Cuộc trò chuyện mới'}</h2>
-              <p className="text-xs text-[--muted]">{messages.length} tin nhắn</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button variant="ghost" size="icon-sm" onClick={clearChat} aria-label="Xoá hội thoại" title="Xóa hội thoại">
-              <Trash2 size={16} />
-            </Button>
-          </div>
-        </div>
-
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-gradient-to-b from-transparent to-[--surface]/30" role="list" aria-label="Tin nhắn">
-          {messages.length === 0 && (
-            <div className="h-full flex flex-col items-center justify-center text-center px-4">
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.3 }}
-                className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[--brand]/20 to-[--secondary]/20 flex items-center justify-center mb-6 shadow-lg"
-              >
-                <Bot className="w-10 h-10 text-[--brand]" />
-              </motion.div>
-              <motion.h3
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="font-semibold text-xl text-[--text] mb-3"
-              >
-                Xin chào! 👋
-              </motion.h3>
-              <motion.p
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="text-[--text-secondary] max-w-md leading-relaxed"
-              >
-                Mình là <span className="font-semibold text-[--brand]">Bạn Đồng Hành</span>, luôn sẵn sàng lắng nghe bạn.
-                <br />
-                Hãy chia sẻ bất cứ điều gì bạn đang nghĩ nhé!
-              </motion.p>
-            </div>
-          )}
-
-          <AnimatePresence>
-            {messages.map((m, i) => (
-              <Bubble
-                key={i}
-                role={m.role}
-                ts={m.ts}
-                isLatest={i === messages.length - 1}
-                onCopy={() => onCopyMsg(m.content)}
-                onPlayTTS={() => {
-                  if (m.role === 'assistant') {
-                    const text = typeof m.content === 'string' 
-                      ? m.content 
-                      : (m.content?.reply || m.content?.text || JSON.stringify(m.content));
-                    speak(text, {
-                      rate: ttsRate,
-                      voice: selectedVoice,
-                    });
-                  }
-                }}
-                onPauseTTS={pauseTTS}
-                onResumeTTS={resumeTTS}
-                onStopTTS={stop}
-                speaking={speaking}
-                paused={ttsPaused}
-                onTtsSettings={() => setShowTtsSettings(true)}
-                feedbackUI={
-                  m.role === 'assistant' ? (
-                    <Feedback
-                      value={m.feedback}
-                      onUp={() => { 
-                        setFeedback(i, 'up', m.messageId || m.traceId); 
-                        setInfo('Cảm ơn bạn!'); 
-                        setTimeout(() => setInfo(''), 1200); 
-                      }}
-                      onDown={() => { 
-                        setFeedback(i, 'down', m.messageId || m.traceId); 
-                        setInfo('Đã ghi nhận!'); 
-                        setTimeout(() => setInfo(''), 1200); 
-                      }}
-                    />
-                  ) : null
-                }
-              >
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    a: ({ href, children }) => (
-                      <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
-                    )
-                  }}
+          {/* Left: Conversation List */}
+          <div className="hidden lg:block">
+            <Card className="h-full flex flex-col overflow-hidden">
+              {/* Header */}
+              <div className="p-4 border-b border-[--surface-border] bg-gradient-to-r from-[--brand]/5 to-transparent">
+                <h3 className="font-semibold text-[--text] mb-3 flex items-center gap-2">
+                  <MessageCircle size={18} className="text-[--brand]" />
+                  Hội thoại
+                </h3>
+                <Button
+                  onClick={() => { newChat(); setText(''); setImages([]); }}
+                  variant="primary"
+                  className="w-full"
+                  icon={<Plus size={18} />}
                 >
-                  {typeof m.content === 'string'
-                    ? m.content
-                    : (m.content?.reply || m.content?.text || JSON.stringify(m.content))}
-                </ReactMarkdown>
+                  Chat mới
+                </Button>
+              </div>
 
-              </Bubble>
+              {/* List */}
+              <div className="flex-1 overflow-y-auto p-2">
+                <ChatList
+                  threads={threads}
+                  currentId={currentId}
+                  onNew={() => { newChat(); setText(''); setImages([]); }}
+                  onSelect={(id) => setCurrentThread(id)}
+                  onRename={(id, name) => renameChat(id, name)}
+                  onDelete={(id) => deleteChat(id)}
+                  minimal
+                />
+              </div>
+            </Card>
+          </div>
 
-            ))}
-          </AnimatePresence>
-
-          {loading && (
-            <motion.div
-              className="flex items-center gap-3"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              <Avatar role="assistant" />
-              <div className="glass-card rounded-2xl rounded-tl-md px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[--brand] animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-2 h-2 rounded-full bg-[--brand] animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-2 h-2 rounded-full bg-[--brand] animate-bounce" style={{ animationDelay: '300ms' }} />
+          {/* Right: Chat Thread */}
+          <Card className="flex flex-col h-full overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-[--surface-border] bg-gradient-to-r from-[--brand]/5 to-transparent">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[--brand] to-[--brand-light] flex items-center justify-center shadow-lg shrink-0">
+                  <Bot className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="font-semibold text-[--text] truncate">{currentThread?.title || 'Cuộc trò chuyện mới'}</h2>
+                  <p className="text-xs text-[--muted]">{messages.length} tin nhắn</p>
                 </div>
               </div>
-            </motion.div>
-          )}
-          <div ref={endRef} />
-        </div>
-
-        {/* Image previews */}
-        {images.length > 0 && (
-          <div className="px-4 pb-2 flex gap-2 flex-wrap">
-            {images.map((src, idx) => (
-              <div key={idx} className="relative">
-                <img src={src} alt="preview" className="w-16 h-16 object-cover rounded-xl border-2 border-[--surface-border]" />
-                <button
-                  onClick={() => setImages(imgs => imgs.filter((_, i) => i !== idx))}
-                  className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center"
-                >
-                  ×
-                </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button variant="ghost" size="icon-sm" onClick={clearChat} aria-label="Xoá hội thoại" title="Xóa hội thoại">
+                  <Trash2 size={16} />
+                </Button>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
 
-        {/* Info toast */}
-        <AnimatePresence>
-          {info && (
-            <motion.div
-              className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50"
-              initial={{ opacity: 0, y: 20, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.9 }}
-            >
-              <div className="px-4 py-2 rounded-xl bg-[--text] text-white shadow-lg backdrop-blur-sm flex items-center gap-2">
-                <Sparkles size={14} />
-                <span className="text-sm font-medium">{info}</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Input */}
-        <div className="p-4 border-t border-[--surface-border] bg-[--surface]/50 backdrop-blur-sm">
-          <form onSubmit={onSubmit} className="flex items-end gap-2">
-            <div className="flex-1 glass rounded-2xl p-3 flex items-end gap-2 border border-[--surface-border]">
-              {/* Mic visualizer */}
-              {speech.supported && speech.listening && (
-                <div className="mb-1">
-                  <MicVisualizer active={speech.listening} height={24} bars={16} />
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-gradient-to-b from-transparent to-[--surface]/30" role="list" aria-label="Tin nhắn">
+              {messages.length === 0 && (
+                <div className="h-full flex flex-col items-center justify-center text-center px-4">
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[--brand]/20 to-[--secondary]/20 flex items-center justify-center mb-6 shadow-lg"
+                  >
+                    <Bot className="w-10 h-10 text-[--brand]" />
+                  </motion.div>
+                  <motion.h3
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="font-semibold text-xl text-[--text] mb-3"
+                  >
+                    Xin chào! 👋
+                  </motion.h3>
+                  <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="text-[--text-secondary] max-w-md leading-relaxed"
+                  >
+                    Mình là <span className="font-semibold text-[--brand]">Bạn Đồng Hành</span>, luôn sẵn sàng lắng nghe bạn.
+                    <br />
+                    Hãy chia sẻ bất cứ điều gì bạn đang nghĩ nhé!
+                  </motion.p>
                 </div>
               )}
 
-              <textarea
-                ref={inputRef}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    onSubmit(e);
-                  }
-                }}
-                placeholder="Chia sẻ điều bạn đang nghĩ..."
-                rows={1}
-                className="flex-1 bg-transparent resize-none outline-none text-[--text] placeholder:text-[--muted] py-2 px-3 min-h-[44px] max-h-32 text-sm leading-relaxed"
-                aria-label="Ô nhập tin nhắn"
-              />
+              <AnimatePresence>
+                {messages.map((m, i) => (
+                  <Bubble
+                    key={i}
+                    role={m.role}
+                    ts={m.ts}
+                    isLatest={i === messages.length - 1}
+                    onCopy={() => onCopyMsg(m.content)}
+                    onPlayTTS={() => {
+                      if (m.role === 'assistant') {
+                        const text = typeof m.content === 'string'
+                          ? m.content
+                          : (m.content?.reply || m.content?.text || JSON.stringify(m.content));
+                        speak(text, {
+                          rate: ttsRate,
+                          voice: selectedVoice,
+                        });
+                      }
+                    }}
+                    onPauseTTS={pauseTTS}
+                    onResumeTTS={resumeTTS}
+                    onStopTTS={stop}
+                    speaking={speaking}
+                    paused={ttsPaused}
+                    onTtsSettings={() => setShowTtsSettings(true)}
+                    feedbackUI={
+                      m.role === 'assistant' ? (
+                        <Feedback
+                          value={m.feedback}
+                          onUp={() => {
+                            setFeedback(i, 'up', m.messageId || m.traceId);
+                            setInfo('Cảm ơn bạn!');
+                            setTimeout(() => setInfo(''), 1200);
+                          }}
+                          onDown={() => {
+                            setFeedback(i, 'down', m.messageId || m.traceId);
+                            setInfo('Đã ghi nhận!');
+                            setTimeout(() => setInfo(''), 1200);
+                          }}
+                        />
+                      ) : null
+                    }
+                  >
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        a: ({ href, children }) => (
+                          <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
+                        )
+                      }}
+                    >
+                      {typeof m.content === 'string'
+                        ? m.content
+                        : (m.content?.reply || m.content?.text || JSON.stringify(m.content))}
+                    </ReactMarkdown>
 
-              {/* Action buttons */}
-              <div className="flex items-center gap-1 mb-1">
-                <label className="p-2 rounded-xl cursor-pointer text-[--muted] hover:text-[--text] hover:bg-[--surface-border] transition-colors touch-target" title="Thêm ảnh">
-                  <Image size={18} />
-                  <input type="file" accept="image/*" onChange={onPickImages} className="hidden" multiple />
-                </label>
+                  </Bubble>
 
-                {speech.supported && (
+                ))}
+              </AnimatePresence>
+
+              {loading && (
+                <motion.div
+                  className="flex items-center gap-3"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <Avatar role="assistant" />
+                  <div className="glass-card rounded-2xl rounded-tl-md px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-[--brand] animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-2 h-2 rounded-full bg-[--brand] animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="w-2 h-2 rounded-full bg-[--brand] animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+              <div ref={endRef} />
+            </div>
+
+            {/* Image previews */}
+            {images.length > 0 && (
+              <div className="px-4 pb-2 flex gap-2 flex-wrap">
+                {images.map((src, idx) => (
+                  <div key={idx} className="relative">
+                    <img src={src} alt="preview" className="w-16 h-16 object-cover rounded-xl border-2 border-[--surface-border]" />
+                    <button
+                      onClick={() => setImages(imgs => imgs.filter((_, i) => i !== idx))}
+                      className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Info toast */}
+            <AnimatePresence>
+              {info && (
+                <motion.div
+                  className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50"
+                  initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                >
+                  <div className="px-4 py-2 rounded-xl bg-[--text] text-white shadow-lg backdrop-blur-sm flex items-center gap-2">
+                    <Sparkles size={14} />
+                    <span className="text-sm font-medium">{info}</span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Input */}
+            <div className="p-4 border-t border-[--surface-border] bg-[--surface]/50 backdrop-blur-sm">
+              <form onSubmit={onSubmit} className="flex items-end gap-2">
+                <div className="flex-1 glass rounded-2xl p-3 flex items-end gap-2 border border-[--surface-border]">
+                  {/* Mic visualizer */}
+                  {speech.supported && speech.listening && (
+                    <div className="mb-1">
+                      <MicVisualizer active={speech.listening} height={24} bars={16} />
+                    </div>
+                  )}
+
+                  <textarea
+                    ref={inputRef}
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        onSubmit(e);
+                      }
+                    }}
+                    placeholder="Chia sẻ điều bạn đang nghĩ..."
+                    rows={1}
+                    className="flex-1 bg-transparent resize-none outline-none text-[--text] placeholder:text-[--muted] py-2 px-3 min-h-[44px] max-h-32 text-sm leading-relaxed"
+                    aria-label="Ô nhập tin nhắn"
+                  />
+
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-1 mb-1">
+                    <label className="p-2 rounded-xl cursor-pointer text-[--muted] hover:text-[--text] hover:bg-[--surface-border] transition-colors touch-target" title="Thêm ảnh">
+                      <Image size={18} />
+                      <input type="file" accept="image/*" onChange={onPickImages} className="hidden" multiple />
+                    </label>
+
+                    {speech.supported && (
+                      <button
+                        type="button"
+                        onClick={speech.listening ? speech.stop : speech.start}
+                        className={`p-2 rounded-xl transition-colors touch-target ${speech.listening
+                          ? 'bg-red-500 text-white shadow-lg'
+                          : 'text-[--muted] hover:text-[--text] hover:bg-[--surface-border]'
+                          }`}
+                        aria-label={speech.listening ? 'Dừng ghi âm' : 'Ghi âm'}
+                        title={speech.listening ? 'Dừng ghi âm' : 'Ghi âm'}
+                      >
+                        {speech.listening ? <MicOff size={18} /> : <Mic size={18} />}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Send button */}
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={loading || (!text.trim() && images.length === 0)}
+                  aria-label="Gửi"
+                  className="w-12 h-12 shrink-0"
+                >
+                  <Send size={18} />
+                </Button>
+              </form>
+
+              {/* Quick actions */}
+              {lastUserText && (
+                <div className="mt-3 flex items-center gap-3 text-xs">
                   <button
                     type="button"
-                    onClick={speech.listening ? speech.stop : speech.start}
-                    className={`p-2 rounded-xl transition-colors touch-target ${speech.listening
-                      ? 'bg-red-500 text-white shadow-lg'
-                      : 'text-[--muted] hover:text-[--text] hover:bg-[--surface-border]'
-                      }`}
-                    aria-label={speech.listening ? 'Dừng ghi âm' : 'Ghi âm'}
-                    title={speech.listening ? 'Dừng ghi âm' : 'Ghi âm'}
+                    onClick={onResendLast}
+                    className="flex items-center gap-1.5 text-[--muted] hover:text-[--text] transition-colors px-2 py-1 rounded-lg hover:bg-[--surface-border]"
                   >
-                    {speech.listening ? <MicOff size={18} /> : <Mic size={18} />}
+                    <RotateCcw size={12} /> Gửi lại
                   </button>
-                )}
-              </div>
-            </div>
-
-            {/* Send button */}
-            <Button
-              type="submit"
-              size="icon"
-              disabled={loading || (!text.trim() && images.length === 0)}
-              aria-label="Gửi"
-              className="w-12 h-12 shrink-0"
-            >
-              <Send size={18} />
-            </Button>
-          </form>
-
-          {/* Quick actions */}
-          {lastUserText && (
-            <div className="mt-3 flex items-center gap-3 text-xs">
-              <button
-                type="button"
-                onClick={onResendLast}
-                className="flex items-center gap-1.5 text-[--muted] hover:text-[--text] transition-colors px-2 py-1 rounded-lg hover:bg-[--surface-border]"
-              >
-                <RotateCcw size={12} /> Gửi lại
-              </button>
-              <button
-                type="button"
-                onClick={() => { if (lastUserText) { setText(lastUserText); inputRef.current?.focus(); } }}
-                className="flex items-center gap-1.5 text-[--muted] hover:text-[--text] transition-colors px-2 py-1 rounded-lg hover:bg-[--surface-border]"
-              >
-                <Edit3 size={12} /> Sửa
-              </button>
-            </div>
-          )}
-        </div>
-      </Card>
-
-        {/* Emergency Overlay - Multi-step calming flow */}
-        <EmergencyOverlay
-          isOpen={!!sos}
-          level={sos?.level || 'high'}
-          message={typeof sos === 'string' ? sos : sos?.message}
-          onClose={clearSOS}
-        />
-
-        {/* TTS Settings Modal */}
-        {showTtsSettings && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="max-w-md w-full">
-            <div className="p-4 border-b border-[--surface-border] flex items-center justify-between">
-              <h3 className="font-semibold text-[--text]">Cài đặt Text-to-Speech</h3>
-              <button
-                onClick={() => setShowTtsSettings(false)}
-                className="p-1 hover:bg-[--surface-border] rounded-lg transition-colors"
-              >
-                <span className="text-xl">×</span>
-              </button>
-            </div>
-            <div className="p-4 space-y-4">
-              {/* Tốc độ đọc */}
-              <div>
-                <label className="block text-sm font-medium text-[--text] mb-2">
-                  Tốc độ đọc: {ttsRate.toFixed(2)}x
-                </label>
-                <input
-                  type="range"
-                  min="0.5"
-                  max="2"
-                  step="0.1"
-                  value={ttsRate}
-                  onChange={(e) => setTtsRate(parseFloat(e.target.value))}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-[--muted] mt-1">
-                  <span>0.5x</span>
-                  <span>1x</span>
-                  <span>1.5x</span>
-                  <span>2x</span>
-                </div>
-              </div>
-
-              {/* Chọn giọng */}
-              {vietnameseVoices.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-[--text] mb-2">
-                    Giọng đọc
-                  </label>
-                  <select
-                    value={selectedVoice?.name || ''}
-                    onChange={(e) => {
-                      const voice = vietnameseVoices.find(v => v.name === e.target.value);
-                      if (voice) setSelectedVoice(voice);
-                    }}
-                    className="w-full px-3 py-2 rounded-lg border border-[--surface-border] bg-[--surface] text-[--text]"
+                  <button
+                    type="button"
+                    onClick={() => { if (lastUserText) { setText(lastUserText); inputRef.current?.focus(); } }}
+                    className="flex items-center gap-1.5 text-[--muted] hover:text-[--text] transition-colors px-2 py-1 rounded-lg hover:bg-[--surface-border]"
                   >
-                    {vietnameseVoices.map((voice) => (
-                      <option key={voice.name} value={voice.name}>
-                        {voice.name} {voice.default ? '(Mặc định)' : ''}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-[--muted] mt-1">
-                    {selectedVoice && (
-                      selectedVoice.name.includes('Female') || selectedVoice.name.includes('Nữ')
-                        ? 'Giọng nữ'
-                        : selectedVoice.name.includes('Male') || selectedVoice.name.includes('Nam')
-                        ? 'Giọng nam'
-                        : 'Giọng mặc định'
-                    )}
-                  </p>
+                    <Edit3 size={12} /> Sửa
+                  </button>
                 </div>
               )}
-
-              {vietnameseVoices.length === 0 && (
-                <p className="text-sm text-[--muted]">
-                  Không tìm thấy giọng tiếng Việt. Trình duyệt sẽ sử dụng giọng mặc định.
-                </p>
-              )}
-
-              {/* Test button */}
-              <Button
-                onClick={() => {
-                  speak('Đây là giọng đọc mẫu. Bạn có thể điều chỉnh tốc độ và giọng đọc theo ý thích.', {
-                    rate: ttsRate,
-                    voice: selectedVoice,
-                  });
-                }}
-                variant="outline"
-                className="w-full"
-              >
-                <Volume2 size={16} /> Nghe thử
-              </Button>
             </div>
           </Card>
-        </div>
-        )}
+
+          {/* SOS Overlay - với Hotline và Map */}
+          <SOSOverlay
+            isOpen={!!sos}
+            riskLevel={sos?.level || 'high'}
+            triggerText={typeof sos === 'string' ? sos : sos?.message}
+            onClose={clearSOS}
+          />
+
+          {/* TTS Settings Modal */}
+          {showTtsSettings && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <Card className="max-w-md w-full">
+                <div className="p-4 border-b border-[--surface-border] flex items-center justify-between">
+                  <h3 className="font-semibold text-[--text]">Cài đặt Text-to-Speech</h3>
+                  <button
+                    onClick={() => setShowTtsSettings(false)}
+                    className="p-1 hover:bg-[--surface-border] rounded-lg transition-colors"
+                  >
+                    <span className="text-xl">×</span>
+                  </button>
+                </div>
+                <div className="p-4 space-y-4">
+                  {/* Tốc độ đọc */}
+                  <div>
+                    <label className="block text-sm font-medium text-[--text] mb-2">
+                      Tốc độ đọc: {ttsRate.toFixed(2)}x
+                    </label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2"
+                      step="0.1"
+                      value={ttsRate}
+                      onChange={(e) => setTtsRate(parseFloat(e.target.value))}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-[--muted] mt-1">
+                      <span>0.5x</span>
+                      <span>1x</span>
+                      <span>1.5x</span>
+                      <span>2x</span>
+                    </div>
+                  </div>
+
+                  {/* Chọn giọng */}
+                  {vietnameseVoices.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-[--text] mb-2">
+                        Giọng đọc
+                      </label>
+                      <select
+                        value={selectedVoice?.name || ''}
+                        onChange={(e) => {
+                          const voice = vietnameseVoices.find(v => v.name === e.target.value);
+                          if (voice) setSelectedVoice(voice);
+                        }}
+                        className="w-full px-3 py-2 rounded-lg border border-[--surface-border] bg-[--surface] text-[--text]"
+                      >
+                        {vietnameseVoices.map((voice) => (
+                          <option key={voice.name} value={voice.name}>
+                            {voice.name} {voice.default ? '(Mặc định)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-[--muted] mt-1">
+                        {selectedVoice && (
+                          selectedVoice.name.includes('Female') || selectedVoice.name.includes('Nữ')
+                            ? 'Giọng nữ'
+                            : selectedVoice.name.includes('Male') || selectedVoice.name.includes('Nam')
+                              ? 'Giọng nam'
+                              : 'Giọng mặc định'
+                        )}
+                      </p>
+                    </div>
+                  )}
+
+                  {vietnameseVoices.length === 0 && (
+                    <p className="text-sm text-[--muted]">
+                      Không tìm thấy giọng tiếng Việt. Trình duyệt sẽ sử dụng giọng mặc định.
+                    </p>
+                  )}
+
+                  {/* Test button */}
+                  <Button
+                    onClick={() => {
+                      speak('Đây là giọng đọc mẫu. Bạn có thể điều chỉnh tốc độ và giọng đọc theo ý thích.', {
+                        rate: ttsRate,
+                        voice: selectedVoice,
+                      });
+                    }}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <Volume2 size={16} /> Nghe thử
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          )}
         </motion.div>
       )}
 
-      {/* Emergency Overlay - Global (cho cả voice mode) */}
-      <EmergencyOverlay
+      {/* SOS Overlay - Global (cho cả voice mode) */}
+      <SOSOverlay
         isOpen={!!sos}
-        level={sos?.level || 'high'}
-        message={typeof sos === 'string' ? sos : sos?.message}
+        riskLevel={sos?.level || 'high'}
+        triggerText={typeof sos === 'string' ? sos : sos?.message}
         onClose={clearSOS}
       />
     </div>

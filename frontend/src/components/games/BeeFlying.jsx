@@ -64,7 +64,7 @@ export default function BeeFlying() {
   // Draw bee
   const drawBee = (ctx, x, y, isStopped) => {
     ctx.save();
-    
+
     // Body
     ctx.fillStyle = '#FCD34D';
     ctx.beginPath();
@@ -119,12 +119,12 @@ export default function BeeFlying() {
     isStoppedRef.current = false;
     setIsStopped(false);
     setShowAlert(false);
-    
+
     // Start moving again
     isMovingRef.current = true;
     moveStartTimeRef.current = Date.now();
     moveDurationRef.current = MOVE_DURATION_MIN + Math.random() * (MOVE_DURATION_MAX - MOVE_DURATION_MIN);
-    
+
     // New random target
     targetXRef.current = BEE_SIZE + Math.random() * (WIDTH - BEE_SIZE * 2);
     targetYRef.current = BEE_SIZE + Math.random() * (HEIGHT - BEE_SIZE * 2);
@@ -155,7 +155,7 @@ export default function BeeFlying() {
     // Update bee movement
     if (isMovingRef.current) {
       const elapsed = now - moveStartTimeRef.current;
-      
+
       if (elapsed >= moveDurationRef.current) {
         // Stop the bee
         isMovingRef.current = false;
@@ -168,10 +168,10 @@ export default function BeeFlying() {
       } else {
         // Move towards target
         const progress = elapsed / moveDurationRef.current;
-        const easeProgress = progress < 0.5 
-          ? 2 * progress * progress 
+        const easeProgress = progress < 0.5
+          ? 2 * progress * progress
           : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-        
+
         beeXRef.current = beeXRef.current + (targetXRef.current - beeXRef.current) * 0.05;
         beeYRef.current = beeYRef.current + (targetYRef.current - beeYRef.current) * 0.05;
       }
@@ -186,7 +186,7 @@ export default function BeeFlying() {
         // Time's up - lose a life
         const newLives = lives - 1;
         setLives(newLives);
-        
+
         if (newLives <= 0) {
           // Game over
           setGameOver(true);
@@ -215,7 +215,7 @@ export default function BeeFlying() {
       ctx.font = 'bold 48px Arial';
       ctx.textAlign = 'center';
       ctx.fillText(Math.ceil(reactionTimeLeftRef.current), WIDTH / 2, 80);
-      
+
       // Warning text
       ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
       ctx.font = 'bold 24px Arial';
@@ -268,7 +268,7 @@ export default function BeeFlying() {
   }, [showIntro, gameOver, running]);
 
   return (
-    <div className="min-h-[70vh] relative pb-20 md:pb-0">
+    <div className="min-h-[70vh] relative">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center">

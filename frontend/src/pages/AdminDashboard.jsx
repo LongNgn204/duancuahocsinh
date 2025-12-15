@@ -166,7 +166,7 @@ function OverviewTab({ stats, logs, sosStats }) {
         const headers = Object.keys(data[0]);
         const csvRows = [
             headers.join(','),
-            ...data.map(row => 
+            ...data.map(row =>
                 headers.map(header => {
                     const value = row[header];
                     // Escape commas and quotes
@@ -237,23 +237,23 @@ function OverviewTab({ stats, logs, sosStats }) {
                         </button>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <StatCard 
-                            icon={AlertTriangle} 
-                            label="SOS Events (7 ngày)" 
-                            value={sosStats.total || 0} 
-                            color="bg-red-500" 
+                        <StatCard
+                            icon={AlertTriangle}
+                            label="SOS Events (7 ngày)"
+                            value={sosStats.total || 0}
+                            color="bg-red-500"
                         />
-                        <StatCard 
-                            icon={AlertTriangle} 
-                            label="Critical Risk" 
-                            value={sosStats.critical || 0} 
-                            color="bg-red-600" 
+                        <StatCard
+                            icon={AlertTriangle}
+                            label="Critical Risk"
+                            value={sosStats.critical || 0}
+                            color="bg-red-600"
                         />
-                        <StatCard 
-                            icon={Users} 
-                            label="Unique Users" 
-                            value={sosStats.unique_users || 0} 
-                            color="bg-purple-500" 
+                        <StatCard
+                            icon={Users}
+                            label="Unique Users"
+                            value={sosStats.unique_users || 0}
+                            color="bg-purple-500"
                         />
                     </div>
                 </div>
@@ -729,8 +729,8 @@ function SOSLogsTab({ sosLogs, onRefresh }) {
                     <button
                         onClick={() => setFilterRisk(null)}
                         className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${!filterRisk
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                             }`}
                     >
                         Tất cả
@@ -740,8 +740,8 @@ function SOSLogsTab({ sosLogs, onRefresh }) {
                             key={risk}
                             onClick={() => setFilterRisk(risk)}
                             className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${filterRisk === risk
-                                    ? riskColors[risk] || 'bg-gray-500 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                ? riskColors[risk] || 'bg-gray-500 text-white'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                 }`}
                         >
                             {risk.toUpperCase()}
@@ -1129,8 +1129,8 @@ export default function AdminDashboard() {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
                             >
-                                <AllUsersTab 
-                                    users={allUsers} 
+                                <AllUsersTab
+                                    users={allUsers}
                                     loading={usersLoading}
                                     onRefresh={loadAllUsers}
                                     sortBy={usersSortBy}
@@ -1175,7 +1175,7 @@ export default function AdminDashboard() {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
                             >
-                                <ChatMetricsTab onRefresh={() => {}} />
+                                <ChatMetricsTab onRefresh={() => { }} />
                             </motion.div>
                         )}
                         {activeTab === 'logs' && (

@@ -268,7 +268,7 @@ export default function SpacePilot() {
     const endGame = async () => {
         setIsPlaying(false);
         const isNewRecord = score > stats.highScore;
-        
+
         if (isNewRecord) {
             const newStats = { ...stats, highScore: score, gamesPlayed: stats.gamesPlayed + 1 };
             setStats(newStats);
@@ -280,7 +280,7 @@ export default function SpacePilot() {
             setLoading(true);
             try {
                 const result = await saveGameScore('space_pilot', score, 1, Math.floor((Date.now() - startTime.current) / 1000));
-                
+
                 // Thưởng XP
                 try {
                     await rewardXP('game_play');
@@ -335,7 +335,7 @@ export default function SpacePilot() {
     }, [gameOver, isPlaying]);
 
     return (
-        <div className="min-h-[70vh] relative pb-20 md:pb-0">
+        <div className="min-h-[70vh] relative">
             <GlowOrbs className="opacity-30" />
 
             <div className="relative z-10 max-w-2xl mx-auto space-y-6">

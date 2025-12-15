@@ -198,14 +198,14 @@ export default function SleepHelper() {
             setSaving(true);
             try {
                 await saveSleepLog(sleepTime, wakeTime, quality, '', Math.round(duration * 60));
-                
+
                 // Thưởng XP khi log sleep
                 try {
                     await rewardXP('sleep_log');
                 } catch (xpError) {
                     console.warn('[Sleep] XP reward failed:', xpError);
                 }
-                
+
                 scheduleSync(3000);
             } catch (e) {
                 console.warn('[Sleep] Server save failed:', e.message);
@@ -225,7 +225,7 @@ export default function SleepHelper() {
     };
 
     return (
-        <div className="min-h-[70vh] relative pb-20 md:pb-0">
+        <div className="min-h-[70vh] relative">
             <GlowOrbs className="opacity-30" />
 
             <div className="relative z-10 max-w-3xl mx-auto space-y-6">
@@ -454,7 +454,7 @@ export default function SleepHelper() {
                                                     const date = new Date(today);
                                                     date.setDate(today.getDate() - i);
                                                     const dateStr = date.toISOString().split('T')[0];
-                                                    const log = stats.logs.find(l => 
+                                                    const log = stats.logs.find(l =>
                                                         new Date(l.date).toISOString().split('T')[0] === dateStr
                                                     );
                                                     weekData.push({
@@ -469,18 +469,17 @@ export default function SleepHelper() {
                                                     return (
                                                         <div key={d.date} className="flex-1 flex flex-col items-center group relative">
                                                             <motion.div
-                                                                className={`w-full rounded-t transition-all ${
-                                                                    d.duration > 0 
-                                                                        ? d.quality >= 4 ? 'bg-emerald-500' 
-                                                                          : d.quality >= 3 ? 'bg-amber-500' 
-                                                                          : 'bg-red-500'
+                                                                className={`w-full rounded-t transition-all ${d.duration > 0
+                                                                        ? d.quality >= 4 ? 'bg-emerald-500'
+                                                                            : d.quality >= 3 ? 'bg-amber-500'
+                                                                                : 'bg-red-500'
                                                                         : 'bg-[--surface-border]'
-                                                                }`}
+                                                                    }`}
                                                                 initial={{ height: 0 }}
                                                                 animate={{ height: `${height}%` }}
                                                                 transition={{ delay: i * 0.05 }}
-                                                                title={d.duration > 0 
-                                                                    ? `${d.date}: ${d.duration.toFixed(1)}h (${d.quality}/5)` 
+                                                                title={d.duration > 0
+                                                                    ? `${d.date}: ${d.duration.toFixed(1)}h (${d.quality}/5)`
                                                                     : d.date
                                                                 }
                                                             />

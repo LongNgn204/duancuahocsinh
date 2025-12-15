@@ -5,7 +5,8 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import AppHeader from './components/layout/AppHeader';
 import Sidebar from './components/layout/Sidebar';
 import FocusModeToggle from './components/layout/FocusModeToggle';
-import MobileNav from './components/layout/MobileNav';
+// MobileNav removed - now using Sidebar on mobile
+// import MobileNav from './components/layout/MobileNav';
 import PrivacyNotice from './components/modals/PrivacyNotice';
 import OnboardingModal from './components/modals/OnboardingModal';
 import UpdateToast from './components/ui/UpdateToast';
@@ -35,14 +36,9 @@ const BeeFlying = lazy(() => import('./components/games/BeeFlying'));
 const Corner = lazy(() => import('./pages/Corner'));
 const Games = lazy(() => import('./pages/Games'));
 const Settings = lazy(() => import('./pages/Settings'));
-const Focus = lazy(() => import('./pages/Focus'));
-const Journal = lazy(() => import('./pages/Journal'));
-const Sleep = lazy(() => import('./pages/Sleep'));
-const Resources = lazy(() => import('./pages/Resources'));
-const Analytics = lazy(() => import('./pages/Analytics'));
-const Achievements = lazy(() => import('./pages/Achievements'));
+const Wellness = lazy(() => import('./pages/Wellness'));
+const Stories = lazy(() => import('./pages/Stories'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-const Journey = lazy(() => import('./pages/Journey'));
 
 // Loading fallback với animation
 function LoadingFallback() {
@@ -161,15 +157,11 @@ function AppRoutes() {
           <Route path="/games/space-pilot" element={<AppLayout><SpacePilot /></AppLayout>} />
           <Route path="/games/match-shape" element={<AppLayout><MatchShape /></AppLayout>} />
           <Route path="/games/bee-flying" element={<AppLayout><BeeFlying /></AppLayout>} />
-          <Route path="/focus" element={<AppLayout><Focus /></AppLayout>} />
-          <Route path="/journal" element={<AppLayout><Journal /></AppLayout>} />
-          <Route path="/sleep" element={<AppLayout><Sleep /></AppLayout>} />
-          <Route path="/resources" element={<AppLayout><Resources /></AppLayout>} />
-          <Route path="/analytics" element={<AppLayout><Analytics /></AppLayout>} />
-          <Route path="/achievements" element={<AppLayout><Achievements /></AppLayout>} />
           <Route path="/corner" element={<AppLayout><Corner /></AppLayout>} />
+          <Route path="/wellness" element={<AppLayout><Wellness /></AppLayout>} />
+          <Route path="/stories" element={<AppLayout><Stories /></AppLayout>} />
           <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
-          <Route path="/journey" element={<AppLayout><Journey /></AppLayout>} />
+
 
           {/* Admin Dashboard - Standalone layout */}
           <Route path="/admin" element={<AdminDashboard />} />

@@ -13,7 +13,7 @@ export default function AppHeader() {
         <div className="h-16 flex items-center justify-between gap-3">
           {/* Mobile Sidebar Toggle */}
           <button
-            className="md:hidden p-2 rounded-xl bg-[--surface] border border-[--surface-border] shadow-sm hover:shadow-md transition-all"
+            className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-[--surface] border border-[--surface-border] shadow-sm hover:shadow-md transition-all"
             aria-label="Mở/Đóng sidebar"
             onClick={() => window.dispatchEvent(new Event('toggle-sidebar'))}
           >

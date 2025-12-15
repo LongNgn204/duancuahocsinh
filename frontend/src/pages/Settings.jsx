@@ -113,7 +113,7 @@ export default function Settings() {
     input.onchange = async (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      
+
       setIsImporting(true);
       try {
         const text = await file.text();

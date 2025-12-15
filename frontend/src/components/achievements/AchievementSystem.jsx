@@ -260,7 +260,7 @@ export default function AchievementSystem() {
     }, [stats]);
 
     return (
-        <div className="min-h-[70vh] relative pb-20 md:pb-0">
+        <div className="min-h-[70vh] relative">
             <GlowOrbs className="opacity-30" />
 
             <div className="relative z-10 max-w-4xl mx-auto space-y-6">

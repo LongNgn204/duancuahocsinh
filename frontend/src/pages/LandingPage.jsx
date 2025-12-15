@@ -12,72 +12,66 @@ import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import GlowOrbs from '../components/ui/GlowOrbs';
 
-// Features data với route và mô tả chi tiết
+// Features data - Theo yêu cầu khách hàng
 const features = [
     {
         icon: Bot,
-        title: 'AI Mentor tâm lý',
-        description: 'Chat với AI thấu cảm, không phán xét. Bạn có thể chat bằng văn bản hoặc nói chuyện trực tiếp. AI sẽ lắng nghe và đưa ra lời khuyên phù hợp. Hệ thống tự động phát hiện khi bạn cần hỗ trợ khẩn cấp.',
+        title: 'Trò chuyện AI',
+        description: 'Chat với AI thấu cảm, không phán xét. Bạn có thể chat bằng văn bản hoặc nói chuyện trực tiếp. Hệ thống tự động phát hiện khi bạn cần hỗ trợ khẩn cấp và hiển thị đường dây nóng.',
         color: 'from-teal-500 to-cyan-500',
-        route: '/app/chat',
+        route: '/chat',
+    },
+    {
+        icon: Sparkles,
+        title: 'Liều thuốc tinh thần',
+        description: 'Bài tập thở theo bong bóng 30 giây và các câu động viên theo nhóm cảm xúc: động lực học tập, yêu bản thân, bình yên, tự tin.',
+        color: 'from-pink-500 to-rose-500',
+        route: '/wellness',
     },
     {
         icon: Heart,
         title: 'Góc An Yên',
-        description: 'Bài tập thở khoa học với animation và âm thanh hướng dẫn. Giúp bạn thư giãn, giảm lo âu và căng thẳng hiệu quả chỉ trong vài phút.',
-        color: 'from-pink-500 to-rose-500',
-        route: '/app/breathing',
-    },
-    {
-        icon: Sparkles,
-        title: 'Lọ Biết Ơn',
-        description: 'Ghi lại những điều bạn biết ơn mỗi ngày. Hệ thống theo dõi streak, gợi ý nội dung và giúp bạn nhìn cuộc sống tích cực hơn.',
-        color: 'from-amber-500 to-orange-500',
-        route: '/app/gratitude',
-    },
-    {
-        icon: BookOpen,
-        title: 'Nhật ký cảm xúc',
-        description: 'Ghi lại cảm xúc, suy nghĩ của bạn mỗi ngày. Phân tích xu hướng tâm lý theo thời gian, giúp bạn hiểu rõ bản thân hơn.',
-        color: 'from-blue-500 to-indigo-500',
-        route: '/app/journal',
-    },
-    {
-        icon: Target,
-        title: 'Hẹn giờ tập trung',
-        description: 'Sử dụng kỹ thuật Pomodoro để tăng năng suất học tập. Đặt thời gian tập trung, nghỉ ngơi hợp lý và theo dõi tiến độ.',
+        description: 'Bài tập thở khoa học với animation và giọng nói hướng dẫn. Bộ thẻ An Yên với 3 loại: Thẻ Bình Yên, Thẻ Việc làm nhỏ, Thẻ Nhắn nhủ.',
         color: 'from-purple-500 to-indigo-500',
-        route: '/app/focus',
+        route: '/breathing',
     },
     {
-        icon: Moon,
-        title: 'Theo dõi giấc ngủ',
-        description: 'Ghi lại thời gian ngủ, chất lượng giấc ngủ và cảm nhận của bạn. Phân tích mối liên hệ giữa giấc ngủ và tâm trạng.',
-        color: 'from-indigo-500 to-purple-500',
-        route: '/app/sleep',
+        icon: Star,
+        title: 'Lọ Biết Ơn',
+        description: 'Ghi lại những điều bạn biết ơn mỗi ngày. Đếm streak (mạch ngày viết), gợi ý nội dung và hiển thị tiến trình 30 ngày.',
+        color: 'from-amber-500 to-orange-500',
+        route: '/gratitude',
     },
     {
         icon: Gamepad2,
-        title: 'Mini Games',
-        description: 'Các trò chơi nhỏ giúp bạn thư giãn, luyện phản xạ và giải tỏa căng thẳng. Nghỉ ngơi hiệu quả giữa giờ học.',
+        title: 'Nhanh tay lẹ mắt',
+        description: 'Mini games rèn luyện phản xạ: chọn hình tương ứng (30-60s), ong tập bay (theo dõi ong dừng 3s). Thư giãn hiệu quả.',
         color: 'from-green-500 to-emerald-500',
-        route: '/app/games',
+        route: '/games',
     },
     {
-        icon: TrendingUp,
-        title: 'Thống kê & Phân tích',
-        description: 'Xem tổng quan về hành trình chăm sóc sức khỏe tâm thần của bạn. Phân tích xu hướng và nhận insights cá nhân hóa từ AI.',
-        color: 'from-cyan-500 to-blue-500',
-        route: '/app/analytics',
+        icon: Clock,
+        title: 'Góc Nhỏ',
+        description: 'Thông báo nhắc nhở các hoạt động cần làm. Cài đặt thời gian nhắc việc theo ý muốn của bạn.',
+        color: 'from-blue-500 to-cyan-500',
+        route: '/corner',
     },
     {
-        icon: Award,
-        title: 'Thành tích & Hành trình',
-        description: 'Hệ thống thành tích, XP và levels giúp bạn theo dõi hành trình phát triển. Mở khóa các achievement khi đạt mục tiêu.',
-        color: 'from-yellow-500 to-orange-500',
-        route: '/app/achievements',
+        icon: BookOpen,
+        title: 'Kể chuyện',
+        description: 'Những câu chuyện ngắn với bài học cuộc sống. Chế độ kể nhanh hoặc kể chậm với giọng đọc tự động.',
+        color: 'from-indigo-500 to-purple-500',
+        route: '/stories',
+    },
+    {
+        icon: Shield,
+        title: 'Hỗ trợ khẩn cấp',
+        description: 'Phát hiện từ khóa tiêu cực và hiển thị màn hình hỗ trợ với hotline, bản đồ tìm bệnh viện gần nhất và lời khuyên bình tĩnh.',
+        color: 'from-red-500 to-pink-500',
+        route: '/chat',
     },
 ];
+
 
 // Stats data
 const stats = [
@@ -221,22 +215,22 @@ export default function LandingPage() {
                                     <Card className="h-full bg-white dark:bg-gray-800 rounded-2xl p-6 hover:shadow-lg transition-all cursor-pointer">
                                         <div className="flex items-start gap-4 mb-4">
                                             <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center shadow-lg shrink-0`}>
-                                            <feature.icon className="w-6 h-6 text-white" />
-                                        </div>
+                                                <feature.icon className="w-6 h-6 text-white" />
+                                            </div>
                                             <div className="flex-1">
                                                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                                        {feature.title}
-                                    </h3>
+                                                    {feature.title}
+                                                </h3>
                                             </div>
                                         </div>
                                         <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-4">
-                                        {feature.description}
-                                    </p>
+                                            {feature.description}
+                                        </p>
                                         <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 text-sm font-medium">
                                             <span>Khám phá ngay</span>
                                             <ArrowRight size={16} />
                                         </div>
-                                </Card>
+                                    </Card>
                                 </Link>
                             </motion.div>
                         ))}
@@ -298,20 +292,20 @@ export default function LandingPage() {
                             className="grid grid-cols-2 gap-4"
                         >
                             {benefitCards.map((card, idx) => (
-                    <motion.div
+                                <motion.div
                                     key={card.title}
                                     initial={{ opacity: 0, scale: 0.9 }}
-                                whileInView={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: idx * 0.1 }}
-                                viewport={{ once: true }}
+                                    whileInView={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: idx * 0.1 }}
+                                    viewport={{ once: true }}
                                     className={`${card.color} rounded-2xl p-6 text-center`}
-                    >
+                                >
                                     <card.icon className={`w-8 h-8 mx-auto mb-3 ${card.iconColor}`} />
                                     <h3 className="font-semibold text-gray-900 dark:text-white mb-2">{card.title}</h3>
                                     <p className="text-sm text-gray-600 dark:text-gray-300">{card.description}</p>
-                            </motion.div>
-                        ))}
-                            </motion.div>
+                                </motion.div>
+                            ))}
+                        </motion.div>
                     </div>
                 </div>
             </section>
