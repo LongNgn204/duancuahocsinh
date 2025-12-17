@@ -1,8 +1,10 @@
 // src/hooks/useAI.js
 // Chú thích: Chat store + AI hook: hỗ trợ đa hội thoại (threads), timestamps,
 // lưu/persist localStorage, tiền kiểm SOS multi-level, streaming SSE, TTS gọi ở UI.
+// v4.0: Thêm userId cho persistent memory
 import { useEffect, useMemo, useState } from 'react';
 import { detectSOSLevel, sosMessage, getSuggestedAction } from '../utils/sosDetector';
+import { getCurrentUser } from '../utils/api';
 
 const THREADS_KEY = 'chat_threads_v1';
 
@@ -213,7 +215,7 @@ export function useAI() {
 
       // Tăng số lượng messages gửi lên (từ 5 lên 10)
       const historyCap = messages.slice(-10);
-      
+
       // Tạo memory summary nếu có nhiều messages
       let memorySummary = '';
       if (messages.length > 10) {
@@ -223,19 +225,24 @@ export function useAI() {
           .map(m => m.content || '')
           .filter(Boolean)
           .join(' ');
-        
+
         if (userOldMessages.length > 0) {
           // Tạo summary đơn giản (client-side)
           const words = userOldMessages.split(/\s+/).slice(0, 100);
           memorySummary = `Tóm tắt trước đó: ${words.join(' ')}${userOldMessages.length > words.join(' ').length ? '...' : ''}`;
         }
       }
-      
-      const stream = await streamFromEndpoint(`${url}?stream=true`, { 
-        message: trimmed, 
-        history: historyCap, 
+
+      // Lấy userId cho persistent memory
+      const currentUser = getCurrentUser();
+      const userId = currentUser?.id || null;
+
+      const stream = await streamFromEndpoint(`${url}?stream=true`, {
+        message: trimmed,
+        history: historyCap,
         images,
-        memorySummary 
+        memorySummary,
+        userId  // Gửi userId để backend có thể load/save memory
       });
 
       if (stream.type === 'json') {
@@ -243,14 +250,14 @@ export function useAI() {
         if (data?.sos) {
           setSos(data.message || 'Tín hiệu SOS');
         } else {
-          const bot = { 
-            role: 'assistant', 
-            content: data?.text || data?.reply || '...', 
+          const bot = {
+            role: 'assistant',
+            content: data?.text || data?.reply || '...',
             ts: nowISO(),
             messageId: stream.traceId || stream.messageId, // Store traceId as messageId for feedback
             traceId: stream.traceId
           };
-          setThreads((prev) => prev.map((t) => (t.id === currentId ? { ...t, messages: [...t.messages, bot], updatedAt: nowISO() } : t))); 
+          setThreads((prev) => prev.map((t) => (t.id === currentId ? { ...t, messages: [...t.messages, bot], updatedAt: nowISO() } : t)));
         }
         return;
       }
@@ -289,16 +296,16 @@ export function useAI() {
           setThreads((prev) => prev.map((t) => {
             if (t.id !== currentId) return t;
             assistantIndex = t.messages.length;
-            return { 
-              ...t, 
-              messages: [...t.messages, { 
-                role: 'assistant', 
-                content: chunk, 
+            return {
+              ...t,
+              messages: [...t.messages, {
+                role: 'assistant',
+                content: chunk,
                 ts: nowISO(),
                 messageId: stream.traceId, // Store traceId as messageId for feedback
                 traceId: stream.traceId
-              }], 
-              updatedAt: nowISO() 
+              }],
+              updatedAt: nowISO()
             };
           }));
         } else {
@@ -306,8 +313,8 @@ export function useAI() {
             if (t.id !== currentId) return t;
             const copy = t.messages.slice();
             // Preserve messageId when updating content
-            copy[assistantIndex] = { 
-              ...copy[assistantIndex], 
+            copy[assistantIndex] = {
+              ...copy[assistantIndex],
               content: (copy[assistantIndex].content || '') + chunk,
               messageId: copy[assistantIndex].messageId || stream.traceId,
               traceId: copy[assistantIndex].traceId || stream.traceId

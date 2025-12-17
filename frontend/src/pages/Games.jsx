@@ -1,66 +1,60 @@
 // src/pages/Games.jsx
-// Chú thích: Games Hub - Hiển thị tất cả mini games
+// Chú thích: Games Hub v2.0 - Responsive, organized mini games với difficulty levels
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Card from '../components/ui/Card';
 import GlowOrbs from '../components/ui/GlowOrbs';
 import Badge from '../components/ui/Badge';
-import { Gamepad2, Sparkles, Target, Palette, Brain } from 'lucide-react';
+import { Gamepad2, Sparkles, ArrowLeft } from 'lucide-react';
 
 const games = [
     {
         id: 'reflex',
         name: 'Game Phản Xạ',
-        description: 'Luyện phản xạ nhanh với Space bar, phản xạ theo âm thanh/ánh sáng',
+        description: 'Luyện phản xạ nhanh với Space bar, có 3 độ khó',
         icon: '⚡',
         color: 'from-yellow-500 to-orange-500',
         path: '/games/reflex',
-        badge: 'Mới',
-    },
-    {
-        id: 'bee',
-        name: 'Ong Bay',
-        description: 'Điều khiển chú ong bay qua chướng ngại vật',
-        icon: '🐝',
-        color: 'from-amber-500 to-yellow-500',
-        path: '/games/bee',
-        badge: 'Cổ điển',
+        badge: 'Nâng cấp',
+        hasDifficulty: true,
     },
     {
         id: 'bee-flying',
-        name: 'Ong tập bay',
-        description: 'Theo dõi ong, phản ứng khi ong dừng trong 3 giây',
+        name: 'Ong Tập Bay',
+        description: 'Theo dõi ong bay, nhấn khi ong dừng lại trong 3 giây',
         icon: '🐝',
-        color: 'from-yellow-500 to-amber-500',
+        color: 'from-amber-500 to-yellow-500',
         path: '/games/bee-flying',
-        badge: 'Mới',
+        badge: 'Phản xạ',
+        hasDifficulty: true,
+    },
+    {
+        id: 'match-shape',
+        name: 'Chọn Hình',
+        description: 'Chọn hình giống với hình hiển thị trong thời gian giới hạn',
+        icon: '🎯',
+        color: 'from-purple-500 to-pink-500',
+        path: '/games/match-shape',
+        badge: 'Trí nhớ',
+        hasDifficulty: true,
     },
     {
         id: 'bubble',
         name: 'Bấm Bong Bóng',
-        description: 'Bấm bong bóng để thư giãn và ghi điểm',
+        description: 'Bấm bong bóng nổi lên để thư giãn và ghi điểm',
         icon: '🫧',
         color: 'from-pink-500 to-purple-500',
         path: '/games/bubble',
-        badge: 'Nóng',
+        badge: 'Thư giãn',
     },
     {
         id: 'memory',
         name: 'Ghép Màu',
-        description: 'Trò chơi trí nhớ với các cặp màu sắc',
+        description: 'Tìm các cặp màu giống nhau, luyện trí nhớ',
         icon: '🧠',
         color: 'from-violet-500 to-indigo-500',
         path: '/games/memory',
-        badge: 'Mới',
-    },
-    {
-        id: 'doodle',
-        name: 'Vẽ Tự Do',
-        description: 'Vẽ tự do, thể hiện cảm xúc qua màu sắc',
-        icon: '🎨',
-        color: 'from-teal-500 to-cyan-500',
-        path: '/games/doodle',
-        badge: 'Mới',
+        badge: 'Trí nhớ',
     },
     {
         id: 'space-pilot',
@@ -69,16 +63,26 @@ const games = [
         icon: '🚀',
         color: 'from-indigo-500 to-purple-500',
         path: '/games/space-pilot',
-        badge: 'Mới',
+        badge: 'Arcade',
+        hasDifficulty: true,
     },
     {
-        id: 'match-shape',
-        name: 'Chọn hình tương ứng',
-        description: 'Chọn hình giống với hình hiển thị trong 5 giây',
-        icon: '🎯',
-        color: 'from-purple-500 to-pink-500',
-        path: '/games/match-shape',
-        badge: 'Mới',
+        id: 'doodle',
+        name: 'Vẽ Tự Do',
+        description: 'Vẽ tự do, thể hiện cảm xúc qua màu sắc',
+        icon: '🎨',
+        color: 'from-teal-500 to-cyan-500',
+        path: '/games/doodle',
+        badge: 'Sáng tạo',
+    },
+    {
+        id: 'bee',
+        name: 'Ong Bay Cổ Điển',
+        description: 'Điều khiển chú ong bay qua chướng ngại vật',
+        icon: '🐝',
+        color: 'from-green-500 to-emerald-500',
+        path: '/games/bee',
+        badge: 'Cổ điển',
     },
 ];
 
