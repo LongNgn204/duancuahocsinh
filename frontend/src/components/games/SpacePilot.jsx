@@ -1,34 +1,57 @@
 // src/components/games/SpacePilot.jsx
-// Chú thích: Space Pilot v1.0 - Điều khiển tàu vũ trụ tránh thiên thạch
+// Chú thích: Space Pilot v2.0 - Với độ khó, nút quay lại, responsive
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
 import GlowOrbs from '../ui/GlowOrbs';
 import {
-    Play, Pause, RotateCcw, Trophy, Rocket, Zap,
-    Volume2, VolumeX, Target, Star
+    Play, Pause, RotateCcw, Trophy, Rocket,
+    Volume2, VolumeX, Target, Star, ArrowLeft, Settings2
 } from 'lucide-react';
 import { isLoggedIn, saveGameScore, rewardXP, getGameLeaderboard } from '../../utils/api';
+
+// Difficulty settings
+const DIFFICULTY_SETTINGS = {
+    easy: {
+        label: 'Dễ',
+        icon: '🌱',
+        spawnRate: 1500,
+        asteroidSpeed: 1.5,
+        shipSpeed: 6,
+    },
+    medium: {
+        label: 'Trung bình',
+        icon: '🔥',
+        spawnRate: 1000,
+        asteroidSpeed: 2,
+        shipSpeed: 5,
+    },
+    hard: {
+        label: 'Khó',
+        icon: '💀',
+        spawnRate: 700,
+        asteroidSpeed: 3,
+        shipSpeed: 4,
+    },
+};
 
 // Game constants
 const SHIP_SIZE = 40;
 const ASTEROID_MIN_SIZE = 30;
 const ASTEROID_MAX_SIZE = 60;
-const SHIP_SPEED = 5;
-const ASTEROID_SPEED = 2;
-const SPAWN_RATE = 1000; // ms
 
 // Storage
-const STATS_KEY = 'space_pilot_stats_v1';
+const STATS_KEY = 'space_pilot_stats_v2';
 
 function loadStats() {
     try {
         const raw = localStorage.getItem(STATS_KEY);
-        return raw ? JSON.parse(raw) : { highScore: 0, gamesPlayed: 0 };
+        return raw ? JSON.parse(raw) : { highScore: 0, gamesPlayed: 0, difficulty: 'medium' };
     } catch (_) {
-        return { highScore: 0, gamesPlayed: 0 };
+        return { highScore: 0, gamesPlayed: 0, difficulty: 'medium' };
     }
 }
 
@@ -39,13 +62,13 @@ function saveStats(stats) {
 }
 
 // Create asteroid
-function createAsteroid(id, canvasWidth) {
+function createAsteroid(id, canvasWidth, speed) {
     return {
         id,
         x: Math.random() * (canvasWidth - ASTEROID_MAX_SIZE),
         y: -ASTEROID_MAX_SIZE,
         size: ASTEROID_MIN_SIZE + Math.random() * (ASTEROID_MAX_SIZE - ASTEROID_MIN_SIZE),
-        speed: ASTEROID_SPEED + Math.random() * 2,
+        speed: speed + Math.random() * 1.5,
         rotation: Math.random() * 360,
         rotationSpeed: (Math.random() - 0.5) * 5,
     };
@@ -54,6 +77,7 @@ function createAsteroid(id, canvasWidth) {
 export default function SpacePilot() {
     const canvasRef = useRef(null);
     const animationFrameRef = useRef(null);
+    const [difficulty, setDifficulty] = useState('medium');
     const [isPlaying, setIsPlaying] = useState(false);
     const [gameOver, setGameOver] = useState(false);
     const [score, setScore] = useState(0);
@@ -65,24 +89,6 @@ export default function SpacePilot() {
     const [leaderboard, setLeaderboard] = useState([]);
     const [loading, setLoading] = useState(false);
     const [showLeaderboard, setShowLeaderboard] = useState(false);
-
-    const nextAsteroidId = useRef(0);
-    const startTime = useRef(0);
-
-    // Load leaderboard
-    useEffect(() => {
-        const loadLeaderboard = async () => {
-            if (isLoggedIn()) {
-                try {
-                    const data = await getGameLeaderboard('space_pilot', 10);
-                    setLeaderboard(data.items || []);
-                } catch (e) {
-                    console.warn('[SpacePilot] Failed to load leaderboard:', e);
-                }
-            }
-        };
-        loadLeaderboard();
-    }, []);
 
     // Keyboard controls
     useEffect(() => {
@@ -335,42 +341,55 @@ export default function SpacePilot() {
     }, [gameOver, isPlaying]);
 
     return (
-        <div className="min-h-[70vh] relative">
+        <div className="min-h-[70vh] relative px-2 sm:px-4">
             <GlowOrbs className="opacity-30" />
 
-            <div className="relative z-10 max-w-2xl mx-auto space-y-6">
-                {/* Header */}
+            <div className="relative z-10 max-w-2xl mx-auto space-y-4 sm:space-y-6">
+                {/* Header với nút quay lại */}
                 <motion.div
-                    className="flex items-center justify-between"
+                    className="flex items-center justify-between flex-wrap gap-2"
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                 >
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-                            <Rocket className="w-8 h-8 text-[--brand]" />
-                            <span className="gradient-text">Space Pilot</span>
-                        </h1>
-                        <p className="text-[--muted] text-sm mt-1">
-                            Điều khiển tàu vũ trụ tránh thiên thạch
-                        </p>
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <Link to="/games">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                icon={<ArrowLeft size={16} />}
+                                className="!p-2 sm:!px-3"
+                            >
+                                <span className="hidden sm:inline">Quay lại</span>
+                            </Button>
+                        </Link>
+                        <div className="flex items-center gap-2">
+                            <Rocket className="w-6 h-6 sm:w-8 sm:h-8 text-[--brand]" />
+                            <div>
+                                <h1 className="text-lg sm:text-xl md:text-2xl font-bold gradient-text">
+                                    Space Pilot
+                                </h1>
+                                <p className="text-[--muted] text-xs hidden sm:block">
+                                    Tránh thiên thạch
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => setShowLeaderboard(!showLeaderboard)}
-                            title="Bảng xếp hạng"
-                        >
-                            <Trophy size={18} />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon-sm"
+                        <Badge variant="accent" size="sm">
+                            <Trophy size={12} className="mr-1" />
+                            {stats.highScore}
+                        </Badge>
+                        <button
                             onClick={() => setSoundOn(!soundOn)}
+                            className={`p-2 rounded-lg transition-colors ${soundOn
+                                    ? 'bg-[--brand]/10 text-[--brand]'
+                                    : 'bg-[--surface-border] text-[--muted]'
+                                }`}
+                            title={soundOn ? 'Tắt âm thanh' : 'Bật âm thanh'}
                         >
-                            {soundOn ? <Volume2 size={18} /> : <VolumeX size={18} />}
-                        </Button>
+                            {soundOn ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                        </button>
                     </div>
                 </motion.div>
 

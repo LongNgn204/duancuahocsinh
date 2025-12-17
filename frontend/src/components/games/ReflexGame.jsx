@@ -1,27 +1,56 @@
 // src/components/games/ReflexGame.jsx
-// Chú thích: Game luyện phản xạ nhanh - Space bar để tránh chướng ngại vật hoặc phản xạ theo âm thanh/ánh sáng
+// Chú thích: Game luyện phản xạ v2.0 - Với GameLayout, độ khó, responsive
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
-import { Play, Pause, Square, RotateCcw, Volume2, VolumeX, Zap, Target, Trophy, TrendingUp } from 'lucide-react';
+import {
+    Play, Pause, Square, RotateCcw, Volume2, VolumeX,
+    Zap, Target, Trophy, ArrowLeft, Settings2
+} from 'lucide-react';
 import { isLoggedIn, saveGameScore } from '../../utils/api';
+
+// Difficulty settings
+const DIFFICULTY_SETTINGS = {
+    easy: {
+        label: 'Dễ',
+        icon: '🌱',
+        spawnInterval: 2500,
+        obstacleSpeed: 0.3,
+        lives: 5,
+    },
+    medium: {
+        label: 'Trung bình',
+        icon: '🔥',
+        spawnInterval: 1800,
+        obstacleSpeed: 0.5,
+        lives: 3,
+    },
+    hard: {
+        label: 'Khó',
+        icon: '💀',
+        spawnInterval: 1200,
+        obstacleSpeed: 0.7,
+        lives: 2,
+    },
+};
 
 const GAME_MODES = {
     visual: {
-        label: 'Phản xạ thị giác',
-        description: 'Nhấn Space khi thấy chướng ngại vật',
+        label: 'Thị giác',
+        description: 'Nhấn khi thấy chướng ngại vật',
         icon: '👁️',
     },
     audio: {
-        label: 'Phản xạ thính giác',
-        description: 'Nhấn Space khi nghe thấy tiếng bíp',
+        label: 'Thính giác',
+        description: 'Nhấn khi nghe tiếng bíp',
         icon: '🔊',
     },
     combo: {
         label: 'Kết hợp',
-        description: 'Phản xạ với cả hình ảnh và âm thanh',
+        description: 'Cả hình ảnh và âm thanh',
         icon: '⚡',
     },
 };
@@ -39,29 +68,34 @@ export default function ReflexGame() {
     const [highScore, setHighScore] = useState(0);
     const [lives, setLives] = useState(3);
     const [gameMode, setGameMode] = useState('visual');
+    const [difficulty, setDifficulty] = useState('medium');
     const [obstacles, setObstacles] = useState([]);
-    const [playerY, setPlayerY] = useState(50); // 0-100 (percentage)
-    const [speed, setSpeed] = useState(1);
+    const [playerY, setPlayerY] = useState(50);
     const [level, setLevel] = useState(1);
     const [reactionTime, setReactionTime] = useState(null);
     const [showFlash, setShowFlash] = useState(false);
     const [playSound, setPlaySound] = useState(true);
 
     const canvasRef = useRef(null);
+    const containerRef = useRef(null);
     const gameLoopRef = useRef(null);
     const obstacleSpawnTimerRef = useRef(null);
     const audioContextRef = useRef(null);
-    const beepSoundRef = useRef(null);
-    const lastObstacleTimeRef = useRef(0);
     const reactionStartTimeRef = useRef(null);
 
     // Load high score
     useEffect(() => {
         const saved = localStorage.getItem('reflex_game_high_score');
-        if (saved) {
-            setHighScore(parseInt(saved, 10));
-        }
+        if (saved) setHighScore(parseInt(saved, 10));
+
+        const savedDiff = localStorage.getItem('reflex_game_difficulty');
+        if (savedDiff) setDifficulty(savedDiff);
     }, []);
+
+    // Save difficulty preference
+    useEffect(() => {
+        localStorage.setItem('reflex_game_difficulty', difficulty);
+    }, [difficulty]);
 
     // Setup audio context
     useEffect(() => {
@@ -95,18 +129,22 @@ export default function ReflexGame() {
         oscillator.stop(audioContextRef.current.currentTime + duration / 1000);
     }, [playSound]);
 
+    // Get difficulty settings
+    const getDiffSettings = useCallback(() => DIFFICULTY_SETTINGS[difficulty], [difficulty]);
+
     // Spawn obstacle
     const spawnObstacle = useCallback(() => {
         const types = Object.keys(OBSTACLE_TYPES);
         const type = types[Math.floor(Math.random() * types.length)];
         const obstacleType = OBSTACLE_TYPES[type];
+        const diffSettings = getDiffSettings();
 
         const newObstacle = {
             id: Date.now() + Math.random(),
             type,
-            x: 100, // Start from right
-            y: Math.random() * 80 + 10, // Random Y position
-            speed: 0.5 + (level * 0.1),
+            x: 100,
+            y: Math.random() * 80 + 10,
+            speed: diffSettings.obstacleSpeed + (level * 0.05),
             color: obstacleType.color,
             emoji: obstacleType.emoji,
             points: obstacleType.points,
@@ -115,22 +153,19 @@ export default function ReflexGame() {
 
         setObstacles(prev => [...prev, newObstacle]);
 
-        // For audio mode, play beep when obstacle spawns
         if (gameMode === 'audio' || gameMode === 'combo') {
             playBeep(800, 100);
         }
 
-        // For visual mode, show flash
         if (gameMode === 'visual' || gameMode === 'combo') {
             setShowFlash(true);
             setTimeout(() => setShowFlash(false), 150);
         }
 
-        // Track reaction time start
         reactionStartTimeRef.current = Date.now();
-    }, [gameMode, level, playBeep]);
+    }, [gameMode, level, playBeep, getDiffSettings]);
 
-    // Game loop
+    // Game loop with responsive canvas
     useEffect(() => {
         if (gameState !== 'playing') return;
 
@@ -138,35 +173,50 @@ export default function ReflexGame() {
         if (!canvas) return;
 
         const ctx = canvas.getContext('2d');
-        const width = canvas.width;
-        const height = canvas.height;
+
+        // Responsive canvas size
+        const container = containerRef.current;
+        const updateCanvasSize = () => {
+            if (container) {
+                const rect = container.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                canvas.width = rect.width * dpr;
+                canvas.height = Math.min(rect.width * 0.5, 300) * dpr;
+                canvas.style.width = `${rect.width}px`;
+                canvas.style.height = `${Math.min(rect.width * 0.5, 300)}px`;
+                ctx.scale(dpr, dpr);
+            }
+        };
+        updateCanvasSize();
+
+        const width = canvas.width / (window.devicePixelRatio || 1);
+        const height = canvas.height / (window.devicePixelRatio || 1);
 
         const loop = () => {
-            // Clear canvas
             ctx.fillStyle = '#1a1a2e';
             ctx.fillRect(0, 0, width, height);
 
-            // Draw player (circle at left side)
+            // Draw player
             const playerX = width * 0.1;
             const playerYPos = (height * playerY) / 100;
 
             ctx.fillStyle = '#10b981';
             ctx.beginPath();
-            ctx.arc(playerX, playerYPos, 20, 0, Math.PI * 2);
+            ctx.arc(playerX, playerYPos, Math.min(20, width * 0.05), 0, Math.PI * 2);
             ctx.fill();
 
             // Draw obstacles
             obstacles.forEach(obstacle => {
                 const x = (width * obstacle.x) / 100;
                 const y = (height * obstacle.y) / 100;
+                const radius = Math.min(25, width * 0.06);
 
                 ctx.fillStyle = obstacle.color;
                 ctx.beginPath();
-                ctx.arc(x, y, 25, 0, Math.PI * 2);
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
                 ctx.fill();
 
-                // Draw emoji
-                ctx.font = '20px Arial';
+                ctx.font = `${Math.min(20, width * 0.05)}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.fillText(obstacle.emoji, x, y + 7);
             });
@@ -176,7 +226,7 @@ export default function ReflexGame() {
                 const updated = prev.map(obs => ({
                     ...obs,
                     x: obs.x - obs.speed,
-                })).filter(obs => obs.x > -5); // Remove off-screen
+                })).filter(obs => obs.x > -5);
 
                 // Check collisions
                 updated.forEach(obs => {
@@ -187,7 +237,6 @@ export default function ReflexGame() {
                     );
 
                     if (distance < 45) {
-                        // Collision!
                         handleCollision(obs);
                     }
                 });
@@ -216,7 +265,9 @@ export default function ReflexGame() {
             return;
         }
 
-        const spawnInterval = Math.max(1000, 2000 - (level * 100)); // Faster as level increases
+        const diffSettings = getDiffSettings();
+        const spawnInterval = Math.max(800, diffSettings.spawnInterval - (level * 100));
+
         obstacleSpawnTimerRef.current = setInterval(() => {
             spawnObstacle();
         }, spawnInterval);
@@ -226,20 +277,17 @@ export default function ReflexGame() {
                 clearInterval(obstacleSpawnTimerRef.current);
             }
         };
-    }, [gameState, level, spawnObstacle]);
+    }, [gameState, level, spawnObstacle, getDiffSettings]);
 
     // Handle collision
     const handleCollision = useCallback((obstacle) => {
-        // Calculate reaction time
         if (reactionStartTimeRef.current) {
             const rt = Date.now() - reactionStartTimeRef.current;
             setReactionTime(rt);
         }
 
-        // Remove obstacle
         setObstacles(prev => prev.filter(obs => obs.id !== obstacle.id));
 
-        // Add score
         setScore(prev => {
             const newScore = prev + obstacle.points;
             if (newScore > highScore) {
@@ -249,18 +297,17 @@ export default function ReflexGame() {
             return newScore;
         });
 
-        // Level up every 100 points
+        // Level up
         setScore(prev => {
             const newLevel = Math.floor(prev / 100) + 1;
             if (newLevel > level) {
                 setLevel(newLevel);
-                setSpeed(prev => Math.min(prev + 0.1, 3));
             }
             return prev;
         });
     }, [highScore, level]);
 
-    // Handle space bar
+    // Handle space bar and touch
     useEffect(() => {
         if (gameState !== 'playing') return;
 
@@ -278,14 +325,11 @@ export default function ReflexGame() {
     const handleSpacePress = useCallback(() => {
         if (gameState !== 'playing') return;
 
-        // Move player up
         setPlayerY(prev => Math.max(10, prev - 15));
 
-        // Check if near any obstacle (successful dodge)
         const now = Date.now();
         obstacles.forEach(obs => {
             if (obs.x < 30 && obs.x > 10) {
-                // Near obstacle, successful dodge
                 if (reactionStartTimeRef.current) {
                     const rt = now - reactionStartTimeRef.current;
                     setReactionTime(rt);
@@ -302,7 +346,6 @@ export default function ReflexGame() {
             }
         });
 
-        // Reset player position after a moment
         setTimeout(() => {
             setPlayerY(prev => Math.min(90, prev + 15));
         }, 200);
@@ -310,11 +353,11 @@ export default function ReflexGame() {
 
     // Start game
     const startGame = () => {
+        const diffSettings = getDiffSettings();
         setGameState('playing');
         setScore(0);
-        setLives(3);
+        setLives(diffSettings.lives);
         setLevel(1);
-        setSpeed(1);
         setObstacles([]);
         setPlayerY(50);
         setReactionTime(null);
@@ -329,15 +372,13 @@ export default function ReflexGame() {
     const resetGame = () => {
         setGameState('idle');
         setScore(0);
-        setLives(3);
         setLevel(1);
-        setSpeed(1);
         setObstacles([]);
         setPlayerY(50);
         setReactionTime(null);
     };
 
-    // Save score to backend
+    // Save score
     const saveScore = async () => {
         if (isLoggedIn() && score > 0) {
             try {
@@ -354,64 +395,117 @@ export default function ReflexGame() {
         }
     }, [gameState, score]);
 
+    const diffSettings = getDiffSettings();
+
     return (
-        <div className="min-h-[70vh] relative">
-            <div className="max-w-4xl mx-auto space-y-6">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-                            <Zap className="w-8 h-8 text-[--brand]" />
-                            <span className="gradient-text">Game Phản Xạ</span>
-                        </h1>
-                        <p className="text-[--muted] text-sm mt-1">
-                            Luyện phản xạ nhanh với Space bar
-                        </p>
+        <div className="min-h-[70vh] relative px-2 sm:px-4">
+            <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
+                {/* Header với nút quay lại */}
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <Link to="/games">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                icon={<ArrowLeft size={16} />}
+                                className="!p-2 sm:!px-3"
+                            >
+                                <span className="hidden sm:inline">Quay lại</span>
+                            </Button>
+                        </Link>
+                        <div className="flex items-center gap-2">
+                            <Zap className="w-6 h-6 sm:w-8 sm:h-8 text-[--brand]" />
+                            <div>
+                                <h1 className="text-lg sm:text-xl md:text-2xl font-bold gradient-text">
+                                    Game Phản Xạ
+                                </h1>
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="flex items-center gap-4">
-                        <div className="text-center">
-                            <div className="text-2xl font-bold gradient-text">{score}</div>
-                            <div className="text-xs text-[--muted]">Điểm</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold gradient-text">{highScore}</div>
-                            <div className="text-xs text-[--muted]">Kỷ lục</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold gradient-text">{level}</div>
-                            <div className="text-xs text-[--muted]">Cấp độ</div>
-                        </div>
+                    {/* Score badges */}
+                    <div className="flex items-center gap-2">
+                        <Badge variant="accent" size="sm">
+                            <Trophy size={12} className="mr-1" />
+                            {highScore}
+                        </Badge>
+                        <Badge variant="primary" size="sm">
+                            Điểm: {score}
+                        </Badge>
+                        <Badge variant="default" size="sm">
+                            Lv.{level}
+                        </Badge>
                     </div>
                 </div>
 
-                {/* Game Mode Selector */}
+                {/* Difficulty & Mode selector - chỉ khi idle */}
                 {gameState === 'idle' && (
-                    <Card>
-                        <h3 className="font-semibold mb-4">Chọn chế độ chơi:</h3>
-                        <div className="grid sm:grid-cols-3 gap-3">
-                            {Object.entries(GAME_MODES).map(([key, mode]) => (
-                                <button
-                                    key={key}
-                                    onClick={() => setGameMode(key)}
-                                    className={`p-4 rounded-xl border-2 transition-all ${gameMode === key
-                                            ? 'border-[--brand] bg-[--brand]/10'
-                                            : 'border-[--surface-border] hover:border-[--brand]/50'
-                                        }`}
-                                >
-                                    <div className="text-3xl mb-2">{mode.icon}</div>
-                                    <div className="font-medium text-[--text]">{mode.label}</div>
-                                    <div className="text-xs text-[--muted] mt-1">{mode.description}</div>
-                                </button>
-                            ))}
-                        </div>
-                    </Card>
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="space-y-4"
+                    >
+                        {/* Difficulty selector */}
+                        <Card size="sm">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Settings2 size={16} className="text-[--brand]" />
+                                <span className="font-medium text-sm">Độ khó:</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                                {Object.entries(DIFFICULTY_SETTINGS).map(([key, level]) => (
+                                    <button
+                                        key={key}
+                                        onClick={() => setDifficulty(key)}
+                                        className={`
+                                            p-2 sm:p-3 rounded-xl border-2 transition-all text-center
+                                            ${difficulty === key
+                                                ? 'border-[--brand] bg-[--brand]/10 shadow-md'
+                                                : 'border-[--surface-border] hover:border-[--brand]/50'
+                                            }
+                                        `}
+                                    >
+                                        <div className="text-xl sm:text-2xl mb-1">{level.icon}</div>
+                                        <div className="font-medium text-xs sm:text-sm text-[--text]">
+                                            {level.label}
+                                        </div>
+                                        <div className="text-[10px] text-[--muted]">
+                                            {level.lives} mạng
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </Card>
+
+                        {/* Game Mode selector */}
+                        <Card size="sm">
+                            <h3 className="font-semibold text-sm mb-3">Chế độ chơi:</h3>
+                            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                                {Object.entries(GAME_MODES).map(([key, mode]) => (
+                                    <button
+                                        key={key}
+                                        onClick={() => setGameMode(key)}
+                                        className={`
+                                            p-2 sm:p-3 rounded-xl border-2 transition-all text-center
+                                            ${gameMode === key
+                                                ? 'border-[--brand] bg-[--brand]/10'
+                                                : 'border-[--surface-border] hover:border-[--brand]/50'
+                                            }
+                                        `}
+                                    >
+                                        <div className="text-xl sm:text-2xl mb-1">{mode.icon}</div>
+                                        <div className="font-medium text-xs sm:text-sm text-[--text]">
+                                            {mode.label}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </Card>
+                    </motion.div>
                 )}
 
                 {/* Game Canvas */}
-                <Card variant="elevated">
-                    <div className="relative">
+                <Card variant="elevated" className="!p-2 sm:!p-4">
+                    <div className="relative" ref={containerRef}>
                         {/* Flash effect */}
                         <AnimatePresence>
                             {showFlash && (
@@ -419,7 +513,7 @@ export default function ReflexGame() {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 0.5 }}
                                     exit={{ opacity: 0 }}
-                                    className="absolute inset-0 bg-white pointer-events-none z-10"
+                                    className="absolute inset-0 bg-white pointer-events-none z-10 rounded-lg"
                                     transition={{ duration: 0.15 }}
                                 />
                             )}
@@ -427,17 +521,20 @@ export default function ReflexGame() {
 
                         <canvas
                             ref={canvasRef}
-                            width={800}
-                            height={400}
-                            className="w-full h-auto rounded-lg border-2 border-[--surface-border] bg-[#1a1a2e]"
+                            className="w-full rounded-lg border-2 border-[--surface-border] bg-[#1a1a2e] touch-none"
+                            onClick={handleSpacePress}
+                            onTouchStart={(e) => {
+                                e.preventDefault();
+                                handleSpacePress();
+                            }}
                         />
 
                         {/* Paused overlay */}
                         {gameState === 'paused' && (
                             <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
                                 <div className="text-center">
-                                    <Pause className="w-16 h-16 text-white mx-auto mb-4" />
-                                    <p className="text-white text-xl font-semibold">Tạm dừng</p>
+                                    <Pause className="w-12 h-12 sm:w-16 sm:h-16 text-white mx-auto mb-2 sm:mb-4" />
+                                    <p className="text-white text-lg sm:text-xl font-semibold">Tạm dừng</p>
                                 </div>
                             </div>
                         )}
@@ -447,58 +544,89 @@ export default function ReflexGame() {
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="absolute inset-0 bg-black/80 flex items-center justify-center rounded-lg"
+                                className="absolute inset-0 bg-black/80 flex items-center justify-center rounded-lg p-4"
                             >
-                                <Card className="max-w-md w-full mx-4">
+                                <Card className="max-w-sm w-full">
                                     <div className="text-center">
-                                        <Trophy className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-                                        <h3 className="text-2xl font-bold mb-2">Game Over!</h3>
-                                        <p className="text-lg mb-4">Điểm số: <span className="font-bold gradient-text">{score}</span></p>
+                                        <Trophy className="w-12 h-12 sm:w-16 sm:h-16 text-yellow-500 mx-auto mb-2 sm:mb-4" />
+                                        <h3 className="text-xl sm:text-2xl font-bold mb-2">Game Over!</h3>
+                                        <p className="text-base sm:text-lg mb-2">
+                                            Điểm: <span className="font-bold gradient-text">{score}</span>
+                                        </p>
                                         {reactionTime && (
-                                            <p className="text-sm text-[--muted] mb-4">
-                                                Phản xạ trung bình: {reactionTime}ms
+                                            <p className="text-xs sm:text-sm text-[--muted] mb-4">
+                                                Phản xạ: {reactionTime}ms
                                             </p>
                                         )}
-                                        <div className="flex gap-3 justify-center">
-                                            <Button onClick={startGame} icon={<Play size={16} />}>
+                                        <div className="flex gap-2 sm:gap-3 justify-center flex-wrap">
+                                            <Button onClick={startGame} icon={<Play size={16} />} size="sm">
                                                 Chơi lại
                                             </Button>
-                                            <Button variant="outline" onClick={resetGame} icon={<RotateCcw size={16} />}>
-                                                Reset
+                                            <Button variant="outline" onClick={resetGame} icon={<RotateCcw size={16} />} size="sm">
+                                                Về menu
                                             </Button>
                                         </div>
                                     </div>
                                 </Card>
                             </motion.div>
                         )}
+
+                        {/* Idle overlay - Start screen */}
+                        {gameState === 'idle' && (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-lg">
+                                <div className="text-center px-4">
+                                    <Zap className="w-12 h-12 sm:w-16 sm:h-16 text-yellow-400 mx-auto mb-3 sm:mb-4" />
+                                    <h3 className="text-lg sm:text-xl font-bold text-white mb-2">
+                                        Sẵn sàng chưa?
+                                    </h3>
+                                    <p className="text-xs sm:text-sm text-gray-300 mb-3 sm:mb-4">
+                                        {GAME_MODES[gameMode].description}
+                                    </p>
+                                    <Button onClick={startGame} icon={<Play size={18} />}>
+                                        Bắt đầu
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </Card>
 
                 {/* Controls */}
-                <Card>
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                        <div className="flex items-center gap-3">
-                            {gameState === 'idle' ? (
-                                <Button onClick={startGame} icon={<Play size={18} />} size="lg">
-                                    Bắt đầu
-                                </Button>
-                            ) : (
+                <Card size="sm">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div className="flex items-center gap-2">
+                            {gameState === 'playing' && (
                                 <>
                                     <Button
                                         onClick={togglePause}
                                         variant="outline"
-                                        icon={gameState === 'paused' ? <Play size={18} /> : <Pause size={18} />}
+                                        size="sm"
+                                        icon={<Pause size={16} />}
                                     >
-                                        {gameState === 'paused' ? 'Tiếp tục' : 'Tạm dừng'}
+                                        <span className="hidden sm:inline">Tạm dừng</span>
                                     </Button>
-                                    <Button onClick={resetGame} variant="ghost" icon={<Square size={18} />}>
-                                        Dừng
+                                    <Button onClick={resetGame} variant="ghost" size="sm" icon={<Square size={16} />}>
+                                        <span className="hidden sm:inline">Dừng</span>
                                     </Button>
                                 </>
                             )}
+                            {gameState === 'paused' && (
+                                <Button
+                                    onClick={togglePause}
+                                    size="sm"
+                                    icon={<Play size={16} />}
+                                >
+                                    Tiếp tục
+                                </Button>
+                            )}
                         </div>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                            {gameState !== 'idle' && (
+                                <Badge variant="default" size="sm">
+                                    {diffSettings.icon} {diffSettings.label}
+                                </Badge>
+                            )}
                             <button
                                 onClick={() => setPlaySound(!playSound)}
                                 className={`p-2 rounded-lg transition-colors ${playSound
@@ -507,16 +635,21 @@ export default function ReflexGame() {
                                     }`}
                                 title={playSound ? 'Tắt âm thanh' : 'Bật âm thanh'}
                             >
-                                {playSound ? <Volume2 size={18} /> : <VolumeX size={18} />}
+                                {playSound ? <Volume2 size={16} /> : <VolumeX size={16} />}
                             </button>
                         </div>
                     </div>
 
                     {/* Instructions */}
-                    <div className="mt-4 p-3 bg-[--surface-border]/50 rounded-lg">
-                        <p className="text-sm text-[--muted]">
-                            <strong className="text-[--text]">Hướng dẫn:</strong> Nhấn <kbd className="px-2 py-1 bg-white dark:bg-gray-800 rounded border">Space</kbd> để di chuyển lên và tránh chướng ngại vật.
-                            Mỗi chướng ngại vật có điểm khác nhau. Phản xạ càng nhanh, điểm càng cao!
+                    <div className="mt-3 p-2 sm:p-3 bg-[--surface-border]/50 rounded-lg">
+                        <p className="text-xs sm:text-sm text-[--muted]">
+                            <strong className="text-[--text]">Hướng dẫn:</strong>{' '}
+                            <span className="hidden sm:inline">
+                                Nhấn <kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-800 rounded border text-xs">Space</kbd> hoặc chạm màn hình để né chướng ngại vật.
+                            </span>
+                            <span className="sm:hidden">
+                                Chạm màn hình để né chướng ngại vật.
+                            </span>
                         </p>
                     </div>
                 </Card>
@@ -524,9 +657,9 @@ export default function ReflexGame() {
                 {/* Reaction Time Display */}
                 {reactionTime && gameState === 'playing' && (
                     <Card size="sm">
-                        <div className="flex items-center gap-2 text-center">
-                            <Target className="w-5 h-5 text-[--brand]" />
-                            <span className="text-sm">
+                        <div className="flex items-center justify-center gap-2 text-center">
+                            <Target className="w-4 h-4 sm:w-5 sm:h-5 text-[--brand]" />
+                            <span className="text-xs sm:text-sm">
                                 Phản xạ: <strong>{reactionTime}ms</strong>
                                 {reactionTime < 200 && ' ⚡ Cực nhanh!'}
                                 {reactionTime >= 200 && reactionTime < 400 && ' 🚀 Tốt!'}
@@ -539,4 +672,3 @@ export default function ReflexGame() {
         </div>
     );
 }
-

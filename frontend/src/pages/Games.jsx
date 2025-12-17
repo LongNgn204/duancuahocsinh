@@ -88,44 +88,45 @@ const games = [
 
 export default function Games() {
     return (
-        <div className="min-h-[70vh] relative">
+        <div className="min-h-[70vh] relative px-2 sm:px-4">
             <GlowOrbs className="opacity-30" />
 
-            <div className="relative z-10 max-w-4xl mx-auto space-y-6">
+            <div className="relative z-10 max-w-5xl mx-auto space-y-6">
                 {/* Header */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
+                    className="text-center sm:text-left"
                 >
-                    <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-                        <Gamepad2 className="w-8 h-8 text-[--brand]" />
+                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold flex items-center justify-center sm:justify-start gap-2 sm:gap-3">
+                        <Gamepad2 className="w-6 h-6 sm:w-8 sm:h-8 text-[--brand]" />
                         <span className="gradient-text">Mini Games</span>
                     </h1>
-                    <p className="text-[--muted] text-sm mt-1">
+                    <p className="text-[--muted] text-xs sm:text-sm mt-1">
                         Thư giãn và giải trí với các trò chơi nhẹ nhàng
                     </p>
                 </motion.div>
 
-                {/* Games Grid */}
-                <div className="grid sm:grid-cols-2 gap-4">
+                {/* Games Grid - Responsive: 1 col mobile, 2 cols tablet, 3 cols desktop */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     {games.map((game, idx) => (
                         <motion.div
                             key={game.id}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: idx * 0.1 }}
+                            transition={{ delay: idx * 0.05 }}
                         >
                             {game.disabled ? (
                                 <Card
-                                    className="opacity-60 cursor-not-allowed"
+                                    className="opacity-60 cursor-not-allowed h-full"
                                 >
                                     <GameCardContent game={game} />
                                 </Card>
                             ) : (
-                                <Link to={game.path}>
+                                <Link to={game.path} className="block h-full">
                                     <Card
                                         variant="interactive"
-                                        className="group"
+                                        className="group h-full"
                                     >
                                         <GameCardContent game={game} />
                                     </Card>
@@ -139,7 +140,7 @@ export default function Games() {
                 <Card size="sm">
                     <div className="flex items-start gap-3">
                         <Sparkles size={18} className="text-[--accent] shrink-0 mt-0.5" />
-                        <div className="text-sm text-[--text-secondary]">
+                        <div className="text-xs sm:text-sm text-[--text-secondary]">
                             <strong className="text-[--text]">Mẹo:</strong> Chơi game thư giãn trong 5-10 phút
                             giữa các giờ học giúp não bộ nghỉ ngơi và tập trung tốt hơn!
                         </div>
@@ -151,30 +152,51 @@ export default function Games() {
 }
 
 function GameCardContent({ game }) {
+    const getBadgeVariant = (badge) => {
+        switch (badge) {
+            case 'Nâng cấp': return 'accent';
+            case 'Phản xạ': return 'primary';
+            case 'Trí nhớ': return 'secondary';
+            case 'Thư giãn': return 'success';
+            case 'Arcade': return 'warning';
+            case 'Sáng tạo': return 'accent';
+            case 'Cổ điển': return 'default';
+            default: return 'primary';
+        }
+    };
+
     return (
-        <div className="flex items-start gap-4">
+        <div className="flex items-start gap-3 sm:gap-4">
             <div className={`
-        w-16 h-16 rounded-xl bg-gradient-to-br ${game.color}
-        flex items-center justify-center text-3xl
-        shadow-lg group-hover:scale-105 transition-transform
-      `}>
+                w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 
+                rounded-xl bg-gradient-to-br ${game.color}
+                flex items-center justify-center text-2xl sm:text-3xl
+                shadow-lg group-hover:scale-105 transition-transform shrink-0
+            `}>
                 {game.icon}
             </div>
-            <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-[--text] group-hover:text-[--brand] transition-colors">
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <h3 className="font-semibold text-sm sm:text-base text-[--text] group-hover:text-[--brand] transition-colors truncate">
                         {game.name}
                     </h3>
                     {game.badge && (
                         <Badge
-                            variant={game.disabled ? 'default' : game.badge === 'Mới' ? 'accent' : 'primary'}
+                            variant={getBadgeVariant(game.badge)}
                             size="sm"
                         >
                             {game.badge}
                         </Badge>
                     )}
                 </div>
-                <p className="text-sm text-[--muted]">{game.description}</p>
+                <p className="text-xs sm:text-sm text-[--muted] line-clamp-2">
+                    {game.description}
+                </p>
+                {game.hasDifficulty && (
+                    <div className="flex items-center gap-1 mt-1.5">
+                        <span className="text-[10px] sm:text-xs text-[--brand]">⚙️ Có độ khó</span>
+                    </div>
+                )}
             </div>
         </div>
     );

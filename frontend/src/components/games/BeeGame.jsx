@@ -1,12 +1,13 @@
 // src/components/games/BeeGame.jsx
-// Chú thích: BeeGame v3.0 - Enhanced game UI với modern frame, intro screen, better UX
+// Chú thích: BeeGame v3.1 - Enhanced game UI với nút quay lại, responsive
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
 import GlowOrbs from '../ui/GlowOrbs';
-import { Play, RotateCcw, Trophy, Gamepad2, Star, Info } from 'lucide-react';
+import { Play, RotateCcw, Trophy, Gamepad2, Star, Info, ArrowLeft } from 'lucide-react';
 import { isLoggedIn, saveGameScore, rewardXP } from '../../utils/api';
 
 const WIDTH = 800;
@@ -273,30 +274,48 @@ export default function BeeGame() {
   }, [gameOver, running, showIntro]);
 
   return (
-    <div className="min-h-[70vh] relative">
+    <div className="min-h-[70vh] relative px-2 sm:px-4">
       <GlowOrbs className="opacity-30" />
 
-      <div className="relative z-10 max-w-4xl mx-auto space-y-6">
-        {/* Header */}
+      <div className="relative z-10 max-w-4xl mx-auto space-y-4 sm:space-y-6">
+        {/* Header với nút quay lại */}
         <motion.div
-          className="flex items-center justify-between"
+          className="flex items-center justify-between flex-wrap gap-2"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-              <Gamepad2 className="w-8 h-8 text-[--brand]" />
-              <span className="gradient-text">Ong Bay</span>
-            </h1>
-            <p className="text-[--muted] text-sm mt-1">Thư giãn với mini game vui nhộn</p>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link to="/games">
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<ArrowLeft size={16} />}
+                className="!p-2 sm:!px-3"
+              >
+                <span className="hidden sm:inline">Quay lại</span>
+              </Button>
+            </Link>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl sm:text-3xl">🐝</span>
+              <div>
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold gradient-text">
+                  Ong Bay
+                </h1>
+                <p className="text-[--muted] text-xs hidden sm:block">
+                  Thư giãn với mini game vui nhộn
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Badge variant="accent" icon={<Star size={14} />}>
-              Best: {highScore}
+          <div className="flex items-center gap-2">
+            <Badge variant="accent" size="sm">
+              <Star size={12} className="mr-1" />
+              {highScore}
             </Badge>
-            <Badge variant="primary" icon={<Trophy size={14} />}>
-              Score: {score}
+            <Badge variant="primary" size="sm">
+              <Trophy size={12} className="mr-1" />
+              {score}
             </Badge>
           </div>
         </motion.div>
