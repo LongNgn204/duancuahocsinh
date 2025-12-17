@@ -1,11 +1,13 @@
 // src/pages/Wellness.jsx
-// Chú thích: Liều thuốc tinh thần - Tích hợp bài tập thở + câu động viên
+// Chú thích: Liều thuốc tinh thần - Tích hợp bài tập thở từ Góc An Yên + Bộ thẻ An Yên + Câu động viên
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import GlowOrbs from '../components/ui/GlowOrbs';
-import { Heart, Sparkles, Brain, Flame, Wind, RefreshCw } from 'lucide-react';
+import BreathingBubble from '../components/breathing/BreathingBubble';
+import RandomWellnessCard from '../components/breathing/RandomWellnessCard';
+import { Heart, Sparkles, Brain, Flame, Wind, RefreshCw, Volume2, VolumeX } from 'lucide-react';
 
 // Nhóm cảm xúc với câu động viên
 const EMOTION_GROUPS = [
@@ -66,8 +68,7 @@ const EMOTION_GROUPS = [
 export default function Wellness() {
     const [selectedGroup, setSelectedGroup] = useState(null);
     const [currentQuote, setCurrentQuote] = useState('');
-    const [showBreathing, setShowBreathing] = useState(false);
-    const [breathPhase, setBreathPhase] = useState('idle'); // idle, inhale, hold, exhale
+    const [activeTab, setActiveTab] = useState('breathing'); // breathing | cards | quotes
 
     // Lấy câu động viên ngẫu nhiên
     const getRandomQuote = (group) => {
@@ -75,30 +76,6 @@ export default function Wellness() {
         const randomIndex = Math.floor(Math.random() * quotes.length);
         setCurrentQuote(quotes[randomIndex]);
         setSelectedGroup(group);
-    };
-
-    // Bài tập thở 30s
-    const startBreathing = async () => {
-        setShowBreathing(true);
-        // Hít vào 4s
-        setBreathPhase('inhale');
-        await new Promise(r => setTimeout(r, 4000));
-        // Giữ 4s
-        setBreathPhase('hold');
-        await new Promise(r => setTimeout(r, 4000));
-        // Thở ra 6s
-        setBreathPhase('exhale');
-        await new Promise(r => setTimeout(r, 6000));
-        // Lặp lại 2 lần nữa (tổng ~30s)
-        setBreathPhase('inhale');
-        await new Promise(r => setTimeout(r, 4000));
-        setBreathPhase('hold');
-        await new Promise(r => setTimeout(r, 4000));
-        setBreathPhase('exhale');
-        await new Promise(r => setTimeout(r, 6000));
-
-        setBreathPhase('idle');
-        setShowBreathing(false);
     };
 
     return (
@@ -120,84 +97,121 @@ export default function Wellness() {
                     </p>
                 </motion.div>
 
-                {/* Bài tập thở */}
-                <Card variant="glass">
-                    <div className="text-center py-4">
-                        <h2 className="font-semibold text-lg mb-2 flex items-center justify-center gap-2">
-                            <Wind className="w-5 h-5 text-blue-500" />
-                            Tìm bình yên - Thở theo bong bóng
-                        </h2>
-                        {!showBreathing ? (
-                            <Button onClick={startBreathing} variant="primary" size="lg">
-                                Bắt đầu thở (30 giây)
-                            </Button>
-                        ) : (
-                            <div className="py-8">
-                                <motion.div
-                                    className={`w-32 h-32 mx-auto rounded-full flex items-center justify-center text-white font-bold text-xl
-                    ${breathPhase === 'inhale' ? 'bg-blue-500' :
-                                            breathPhase === 'hold' ? 'bg-purple-500' :
-                                                breathPhase === 'exhale' ? 'bg-green-500' : 'bg-gray-400'}`}
-                                    animate={{
-                                        scale: breathPhase === 'inhale' ? 1.5 :
-                                            breathPhase === 'hold' ? 1.5 :
-                                                breathPhase === 'exhale' ? 1 : 1
-                                    }}
-                                    transition={{ duration: breathPhase === 'inhale' ? 4 : breathPhase === 'exhale' ? 6 : 0.3 }}
-                                >
-                                    {breathPhase === 'inhale' && 'Hít vào'}
-                                    {breathPhase === 'hold' && 'Giữ'}
-                                    {breathPhase === 'exhale' && 'Thở ra'}
-                                </motion.div>
-                            </div>
-                        )}
-                    </div>
-                </Card>
-
-                {/* Nhóm cảm xúc */}
-                <div>
-                    <h2 className="font-semibold text-lg mb-3">Chọn liều thuốc của bạn</h2>
-                    <div className="grid grid-cols-2 gap-3">
-                        {EMOTION_GROUPS.map((group) => (
-                            <motion.button
-                                key={group.id}
-                                onClick={() => getRandomQuote(group)}
-                                className={`p-4 rounded-2xl bg-gradient-to-br ${group.color} text-white text-left
-                  hover:scale-105 active:scale-95 transition-transform shadow-lg`}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                            >
-                                <group.icon className="w-8 h-8 mb-2" />
-                                <span className="font-semibold">{group.name}</span>
-                            </motion.button>
-                        ))}
-                    </div>
+                {/* Tab Navigation */}
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                    <button
+                        onClick={() => setActiveTab('breathing')}
+                        className={`px-4 py-2 rounded-xl font-medium transition-all whitespace-nowrap ${activeTab === 'breathing'
+                                ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg'
+                                : 'bg-[--surface] text-[--text-secondary] hover:bg-[--surface-border]'
+                            }`}
+                    >
+                        <Wind className="w-4 h-4 inline mr-2" />
+                        Thở thư giãn
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('cards')}
+                        className={`px-4 py-2 rounded-xl font-medium transition-all whitespace-nowrap ${activeTab === 'cards'
+                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
+                                : 'bg-[--surface] text-[--text-secondary] hover:bg-[--surface-border]'
+                            }`}
+                    >
+                        <Sparkles className="w-4 h-4 inline mr-2" />
+                        Bộ thẻ An Yên
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('quotes')}
+                        className={`px-4 py-2 rounded-xl font-medium transition-all whitespace-nowrap ${activeTab === 'quotes'
+                                ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg'
+                                : 'bg-[--surface] text-[--text-secondary] hover:bg-[--surface-border]'
+                            }`}
+                    >
+                        <Heart className="w-4 h-4 inline mr-2" />
+                        Động viên
+                    </button>
                 </div>
 
-                {/* Câu động viên hiện tại */}
+                {/* Tab Content */}
                 <AnimatePresence mode="wait">
-                    {currentQuote && (
+                    {activeTab === 'breathing' && (
                         <motion.div
-                            key={currentQuote}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
+                            key="breathing"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
                         >
-                            <Card className="text-center py-8">
-                                <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br ${selectedGroup?.color} flex items-center justify-center`}>
-                                    {selectedGroup && <selectedGroup.icon className="w-8 h-8 text-white" />}
+                            {/* Chú thích: Sử dụng BreathingBubble từ Góc An Yên - có TTS hướng dẫn giọng nói */}
+                            <BreathingBubble />
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'cards' && (
+                        <motion.div
+                            key="cards"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                        >
+                            {/* Chú thích: Bộ thẻ An Yên - 3 loại: Bình Yên, Việc làm nhỏ, Nhắn nhủ */}
+                            <RandomWellnessCard />
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'quotes' && (
+                        <motion.div
+                            key="quotes"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            className="space-y-6"
+                        >
+                            {/* Nhóm cảm xúc */}
+                            <div>
+                                <h2 className="font-semibold text-lg mb-3">Chọn liều thuốc của bạn</h2>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {EMOTION_GROUPS.map((group) => (
+                                        <motion.button
+                                            key={group.id}
+                                            onClick={() => getRandomQuote(group)}
+                                            className={`p-4 rounded-2xl bg-gradient-to-br ${group.color} text-white text-left
+                              hover:scale-105 active:scale-95 transition-transform shadow-lg`}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                        >
+                                            <group.icon className="w-8 h-8 mb-2" />
+                                            <span className="font-semibold">{group.name}</span>
+                                        </motion.button>
+                                    ))}
                                 </div>
-                                <p className="text-xl font-medium text-[--text] mb-4 px-4">
-                                    "{currentQuote}"
-                                </p>
-                                <Button
-                                    variant="ghost"
-                                    onClick={() => getRandomQuote(selectedGroup)}
-                                    icon={<RefreshCw size={16} />}
-                                >
-                                    Câu khác
-                                </Button>
-                            </Card>
+                            </div>
+
+                            {/* Câu động viên hiện tại */}
+                            <AnimatePresence mode="wait">
+                                {currentQuote && (
+                                    <motion.div
+                                        key={currentQuote}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -20 }}
+                                    >
+                                        <Card className="text-center py-8">
+                                            <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br ${selectedGroup?.color} flex items-center justify-center`}>
+                                                {selectedGroup && <selectedGroup.icon className="w-8 h-8 text-white" />}
+                                            </div>
+                                            <p className="text-xl font-medium text-[--text] mb-4 px-4">
+                                                "{currentQuote}"
+                                            </p>
+                                            <Button
+                                                variant="ghost"
+                                                onClick={() => getRandomQuote(selectedGroup)}
+                                                icon={<RefreshCw size={16} />}
+                                            >
+                                                Câu khác
+                                            </Button>
+                                        </Card>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </motion.div>
                     )}
                 </AnimatePresence>
