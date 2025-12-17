@@ -34,6 +34,7 @@ const Resources = lazy(() => import('./pages/Resources'));
 const Analytics = lazy(() => import('./pages/Analytics'));
 const Achievements = lazy(() => import('./pages/Achievements'));
 const TalkToAI = lazy(() => import('./pages/TalkToAI'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
 
 // Loading fallback với animation
 function LoadingFallback() {
@@ -91,8 +92,8 @@ function AppRoutes() {
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
 
-  // Check if on landing page
-  const isLandingPage = location.pathname === '/' || location.pathname === '/landing';
+  // Check if on landing page or login page
+  const isLandingPage = location.pathname === '/' || location.pathname === '/landing' || location.pathname === '/login';
 
   useEffect(() => {
     // Only show modals on app pages, not landing
@@ -127,9 +128,9 @@ function AppRoutes() {
     <>
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
-          {/* Landing Page - Standalone without app layout */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/landing" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
 
           {/* App Pages - With layout */}
           <Route path="/app" element={<AppLayout><Dashboard /></AppLayout>} />

@@ -5,9 +5,9 @@ import Button from '../ui/Button';
 import { Rocket, MessageCircle, Wind, Heart, CheckCircle } from 'lucide-react';
 
 const FEATURES = [
-  { icon: MessageCircle, text: 'Chat với AI - trò chuyện, gửi hình, dùng mic', color: 'from-pink-500 to-rose-500' },
-  { icon: Wind, text: 'Thở thư giãn - nhiều pattern (4-7-8, box...)', color: 'from-blue-500 to-cyan-500' },
-  { icon: Heart, text: 'Lọ biết ơn - ghi nhận điều tích cực mỗi ngày', color: 'from-purple-500 to-violet-500' },
+  { icon: MessageCircle, text: 'Tâm sự với AI bạn', color: 'from-pink-500 to-rose-500' },
+  { icon: Wind, text: 'Thở thư giãn', color: 'from-blue-500 to-cyan-500' },
+  { icon: Heart, text: 'Lọ Biết Ơn', color: 'from-purple-500 to-violet-500' },
 ];
 
 export default function OnboardingModal({ open, onClose }) {

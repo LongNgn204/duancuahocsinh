@@ -30,7 +30,7 @@ const quickActions = [
     icon: MessageCircle,
     description: 'Chia sẻ điều bạn đang nghĩ',
     color: 'from-teal-500 to-cyan-500',
-    badge: 'HOT'
+    badge: 'Hay'
   },
   {
     path: '/breathing',
@@ -50,7 +50,7 @@ const quickActions = [
     path: '/games',
     label: 'Giải trí',
     icon: Gamepad2,
-    description: 'Thư giãn với mini games',
+    description: 'Thư giãn với trò chơi nhỏ',
     color: 'from-purple-500 to-indigo-500',
   },
 ];
@@ -105,12 +105,12 @@ export default function Dashboard() {
               <div className="hidden md:flex items-center gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-[--brand]">7</div>
-                  <div className="text-xs text-[--muted]">Ngày streak</div>
+                  <div className="text-xs text-[--muted]">Ngày liên tiếp</div>
                 </div>
                 <div className="w-px h-10 bg-[--surface-border]" />
                 <div className="text-center">
                   <div className="text-2xl font-bold text-[--accent]">23</div>
-                  <div className="text-xs text-[--muted]">Cuộc chat</div>
+                  <div className="text-xs text-[--muted]">Cuộc trò chuyện</div>
                 </div>
               </div>
             </div>
@@ -223,7 +223,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <h3 className="font-semibold">Mẹo hôm nay</h3>
-                <p className="text-xs text-[--muted]">Wellbeing tip</p>
+                <p className="text-xs text-[--muted]">Lời khuyên sức khỏe</p>
               </div>
             </div>
             <p className="text-[--text-secondary] leading-relaxed">{todayTip}</p>
