@@ -172,11 +172,12 @@ export async function handleRegister(request, env) {
 /**
  * Handler đăng nhập
  * POST /api/auth/login
+ * Body: { username, password }
  */
 export async function handleLogin(request, env) {
     try {
         const body = await request.json();
-        const { username } = body;
+        const { username, password } = body;
 
         // Validate username
         const validation = validateUsername(username);
@@ -186,9 +187,9 @@ export async function handleLogin(request, env) {
 
         const trimmedUsername = username.trim();
 
-        // Find user
+        // Find user với password_hash và password_salt
         const user = await env.ban_dong_hanh_db.prepare(
-            'SELECT id, username, created_at FROM users WHERE username = ?'
+            'SELECT id, username, created_at, password_hash, password_salt FROM users WHERE username = ?'
         ).bind(trimmedUsername).first();
 
         if (!user) {
@@ -199,8 +200,49 @@ export async function handleLogin(request, env) {
             }, 404);
         }
 
-        // Update last login - sử dụng datetime('now') trực tiếp trong SQL
-        // D1 database: UPDATE phải chạy trước SELECT
+        // Chú thích: Hỗ trợ legacy users (chưa có password)
+        // Nếu user chưa set password → yêu cầu set password
+        if (!user.password_hash || !user.password_salt) {
+            // Legacy user - yêu cầu set password
+            if (!password) {
+                return createJsonResponse({
+                    error: 'password_required',
+                    message: 'Tài khoản này cần đặt mật khẩu. Vui lòng nhập mật khẩu mới.',
+                    requireSetPassword: true
+                }, 400);
+            }
+
+            // Validate và set password mới cho legacy user
+            const passwordValidation = validatePassword(password);
+            if (!passwordValidation.valid) {
+                return createJsonResponse({ error: passwordValidation.error }, 400);
+            }
+
+            const { hash, salt } = await hashPassword(password);
+            await env.ban_dong_hanh_db.prepare(
+                'UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?'
+            ).bind(hash, salt, user.id).run();
+
+            console.log('[Auth] Set password for legacy user:', user.id);
+        } else {
+            // Normal login - verify password
+            if (!password) {
+                return createJsonResponse({
+                    error: 'password_required',
+                    message: 'Vui lòng nhập mật khẩu'
+                }, 400);
+            }
+
+            const isValid = await verifyPassword(password, user.password_hash, user.password_salt);
+            if (!isValid) {
+                return createJsonResponse({
+                    error: 'invalid_password',
+                    message: 'Mật khẩu không chính xác'
+                }, 401);
+            }
+        }
+
+        // Update last login
         try {
             const updateResult = await env.ban_dong_hanh_db.prepare(
                 "UPDATE users SET last_login = datetime('now') WHERE id = ?"
@@ -217,7 +259,6 @@ export async function handleLogin(request, env) {
         }
 
         // Get updated user with last_login
-        // Query lại để lấy giá trị mới nhất
         const updatedUser = await env.ban_dong_hanh_db.prepare(
             'SELECT id, username, created_at, COALESCE(last_login, NULL) as last_login FROM users WHERE id = ?'
         ).bind(user.id).first();
@@ -229,18 +270,16 @@ export async function handleLogin(request, env) {
             has_last_login: 'last_login' in (updatedUser || {})
         });
 
-        // Build response - đảm bảo last_login luôn có
+        // Build response
         const responseUser = {
             id: updatedUser.id,
             username: updatedUser.username,
             created_at: updatedUser.created_at,
         };
 
-        // Explicitly add last_login (có thể null hoặc undefined)
         if ('last_login' in updatedUser) {
             responseUser.last_login = updatedUser.last_login;
         } else {
-            // Nếu không có trong result, query riêng
             const lastLoginCheck = await env.ban_dong_hanh_db.prepare(
                 'SELECT last_login FROM users WHERE id = ?'
             ).bind(user.id).first();

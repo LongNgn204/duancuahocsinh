@@ -85,7 +85,7 @@ const PATTERNS = {
     description: 'Giảm lo âu, hỗ trợ giấc ngủ',
   },
   box: {
-    label: 'Box Breathing',
+    label: 'Thở hộp vuông',
     code: '4-4-4-4',
     phases: ['inhale', 'hold', 'exhale', 'hold2'],
     durations: { inhale: 4, hold: 4, exhale: 4, hold2: 4 },
@@ -170,7 +170,7 @@ export default function BreathingBubble() {
       if (saved) {
         setVoiceSettings(JSON.parse(saved));
       }
-    } catch (_) {}
+    } catch (_) { }
   }, []);
 
   // Load available voices
@@ -192,7 +192,7 @@ export default function BreathingBubble() {
   useEffect(() => {
     try {
       localStorage.setItem(VOICE_SETTINGS_KEY, JSON.stringify(voiceSettings));
-    } catch (_) {}
+    } catch (_) { }
   }, [voiceSettings]);
 
   // Load sessions
@@ -282,7 +282,7 @@ export default function BreathingBubble() {
     // Special handling for bubble pattern (30s fixed duration)
     if (patternKey === 'bubble' && pattern.duration) {
       speak('Hãy thở theo nhịp bong bóng. Hít vào khi bong bóng lớn, thở ra khi bong bóng nhỏ.');
-      
+
       // Phase timer for bubble pattern
       sessionTimers.current.phase = setInterval(() => {
         const next = nextPhase(phase);
@@ -293,7 +293,7 @@ export default function BreathingBubble() {
 
       sessionTimers.current.tick = setInterval(() => setTickMs((v) => Math.min(v + 100, curPhaseMs)), 100);
       sessionTimers.current.second = setInterval(() => setElapsed((s) => s + 1), 1000);
-      
+
       // Stop after 30 seconds
       sessionTimers.current.duration = setTimeout(() => {
         setRunning(false);
@@ -388,7 +388,7 @@ export default function BreathingBubble() {
         {/* Pattern Selector */}
         <Card size="none" className="p-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-[--text]">Chọn Pattern</h3>
+            <h3 className="font-semibold text-[--text]">Chọn kiểu thở</h3>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setVoiceOn(!voiceOn)}
@@ -455,7 +455,7 @@ export default function BreathingBubble() {
                 className="mt-4 pt-4 border-t border-[--surface-border] space-y-3"
               >
                 <h4 className="text-sm font-semibold text-[--text] mb-2">Cài đặt giọng nói</h4>
-                
+
                 {/* Voice Selection */}
                 {availableVoices.length > 0 && (
                   <div>
@@ -568,11 +568,10 @@ export default function BreathingBubble() {
             {/* Breathing Bubble */}
             <div className="relative">
               <motion.div
-                className={`rounded-full shadow-2xl ${
-                  patternKey === 'bubble' 
-                    ? 'bg-gradient-to-br from-cyan-400 to-blue-500' 
+                className={`rounded-full shadow-2xl ${patternKey === 'bubble'
+                    ? 'bg-gradient-to-br from-cyan-400 to-blue-500'
                     : 'bg-gradient-to-br from-[--brand] to-[--brand-light]'
-                }`}
+                  }`}
                 animate={{
                   width: bubbleSize[phase].size,
                   height: bubbleSize[phase].size,
@@ -583,7 +582,7 @@ export default function BreathingBubble() {
                   ease: 'easeInOut'
                 }}
                 style={{
-                  boxShadow: running 
+                  boxShadow: running
                     ? patternKey === 'bubble'
                       ? '0 0 60px rgba(34, 211, 238, 0.4), 0 0 100px rgba(59, 130, 246, 0.2)'
                       : '0 0 60px rgba(13, 148, 136, 0.4), 0 0 100px rgba(13, 148, 136, 0.2)'
@@ -658,14 +657,14 @@ export default function BreathingBubble() {
         </Card>
 
         {/* Encouragement Messages */}
-        <EncouragementMessages 
+        <EncouragementMessages
           onMessageShown={(data) => {
             console.log('[Breathing] Message shown:', data);
           }}
         />
 
         {/* Random Wellness Card */}
-        <RandomWellnessCard 
+        <RandomWellnessCard
           onActionTaken={(card) => {
             console.log('[Breathing] Action taken:', card.id);
             // Có thể thêm XP hoặc notification ở đây

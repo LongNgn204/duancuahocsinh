@@ -277,12 +277,13 @@ if (typeof window !== 'undefined') {
 /**
  * Đăng ký tài khoản mới
  * @param {string} username 
+ * @param {string} password 
  * @returns {Promise<{success: boolean, user: Object}>}
  */
-export async function register(username) {
+export async function register(username, password) {
     const data = await apiRequest('/api/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ username, password }),
     });
 
     if (data.success && data.user) {
@@ -295,12 +296,13 @@ export async function register(username) {
 /**
  * Đăng nhập
  * @param {string} username 
+ * @param {string} password 
  * @returns {Promise<{success: boolean, user: Object}>}
  */
-export async function login(username) {
+export async function login(username, password) {
     const data = await apiRequest('/api/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ username, password }),
     });
 
     if (data.success && data.user) {

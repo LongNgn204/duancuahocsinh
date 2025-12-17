@@ -1,18 +1,21 @@
 // src/components/auth/AuthModal.jsx
-// Chú thích: Modal đăng nhập/đăng ký đơn giản chỉ cần username
+// Chú thích: Modal đăng nhập/đăng ký với username và password
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, LogIn, UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
+import { X, User, Lock, LogIn, UserPlus, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import Button from '../ui/Button';
 import { register, login, checkUsername } from '../../utils/api';
 
 export default function AuthModal({ isOpen, onClose, onSuccess }) {
     const [mode, setMode] = useState('login'); // 'login' | 'register'
     const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [suggestions, setSuggestions] = useState([]);
     const [usernameAvailable, setUsernameAvailable] = useState(null);
+    const [requireSetPassword, setRequireSetPassword] = useState(false);
 
     // Kiểm tra username availability khi nhập (debounced)
     const handleUsernameChange = async (value) => {
@@ -35,20 +38,27 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
         e.preventDefault();
         if (!username.trim() || loading) return;
 
+        // Chú thích: Validate password phía client
+        if (password.length < 6) {
+            setError('Mật khẩu phải có ít nhất 6 ký tự');
+            return;
+        }
+
         setLoading(true);
         setError('');
         setSuggestions([]);
 
         try {
             if (mode === 'register') {
-                const result = await register(username.trim());
+                const result = await register(username.trim(), password);
                 if (result.success) {
                     onSuccess?.(result.user);
                     onClose();
                 }
             } else {
-                const result = await login(username.trim());
+                const result = await login(username.trim(), password);
                 if (result.success) {
+                    setRequireSetPassword(false);
                     onSuccess?.(result.user);
                     onClose();
                 }
@@ -65,6 +75,12 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
             if (err.data?.canRegister) {
                 setMode('register');
                 setError(`Tài khoản "${username}" chưa tồn tại. Tạo mới?`);
+            }
+
+            // Chú thích: Xử lý legacy user cần set password
+            if (err.data?.requireSetPassword) {
+                setRequireSetPassword(true);
+                setError('Vui lòng tạo mật khẩu mới cho tài khoản này.');
             }
         } finally {
             setLoading(false);
@@ -142,6 +158,39 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                             </div>
                             <p className="text-xs text-[--muted] mt-1">
                                 Chỉ cần nhớ tên này để đăng nhập lại sau
+                            </p>
+                        </div>
+
+                        {/* Chú thích: Password field với toggle show/hide */}
+                        <div>
+                            <label className="block text-sm font-medium mb-2">
+                                {requireSetPassword ? 'Tạo mật khẩu mới' : 'Mật khẩu'}
+                            </label>
+                            <div className="relative">
+                                <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[--muted]" />
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder={requireSetPassword ? 'Nhập mật khẩu mới (ít nhất 6 ký tự)...' : 'Nhập mật khẩu...'}
+                                    className="w-full pl-10 pr-12 py-3 bg-[--bg] border border-[--border] rounded-xl focus:ring-2 focus:ring-[--brand] focus:border-transparent outline-none transition-all"
+                                    minLength={6}
+                                    maxLength={100}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[--muted] hover:text-[--text] transition-colors"
+                                    tabIndex={-1}
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
+                            <p className="text-xs text-[--muted] mt-1">
+                                {mode === 'register' || requireSetPassword
+                                    ? 'Mật khẩu phải có ít nhất 6 ký tự'
+                                    : 'Nhập mật khẩu đã đăng ký'
+                                }
                             </p>
                         </div>
 

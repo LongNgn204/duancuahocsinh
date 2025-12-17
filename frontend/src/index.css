@@ -161,9 +161,9 @@ body,
   scroll-behavior: smooth;
 }
 
-/* Responsive base font size */
+/* Responsive base font size - tăng cho dễ đọc */
 html {
-  font-size: 16px;
+  font-size: 17px;
 }
 
 /* ===== RESPONSIVE DESIGN - Phase 5 ===== */
@@ -219,13 +219,13 @@ html {
 
 @media (max-width: 768px) {
   html {
-    font-size: 15px;
+    font-size: 16px;
   }
 }
 
 @media (max-width: 480px) {
   html {
-    font-size: 14px;
+    font-size: 15px;
   }
 }
 

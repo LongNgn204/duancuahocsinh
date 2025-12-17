@@ -21,7 +21,8 @@ export default function LoginPrompt({
     const steps = [
         { step: 1, text: 'Nhấn nút "Đăng nhập" bên dưới' },
         { step: 2, text: "Nhập tên người dùng (ví dụ: hocsinh2024)" },
-        { step: 3, text: "Nếu chưa có tài khoản, hệ thống sẽ tự tạo cho bạn!" },
+        { step: 3, text: "Nhập mật khẩu (ít nhất 6 ký tự)" },
+        { step: 4, text: "Nếu chưa có tài khoản, chọn 'Tạo mới'!" },
     ];
 
     return (

@@ -6,11 +6,11 @@ import { Rocket, Bot, Wind, Heart, CheckCircle } from 'lucide-react';
 
 const FEATURES = [
   { icon: Bot, text: 'Tâm sự với AI - chat văn bản hoặc nói chuyện bằng giọng nói', color: 'from-pink-500 to-rose-500' },
-  { icon: Wind, text: 'Thở thư giãn - nhiều pattern (4-7-8, box...)', color: 'from-blue-500 to-cyan-500' },
+  { icon: Wind, text: 'Thở thư giãn - nhiều kiểu thở (4-7-8, hộp vuông...)', color: 'from-blue-500 to-cyan-500' },
   { icon: Heart, text: 'Lọ biết ơn - ghi nhận điều tích cực mỗi ngày', color: 'from-purple-500 to-violet-500' },
-  { icon: CheckCircle, text: 'Nhật ký cảm xúc - theo dõi mood và phân tích sentiment', color: 'from-green-500 to-emerald-500' },
-  { icon: CheckCircle, text: 'Trò chơi thư giãn - giảm stress với mini games', color: 'from-orange-500 to-amber-500' },
-  { icon: CheckCircle, text: 'Hành trình & Thành tích - XP, level, huy hiệu', color: 'from-indigo-500 to-purple-500' },
+  { icon: CheckCircle, text: 'Nhật ký cảm xúc - theo dõi tâm trạng và phân tích cảm xúc', color: 'from-green-500 to-emerald-500' },
+  { icon: CheckCircle, text: 'Trò chơi thư giãn - giảm stress với trò chơi nhỏ', color: 'from-orange-500 to-amber-500' },
+  { icon: CheckCircle, text: 'Hành trình & Thành tích - điểm XP, cấp độ, huy hiệu', color: 'from-indigo-500 to-purple-500' },
 ];
 
 export default function OnboardingModal({ open, onClose }) {
