@@ -262,17 +262,73 @@ export function useAI() {
         return;
       }
 
-      // Streaming
+      // Streaming - với buffer để gom text, tránh spam render
       let assistantIndex = -1;
+      let textBuffer = '';  // Buffer để gom text
+      let updateScheduled = false;  // Flag để debounce
+
+      // Function để flush buffer vào state
+      const flushBuffer = () => {
+        if (!textBuffer) return;
+        const currentBuffer = textBuffer;
+        textBuffer = '';  // Reset buffer
+
+        if (assistantIndex === -1) {
+          setThreads((prev) => prev.map((t) => {
+            if (t.id !== currentId) return t;
+            assistantIndex = t.messages.length;
+            return {
+              ...t,
+              messages: [...t.messages, {
+                role: 'assistant',
+                content: currentBuffer,
+                ts: nowISO(),
+                messageId: stream.traceId,
+                traceId: stream.traceId
+              }],
+              updatedAt: nowISO()
+            };
+          }));
+        } else {
+          setThreads((prev) => prev.map((t) => {
+            if (t.id !== currentId) return t;
+            const copy = t.messages.slice();
+            copy[assistantIndex] = {
+              ...copy[assistantIndex],
+              content: (copy[assistantIndex].content || '') + currentBuffer,
+              messageId: copy[assistantIndex].messageId || stream.traceId,
+              traceId: copy[assistantIndex].traceId || stream.traceId
+            };
+            return { ...t, messages: copy, updatedAt: nowISO() };
+          }));
+        }
+        updateScheduled = false;
+      };
+
+      // Schedule update với debounce
+      const scheduleUpdate = () => {
+        if (!updateScheduled) {
+          updateScheduled = true;
+          // Debounce 50ms để gom nhiều chunks lại
+          setTimeout(flushBuffer, 50);
+        }
+      };
+
       await stream.read(({ event, data }) => {
         if (event === 'error') {
+          // Flush buffer trước khi xử lý error
+          flushBuffer();
           let msg = 'Lỗi không xác định';
           try { const j = JSON.parse(data); msg = j?.note || msg; } catch (_) { }
           const bot = { role: 'assistant', content: `Lỗi: ${msg}`, ts: nowISO() };
           setThreads((prev) => prev.map((t) => (t.id === currentId ? { ...t, messages: [...t.messages, bot], updatedAt: nowISO() } : t)));
           return;
         }
-        if (event === 'done') return;
+        if (event === 'done') {
+          // Flush buffer khi done
+          flushBuffer();
+          return;
+        }
         // Đảm bảo chunk luôn là string, không phải object
         let chunk = '';
         if (typeof data === 'string') {
@@ -292,37 +348,16 @@ export function useAI() {
         } else {
           chunk = String(data || '');
         }
-        if (assistantIndex === -1) {
-          setThreads((prev) => prev.map((t) => {
-            if (t.id !== currentId) return t;
-            assistantIndex = t.messages.length;
-            return {
-              ...t,
-              messages: [...t.messages, {
-                role: 'assistant',
-                content: chunk,
-                ts: nowISO(),
-                messageId: stream.traceId, // Store traceId as messageId for feedback
-                traceId: stream.traceId
-              }],
-              updatedAt: nowISO()
-            };
-          }));
-        } else {
-          setThreads((prev) => prev.map((t) => {
-            if (t.id !== currentId) return t;
-            const copy = t.messages.slice();
-            // Preserve messageId when updating content
-            copy[assistantIndex] = {
-              ...copy[assistantIndex],
-              content: (copy[assistantIndex].content || '') + chunk,
-              messageId: copy[assistantIndex].messageId || stream.traceId,
-              traceId: copy[assistantIndex].traceId || stream.traceId
-            };
-            return { ...t, messages: copy, updatedAt: nowISO() };
-          }));
+
+        // Thêm vào buffer thay vì update ngay
+        if (chunk) {
+          textBuffer += chunk;
+          scheduleUpdate();
         }
       });
+
+      // Final flush sau khi stream kết thúc
+      flushBuffer();
     } catch (_e) {
       const bot = { role: 'assistant', content: 'Xin lỗi, hiện tại mình đang gặp sự cố kết nối. Bạn thử lại sau nhé.', ts: nowISO() };
       setThreads((prev) => prev.map((t) => (t.id === currentId ? { ...t, messages: [...t.messages, bot], updatedAt: nowISO() } : t)));
