@@ -95,8 +95,8 @@ function Sparkline({ entries, days = 30, streak = 0 }) {
       const key = toDayStr(d);
       const dayEntries = entries.filter((e) => toDayStr(new Date(e.date || e.created_at)) === key);
       const has = dayEntries.length > 0;
-      arr.push({ 
-        day: key, 
+      arr.push({
+        day: key,
         v: has ? 1 : 0,
         count: dayEntries.length,
         isToday: i === 0,
@@ -120,18 +120,17 @@ function Sparkline({ entries, days = 30, streak = 0 }) {
             transition={{ delay: i * 0.02 }}
           >
             <motion.div
-              className={`w-3 rounded-t transition-all ${
-                d.v 
-                  ? d.isInStreak 
-                    ? 'bg-gradient-to-t from-[--brand] via-[--brand-light] to-orange-400' 
+              className={`w-3 rounded-t transition-all ${d.v
+                  ? d.isInStreak
+                    ? 'bg-gradient-to-t from-[--brand] via-[--brand-light] to-orange-400'
                     : 'bg-gradient-to-t from-[--brand] to-[--brand-light]'
                   : 'bg-[--surface-border]'
-              } ${d.isToday ? 'ring-2 ring-[--brand] ring-offset-1' : ''}`}
+                } ${d.isToday ? 'ring-2 ring-[--brand] ring-offset-1' : ''}`}
               initial={{ height: 4 }}
-              animate={{ 
-                height: d.v 
-                  ? Math.max(16, (d.count / maxCount) * 40) 
-                  : 8 
+              animate={{
+                height: d.v
+                  ? Math.max(16, (d.count / maxCount) * 40)
+                  : 8
               }}
               transition={{ delay: i * 0.02 }}
             />
@@ -146,7 +145,7 @@ function Sparkline({ entries, days = 30, streak = 0 }) {
         <span>{days} ngày qua</span>
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-gradient-to-t from-[--brand] to-[--brand-light]" />
-          Có entry
+          Có chứ!
         </span>
       </div>
     </div>
@@ -269,7 +268,7 @@ export default function GratitudeJar() {
     return tagInfo?.suggestions || [];
   }, [selectedTag, entries]);
 
-    // Add entry - save to both local and server
+  // Add entry - save to both local and server
   const addEntry = async () => {
     const t = text.trim();
     if (!t) return;
@@ -302,14 +301,14 @@ export default function GratitudeJar() {
           const updated = next.map(e => e.id === newEntry.id ? { ...e, id: result.item.id, serverId: result.item.id } : e);
           saveLocal(updated);
         }
-        
+
         // Thưởng XP khi thêm entry
         try {
           await rewardXP('gratitude_add');
         } catch (xpError) {
           console.warn('[Gratitude] XP reward failed:', xpError);
         }
-        
+
         // Schedule sync to clear local data
         scheduleSync(3000);
       } catch (e) {
@@ -342,7 +341,7 @@ export default function GratitudeJar() {
         try {
           const imported = JSON.parse(event.target.result);
           if (Array.isArray(imported)) {
-            const merged = [...entries, ...imported].filter((e, i, arr) => 
+            const merged = [...entries, ...imported].filter((e, i, arr) =>
               arr.findIndex(a => a.id === e.id) === i
             );
             saveLocal(merged);
@@ -564,17 +563,16 @@ export default function GratitudeJar() {
                           setCustomTag('');
                           setShowContentSuggestions(true);
                         }}
-                        className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
-                          selectedTag === t.id
+                        className={`px-3 py-1.5 rounded-lg text-sm transition-all ${selectedTag === t.id
                             ? 'bg-[--brand] text-white shadow-md'
                             : 'bg-[--surface-border] text-[--text] hover:bg-[--surface-border]/80'
-                        }`}
+                          }`}
                       >
                         {t.emoji} {t.label}
                       </button>
                     ))}
                   </div>
-                  
+
                   {/* Custom tag input */}
                   {!selectedTag && (
                     <div className="mt-2 flex items-center gap-2 glass rounded-xl px-3 py-2">
