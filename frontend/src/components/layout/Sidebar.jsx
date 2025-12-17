@@ -1,13 +1,14 @@
 // src/components/layout/Sidebar.jsx
-// Chú thích: Sidebar v4.3 - Compact mobile layout, removed Thành tích
+// Chú thích: Sidebar v4.4 - Thêm nút Hỗ trợ khẩn cấp
 import { NavLink } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import {
   Home, Heart, Bot, Gamepad2, Sparkles,
   BookOpenCheck, Timer, Library, Settings, Moon,
   ChevronLeft, ChevronRight, BarChart3, Trophy,
-  Shield, Star, Menu, X, Bell
+  Shield, Star, Menu, X, Bell, AlertTriangle
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import SOSOverlay from '../sos/SOSOverlay';
 
 const sections = [
   {
@@ -38,6 +39,7 @@ const sections = [
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sosOpen, setSosOpen] = useState(false);
 
   // Close mobile sidebar when route changes + listen for toggle events from header
   useEffect(() => {
@@ -173,8 +175,29 @@ export default function Sidebar() {
           ))}
         </div>
 
-        {/* Footer - Settings */}
-        <div className="p-3 border-t border-[--surface-border]">
+        {/* Footer - SOS + Settings */}
+        <div className="p-3 border-t border-[--surface-border] space-y-2">
+          {/* Chú thích: Nút Hỗ trợ khẩn cấp - Màu đỏ nổi bật */}
+          <button
+            onClick={() => setSosOpen(true)}
+            title={collapsed ? 'Hỗ trợ khẩn cấp' : undefined}
+            className={`
+              w-full flex items-center gap-3 
+              ${collapsed ? 'justify-center' : ''} 
+              px-3 py-2.5 rounded-xl
+              bg-gradient-to-r from-red-500 to-rose-500
+              text-white font-semibold
+              hover:from-red-600 hover:to-rose-600
+              transition-all duration-200
+              shadow-lg shadow-red-500/20
+              hover:shadow-red-500/30
+              hover:scale-[1.02]
+            `}
+          >
+            <AlertTriangle size={20} />
+            {!collapsed && <span className="text-base">Hỗ trợ khẩn cấp</span>}
+          </button>
+
           <NavLink
             to="/settings"
             title={collapsed ? 'Cài đặt' : undefined}
@@ -195,6 +218,9 @@ export default function Sidebar() {
           </NavLink>
         </div>
       </aside>
+
+      {/* SOS Overlay */}
+      <SOSOverlay isOpen={sosOpen} onClose={() => setSosOpen(false)} riskLevel="high" />
     </>
   );
 }
