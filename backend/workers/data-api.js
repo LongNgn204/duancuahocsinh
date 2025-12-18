@@ -1510,3 +1510,243 @@ export async function deleteBookmark(request, env) {
         return json({ error: 'server_error' }, 500);
     }
 }
+
+// =============================================================================
+// CHAT THREADS SYNC ENDPOINTS
+// Chú thích: Sync lịch sử chat AI để người dùng xem lại trên các thiết bị
+// =============================================================================
+
+/**
+ * GET /api/data/chat/threads - Lấy danh sách chat threads của user
+ * Query params: ?limit=50
+ */
+export async function getChatThreads(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    try {
+        const url = new URL(request.url);
+        const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 100);
+
+        // Lấy danh sách threads
+        const threads = await env.ban_dong_hanh_db.prepare(
+            'SELECT id, title, created_at, updated_at FROM chat_threads WHERE user_id = ? ORDER BY updated_at DESC LIMIT ?'
+        ).bind(userId, limit).all();
+
+        // Lấy messages cho mỗi thread
+        const threadsWithMessages = [];
+        for (const thread of threads.results || []) {
+            const messages = await env.ban_dong_hanh_db.prepare(
+                'SELECT role, content, timestamp as ts, feedback, trace_id FROM chat_messages WHERE thread_id = ? AND user_id = ? ORDER BY timestamp ASC'
+            ).bind(thread.id, userId).all();
+
+            threadsWithMessages.push({
+                id: thread.id,
+                title: thread.title,
+                createdAt: thread.created_at,
+                updatedAt: thread.updated_at,
+                messages: messages.results || []
+            });
+        }
+
+        return json({ threads: threadsWithMessages });
+    } catch (error) {
+        console.error('[Data] getChatThreads error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+/**
+ * POST /api/data/chat/threads - Tạo hoặc cập nhật thread
+ * Body: { id: string, title: string }
+ */
+export async function saveChatThread(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    try {
+        const { id, title } = await request.json();
+
+        if (!id || typeof id !== 'string') {
+            return json({ error: 'id bắt buộc' }, 400);
+        }
+
+        // Upsert thread
+        await env.ban_dong_hanh_db.prepare(`
+            INSERT INTO chat_threads (id, user_id, title, updated_at)
+            VALUES (?, ?, ?, datetime('now'))
+            ON CONFLICT(id) DO UPDATE SET
+                title = ?,
+                updated_at = datetime('now')
+        `).bind(id, userId, title || 'Cuộc trò chuyện mới', title || 'Cuộc trò chuyện mới').run();
+
+        return json({ success: true, thread_id: id });
+    } catch (error) {
+        console.error('[Data] saveChatThread error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+/**
+ * POST /api/data/chat/messages - Lưu tin nhắn vào thread
+ * Body: { thread_id: string, messages: [{role, content, ts, feedback?, trace_id?}] }
+ */
+export async function saveChatMessages(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    try {
+        const { thread_id, messages } = await request.json();
+
+        if (!thread_id || !Array.isArray(messages)) {
+            return json({ error: 'thread_id và messages bắt buộc' }, 400);
+        }
+
+        // Đảm bảo thread tồn tại
+        const thread = await env.ban_dong_hanh_db.prepare(
+            'SELECT id FROM chat_threads WHERE id = ? AND user_id = ?'
+        ).bind(thread_id, userId).first();
+
+        if (!thread) {
+            // Tự động tạo thread nếu chưa có
+            await env.ban_dong_hanh_db.prepare(
+                'INSERT INTO chat_threads (id, user_id, title) VALUES (?, ?, ?)'
+            ).bind(thread_id, userId, 'Cuộc trò chuyện mới').run();
+        }
+
+        // Xóa messages cũ và insert mới (full sync)
+        await env.ban_dong_hanh_db.prepare(
+            'DELETE FROM chat_messages WHERE thread_id = ? AND user_id = ?'
+        ).bind(thread_id, userId).run();
+
+        // Insert messages mới (batch insert)
+        let inserted = 0;
+        for (const msg of messages.slice(0, 500)) { // Giới hạn 500 tin nhắn
+            if (msg.role && msg.content) {
+                await env.ban_dong_hanh_db.prepare(
+                    'INSERT INTO chat_messages (thread_id, user_id, role, content, timestamp, feedback, trace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+                ).bind(
+                    thread_id,
+                    userId,
+                    msg.role,
+                    msg.content,
+                    msg.ts || new Date().toISOString(),
+                    msg.feedback || null,
+                    msg.trace_id || msg.traceId || null
+                ).run();
+                inserted++;
+            }
+        }
+
+        // Cập nhật updated_at của thread
+        await env.ban_dong_hanh_db.prepare(
+            'UPDATE chat_threads SET updated_at = datetime(\'now\') WHERE id = ?'
+        ).bind(thread_id).run();
+
+        return json({ success: true, inserted });
+    } catch (error) {
+        console.error('[Data] saveChatMessages error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+/**
+ * DELETE /api/data/chat/threads/:id - Xóa thread và messages
+ */
+export async function deleteChatThread(request, env, threadId) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    try {
+        // Xóa messages trước (do foreign key)
+        await env.ban_dong_hanh_db.prepare(
+            'DELETE FROM chat_messages WHERE thread_id = ? AND user_id = ?'
+        ).bind(threadId, userId).run();
+
+        // Xóa thread
+        const result = await env.ban_dong_hanh_db.prepare(
+            'DELETE FROM chat_threads WHERE id = ? AND user_id = ?'
+        ).bind(threadId, userId).run();
+
+        if (result.changes === 0) {
+            return json({ error: 'not_found' }, 404);
+        }
+
+        return json({ success: true });
+    } catch (error) {
+        console.error('[Data] deleteChatThread error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+/**
+ * POST /api/data/chat/sync - Sync toàn bộ threads từ client
+ * Body: { threads: [{id, title, createdAt, updatedAt, messages: [{role, content, ts, feedback}]}] }
+ */
+export async function syncChatThreads(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    try {
+        const { threads } = await request.json();
+
+        if (!Array.isArray(threads)) {
+            return json({ error: 'threads phải là array' }, 400);
+        }
+
+        let synced = 0;
+        for (const thread of threads.slice(0, 50)) { // Giới hạn 50 threads
+            if (!thread.id) continue;
+
+            // Upsert thread
+            await env.ban_dong_hanh_db.prepare(`
+                INSERT INTO chat_threads (id, user_id, title, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    title = ?,
+                    updated_at = MAX(updated_at, ?)
+            `).bind(
+                thread.id,
+                userId,
+                thread.title || 'Cuộc trò chuyện',
+                thread.createdAt || new Date().toISOString(),
+                thread.updatedAt || new Date().toISOString(),
+                thread.title || 'Cuộc trò chuyện',
+                thread.updatedAt || new Date().toISOString()
+            ).run();
+
+            // Sync messages nếu có
+            if (Array.isArray(thread.messages) && thread.messages.length > 0) {
+                // Xóa messages cũ
+                await env.ban_dong_hanh_db.prepare(
+                    'DELETE FROM chat_messages WHERE thread_id = ? AND user_id = ?'
+                ).bind(thread.id, userId).run();
+
+                // Insert messages mới
+                for (const msg of thread.messages.slice(0, 200)) {
+                    if (msg.role && msg.content) {
+                        await env.ban_dong_hanh_db.prepare(
+                            'INSERT INTO chat_messages (thread_id, user_id, role, content, timestamp, feedback, trace_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+                        ).bind(
+                            thread.id,
+                            userId,
+                            msg.role,
+                            msg.content,
+                            msg.ts || new Date().toISOString(),
+                            msg.feedback || null,
+                            msg.trace_id || msg.traceId || null
+                        ).run();
+                    }
+                }
+            }
+
+            synced++;
+        }
+
+        return json({ success: true, synced });
+    } catch (error) {
+        console.error('[Data] syncChatThreads error:', error.message);
+        return json({ error: 'server_error' }, 500);
+    }
+}
+

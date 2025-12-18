@@ -71,11 +71,12 @@ export default function Sidebar() {
       <aside
         className={`
           flex flex-col
-          ${collapsed ? 'w-16' : 'w-56 md:w-52 lg:w-60'}
+          ${collapsed ? 'w-16' : 'w-64 md:w-52 lg:w-60'}
         shrink-0 
         glass-strong
         border-r border-[--surface-border]
-          h-screen fixed md:sticky md:top-16 top-0
+          md:h-screen md:sticky md:top-16 
+          fixed top-16 bottom-0 left-0
         transition-all duration-300 ease-out
           z-40
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
@@ -93,17 +94,17 @@ export default function Sidebar() {
         {/* Mobile Close Button */}
         <button
           onClick={() => setMobileOpen(false)}
-          className="md:hidden absolute top-4 right-4 p-2 rounded-xl hover:bg-[--surface-border] transition-colors"
+          className="md:hidden absolute top-2 right-2 p-2 rounded-xl hover:bg-[--surface-border] transition-colors"
           aria-label="Đóng sidebar"
         >
-          <X size={20} />
+          <X size={18} />
         </button>
 
-        <div className="flex-1 overflow-y-auto py-4 px-2 md:py-6 md:px-3">
+        <div className="flex-1 overflow-y-auto py-4 px-3">
           {/* Brand - Only show when not collapsed */}
           {!collapsed && (
-            <div className="px-2 md:px-3 mb-4 md:mb-6">
-              <div className="text-xs md:text-sm uppercase tracking-wider text-[--text-secondary] font-semibold">
+            <div className="px-2 mb-4 md:mb-6">
+              <div className="text-sm uppercase tracking-wider text-[--brand] font-bold">
                 Bạn Đồng Hành
               </div>
             </div>

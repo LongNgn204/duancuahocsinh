@@ -55,20 +55,23 @@ function AdminSidebar({ activeTab, setActiveTab, collapsed, setCollapsed }) {
     return (
         <aside className={`
             ${collapsed ? 'w-16' : 'w-64'} 
-            h-screen bg-gray-900 text-white flex flex-col transition-all duration-300
+            h-screen bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 text-white flex flex-col transition-all duration-300
             fixed left-0 top-0 z-50 md:relative
+            shadow-2xl shadow-indigo-900/30
         `}>
             {/* Header */}
-            <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+            <div className="p-4 border-b border-indigo-500/30 flex items-center justify-between bg-gradient-to-r from-indigo-600/20 to-transparent">
                 {!collapsed && (
                     <div className="flex items-center gap-2">
-                        <Shield className="w-6 h-6 text-blue-400" />
-                        <span className="font-bold">Admin Panel</span>
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                            <Shield className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="font-bold bg-gradient-to-r from-white to-indigo-200 bg-clip-text text-transparent">Admin Panel</span>
                     </div>
                 )}
                 <button
                     onClick={() => setCollapsed(!collapsed)}
-                    className="p-2 hover:bg-gray-700 rounded-lg"
+                    className="p-2 hover:bg-indigo-500/20 rounded-xl transition-colors"
                 >
                     {collapsed ? <Menu size={18} /> : <X size={18} />}
                 </button>
@@ -76,9 +79,9 @@ function AdminSidebar({ activeTab, setActiveTab, collapsed, setCollapsed }) {
 
             {/* Admin Badge */}
             {!collapsed && (
-                <div className="p-4 border-b border-gray-700">
-                    <div className="flex items-center gap-2 text-green-400">
-                        <KeyRound size={16} />
+                <div className="p-4 border-b border-indigo-500/20">
+                    <div className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 px-3 py-2 rounded-xl">
+                        <KeyRound size={16} className="animate-pulse" />
                         <span className="text-sm font-medium">JWT Authenticated</span>
                     </div>
                 </div>
@@ -91,36 +94,39 @@ function AdminSidebar({ activeTab, setActiveTab, collapsed, setCollapsed }) {
                         key={item.id}
                         onClick={() => setActiveTab(item.id)}
                         className={`
-                            w-full flex items-center gap-3 px-4 py-3 transition-colors
+                            w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 relative group
                             ${activeTab === item.id
-                                ? 'bg-blue-600 text-white'
-                                : 'text-gray-300 hover:bg-gray-800 hover:text-white'}
+                                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30'
+                                : 'text-indigo-200 hover:bg-indigo-500/20 hover:text-white'}
                         `}
                         title={collapsed ? item.label : undefined}
                     >
-                        <item.icon size={20} />
-                        {!collapsed && <span>{item.label}</span>}
+                        {activeTab === item.id && (
+                            <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-cyan-400 to-indigo-400 rounded-r-full" />
+                        )}
+                        <item.icon size={20} className={`transition-transform group-hover:scale-110 ${activeTab === item.id ? 'drop-shadow-lg' : ''}`} />
+                        {!collapsed && <span className="font-medium">{item.label}</span>}
                     </button>
                 ))}
             </nav>
 
             {/* Footer Actions */}
-            <div className="p-4 border-t border-gray-700 space-y-2">
+            <div className="p-4 border-t border-indigo-500/20 space-y-2 bg-gradient-to-t from-slate-900/50 to-transparent">
                 <Link
                     to="/app"
-                    className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 rounded-lg transition-colors"
+                    className="flex items-center gap-3 px-3 py-2.5 text-indigo-200 hover:bg-indigo-500/20 hover:text-white rounded-xl transition-all"
                     title={collapsed ? 'Về trang chính' : undefined}
                 >
                     <Home size={18} />
-                    {!collapsed && <span className="text-sm">Về trang chính</span>}
+                    {!collapsed && <span className="text-sm font-medium">Về trang chính</span>}
                 </Link>
                 <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-3 py-2 text-red-400 hover:bg-gray-800 rounded-lg transition-colors"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded-xl transition-all"
                     title={collapsed ? 'Đăng xuất' : undefined}
                 >
                     <LogOut size={18} />
-                    {!collapsed && <span className="text-sm">Đăng xuất</span>}
+                    {!collapsed && <span className="text-sm font-medium">Đăng xuất</span>}
                 </button>
             </div>
         </aside>
@@ -136,15 +142,24 @@ function StatCard({ icon: Icon, label, value, color, trend }) {
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700"
+            whileHover={{ y: -2, scale: 1.01 }}
+            className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 relative overflow-hidden group"
         >
-            <div className="flex items-center justify-between">
+            {/* Background decoration */}
+            <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full ${color} opacity-10 group-hover:opacity-20 transition-opacity blur-xl`} />
+
+            <div className="flex items-center justify-between relative">
                 <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{label}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1 font-medium">{label}</p>
                     <p className="text-3xl font-bold text-gray-800 dark:text-white">{value}</p>
+                    {trend && (
+                        <p className={`text-xs mt-1 ${trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                            {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}%
+                        </p>
+                    )}
                 </div>
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${color}`}>
-                    <Icon className="w-6 h-6 text-white" />
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${color} shadow-lg ring-4 ring-white/20`}>
+                    <Icon className="w-7 h-7 text-white" />
                 </div>
             </div>
         </motion.div>
@@ -1419,24 +1434,34 @@ export default function AdminDashboard() {
     // Show login form if not authenticated
     if (!isAuthenticated) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
+                {/* Animated background decorations */}
+                <div className="absolute top-0 left-0 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+                <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2 animate-pulse" />
+                <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-cyan-500/10 rounded-full blur-2xl -translate-x-1/2 -translate-y-1/2" />
+
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="w-full max-w-md"
+                    initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                    className="w-full max-w-md relative z-10"
                 >
-                    <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-700">
+                    <div className="bg-slate-800/50 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-indigo-500/30 ring-1 ring-white/10">
                         <div className="text-center mb-8">
-                            <div className="w-20 h-20 mx-auto rounded-full bg-blue-500/20 flex items-center justify-center mb-4">
-                                <Shield className="w-10 h-10 text-blue-400" />
-                            </div>
-                            <h1 className="text-2xl font-bold text-white mb-2">Admin Panel</h1>
-                            <p className="text-gray-400">Nhập mật khẩu để truy cập</p>
+                            <motion.div
+                                className="w-24 h-24 mx-auto rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 flex items-center justify-center mb-6 shadow-2xl shadow-indigo-500/40 ring-4 ring-indigo-500/20"
+                                animate={{ rotate: [0, 5, -5, 0] }}
+                                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                            >
+                                <Shield className="w-12 h-12 text-white drop-shadow-lg" />
+                            </motion.div>
+                            <h1 className="text-3xl font-bold bg-gradient-to-r from-white via-indigo-200 to-purple-200 bg-clip-text text-transparent mb-2">Admin Panel</h1>
+                            <p className="text-indigo-300/80">Nhập mật khẩu để truy cập bảng điều khiển</p>
                         </div>
 
                         <form onSubmit={handleLogin} className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                <label className="block text-sm font-medium text-indigo-200 mb-2">
                                     Mật khẩu Admin
                                 </label>
                                 <input
@@ -1444,21 +1469,25 @@ export default function AdminDashboard() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="Nhập mật khẩu..."
-                                    className="w-full px-4 py-3 rounded-xl bg-gray-700 border border-gray-600 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                    className="w-full px-4 py-4 rounded-xl bg-slate-700/50 border border-indigo-500/30 text-white placeholder-indigo-300/50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-400 outline-none transition-all backdrop-blur-sm"
                                     autoFocus
                                 />
                             </div>
 
                             {loginError && (
-                                <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300 text-sm text-center">
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="p-4 bg-red-500/20 border border-red-500/40 rounded-xl text-red-300 text-sm text-center backdrop-blur-sm"
+                                >
                                     {loginError}
-                                </div>
+                                </motion.div>
                             )}
 
                             <button
                                 type="submit"
                                 disabled={loginLoading || !password}
-                                className="w-full py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+                                className="w-full py-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-500 hover:via-purple-500 hover:to-indigo-500 disabled:from-slate-600 disabled:via-slate-600 disabled:to-slate-600 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:scale-[1.02] active:scale-[0.98]"
                             >
                                 {loginLoading ? (
                                     <>
@@ -1474,10 +1503,10 @@ export default function AdminDashboard() {
                             </button>
                         </form>
 
-                        <div className="mt-6 pt-6 border-t border-gray-700 text-center">
+                        <div className="mt-8 pt-6 border-t border-indigo-500/20 text-center">
                             <Link
                                 to="/"
-                                className="text-sm text-gray-400 hover:text-white transition-colors"
+                                className="text-sm text-indigo-300 hover:text-white transition-colors inline-flex items-center gap-1"
                             >
                                 ← Quay về trang chủ
                             </Link>
@@ -1489,7 +1518,7 @@ export default function AdminDashboard() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex">
+        <div className="min-h-screen bg-gradient-to-br from-slate-100 via-indigo-50/50 to-purple-50/30 dark:from-slate-900 dark:via-indigo-950/50 dark:to-slate-900 flex">
             {/* Sidebar */}
             <AdminSidebar
                 activeTab={activeTab}
@@ -1501,10 +1530,10 @@ export default function AdminDashboard() {
             {/* Main Content */}
             <main className={`flex-1 ${sidebarCollapsed ? 'md:ml-16' : 'md:ml-0'} transition-all duration-300`}>
                 {/* Header */}
-                <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-40">
+                <header className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl shadow-sm sticky top-0 z-40 border-b border-indigo-100 dark:border-indigo-900/50">
                     <div className="px-6 py-4 flex items-center justify-between">
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                            <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-indigo-700 dark:from-white dark:to-indigo-200 bg-clip-text text-transparent">
                                 {activeTab === 'overview' && 'Tổng quan'}
                                 {activeTab === 'database-stats' && 'Thống kê Database'}
                                 {activeTab === 'all-users' && 'Tất cả người dùng'}
@@ -1514,14 +1543,14 @@ export default function AdminDashboard() {
                                 {activeTab === 'chat-metrics' && 'Chat Analytics'}
                                 {activeTab === 'logs' && 'Nhật ký hoạt động'}
                             </h1>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                            <p className="text-sm text-indigo-600/70 dark:text-indigo-300/70 font-medium">
                                 Quản trị forum Bạn Đồng Hành
                             </p>
                         </div>
                         <button
                             onClick={loadData}
                             disabled={loading}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50"
+                            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium rounded-xl hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all hover:scale-105 active:scale-95"
                         >
                             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                             Làm mới

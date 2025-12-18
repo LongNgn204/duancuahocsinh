@@ -1,12 +1,13 @@
 // src/hooks/useAI.js
 // Chú thích: Chat store + AI hook: hỗ trợ đa hội thoại (threads), timestamps,
 // lưu/persist localStorage, tiền kiểm SOS multi-level, streaming SSE, TTS gọi ở UI.
-// v4.0: Thêm userId cho persistent memory
-import { useEffect, useMemo, useState } from 'react';
+// v5.0: Thêm sync với server để user xem lại lịch sử chat trên các thiết bị
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { detectSOSLevel, sosMessage, getSuggestedAction } from '../utils/sosDetector';
-import { getCurrentUser } from '../utils/api';
+import { getCurrentUser, isLoggedIn, getChatThreads, syncChatThreadsToServer } from '../utils/api';
 
 const THREADS_KEY = 'chat_threads_v1';
+const SYNC_DEBOUNCE_MS = 5000; // Sync sau 5 giây không có thay đổi
 
 function nowISO() {
   return new Date().toISOString();
@@ -33,6 +34,24 @@ function saveThreads(threads) {
   } catch (_) { }
 }
 
+// Merge local và server threads - server wins cho cùng ID
+function mergeThreads(localThreads, serverThreads) {
+  const merged = [...serverThreads];
+  const serverIds = new Set(serverThreads.map(t => t.id));
+
+  // Thêm local threads chưa có trên server
+  for (const local of localThreads) {
+    if (!serverIds.has(local.id)) {
+      merged.push(local);
+    }
+  }
+
+  // Sắp xếp theo updatedAt
+  merged.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+  return merged;
+}
+
 export function useAI() {
   const endpoint = import.meta.env.VITE_API_URL ?? import.meta.env.VITE_AI_PROXY_URL ?? null;
 
@@ -40,41 +59,94 @@ export function useAI() {
   const [currentId, setCurrentId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [sos, setSos] = useState(null);
+  const [syncing, setSyncing] = useState(false);
+  const syncTimeoutRef = useRef(null);
+  const lastSyncRef = useRef(0);
 
-  // Khởi tạo: migrate từ storage cũ nếu có
-  useEffect(() => {
-    const loaded = loadThreads();
-    if (loaded.length > 0) {
-      setThreads(loaded);
-      setCurrentId(loaded[0]?.id || null);
-      return;
-    }
-    // migrate từ bản cũ (messages cũ)
+  // Sync threads lên server (debounced)
+  const syncToServer = useCallback(async (threadsToSync) => {
+    if (!isLoggedIn() || !threadsToSync.length) return;
+
+    // Debounce: không sync quá thường xuyên
+    const now = Date.now();
+    if (now - lastSyncRef.current < 10000) return; // Min 10s giữa các sync
+
     try {
-      const rawOld = localStorage.getItem('chat_messages_v1');
-      const old = rawOld ? JSON.parse(rawOld) : [];
-      if (Array.isArray(old) && old.length) {
-        const t = makeThread('Hội thoại cũ');
-        t.messages = old.map((m) => ({ ...m, ts: nowISO() }));
-        const arr = [t];
-        setThreads(arr);
-        setCurrentId(t.id);
-        saveThreads(arr);
-        localStorage.removeItem('chat_messages_v1');
-        return;
-      }
-    } catch (_) { }
-    // no data → tạo thread mới
-    const t = makeThread();
-    setThreads([t]);
-    setCurrentId(t.id);
-    saveThreads([t]);
+      setSyncing(true);
+      lastSyncRef.current = now;
+      await syncChatThreadsToServer(threadsToSync);
+      console.log('[ChatSync] Synced', threadsToSync.length, 'threads to server');
+    } catch (err) {
+      console.warn('[ChatSync] Sync failed:', err.message);
+    } finally {
+      setSyncing(false);
+    }
   }, []);
 
-  // Persist khi threads đổi
+  // Schedule sync with debounce
+  const scheduleSync = useCallback((threadsToSync) => {
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+    syncTimeoutRef.current = setTimeout(() => {
+      syncToServer(threadsToSync);
+    }, SYNC_DEBOUNCE_MS);
+  }, [syncToServer]);
+
+  // Khởi tạo: Load từ localStorage và server
   useEffect(() => {
-    if (threads.length) saveThreads(threads);
-  }, [threads]);
+    const initThreads = async () => {
+      // Load từ localStorage trước
+      let localThreads = loadThreads();
+
+      // Migrate từ bản cũ nếu có
+      if (localThreads.length === 0) {
+        try {
+          const rawOld = localStorage.getItem('chat_messages_v1');
+          const old = rawOld ? JSON.parse(rawOld) : [];
+          if (Array.isArray(old) && old.length) {
+            const t = makeThread('Hội thoại cũ');
+            t.messages = old.map((m) => ({ ...m, ts: nowISO() }));
+            localThreads = [t];
+            localStorage.removeItem('chat_messages_v1');
+          }
+        } catch (_) { }
+      }
+
+      // Nếu user đã đăng nhập, load từ server và merge
+      if (isLoggedIn()) {
+        try {
+          const serverData = await getChatThreads(50);
+          if (serverData?.threads?.length) {
+            console.log('[ChatSync] Loaded', serverData.threads.length, 'threads from server');
+            localThreads = mergeThreads(localThreads, serverData.threads);
+          }
+        } catch (err) {
+          console.warn('[ChatSync] Failed to load from server:', err.message);
+        }
+      }
+
+      // Set initial threads
+      if (localThreads.length === 0) {
+        const t = makeThread();
+        localThreads = [t];
+      }
+
+      setThreads(localThreads);
+      setCurrentId(localThreads[0]?.id || null);
+      saveThreads(localThreads);
+    };
+
+    initThreads();
+  }, []);
+
+  // Persist khi threads đổi và schedule sync
+  useEffect(() => {
+    if (threads.length) {
+      saveThreads(threads);
+      scheduleSync(threads);
+    }
+  }, [threads, scheduleSync]);
 
   const currentThread = useMemo(() => threads.find((t) => t.id === currentId) || null, [threads, currentId]);
   const messages = currentThread?.messages || [];

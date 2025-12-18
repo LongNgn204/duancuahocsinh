@@ -53,9 +53,8 @@
   --font-heading: 'Nunito', var(--font-sans);
 }
 
-/* ===== LIGHT THEME ===== */
-:root,
-[data-theme="light"] {
+/* ===== DEFAULT THEME ===== */
+:root {
   /* Brand colors - Rose Pink (nhẹ nhàng, thân thiện) */
   --brand: #ec4899;
   --brand-light: #f472b6;
@@ -104,54 +103,7 @@
   --fs-scale: 1;
 }
 
-/* ===== DARK THEME ===== */
-[data-theme="dark"] {
-  /* Brand colors - Teal/Cyan (dễ nhìn trên nền tối) */
-  --brand: #2dd4bf;
-  --brand-light: #5eead4;
-  --brand-dark: #14b8a6;
-  --brand-foreground: #042f2e;
 
-  /* Accent colors */
-  --accent: #fcd34d;
-  --accent-foreground: #1c1917;
-  --secondary: #f0abfc;
-  --secondary-foreground: #faf5ff;
-
-  /* Surfaces - Gradient đẹp hơn với màu xanh đậm */
-  --bg: #0a0e1a;
-  --bg-gradient-start: #0a0e1a;
-  --bg-gradient-end: #1a1f3a;
-  --text: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --surface: rgba(30, 41, 59, 0.8);
-  --surface-elevated: rgba(30, 41, 59, 0.95);
-  --surface-border: rgba(45, 212, 191, 0.15);
-  --muted: #94a3b8;
-
-  /* Glassmorphism - Tăng độ trong suốt và đẹp hơn */
-  --glass-bg: rgba(30, 41, 59, 0.7);
-  --glass-bg-strong: rgba(30, 41, 59, 0.92);
-  --glass-border: rgba(45, 212, 191, 0.2);
-  --glass-shadow: rgba(0, 0, 0, 0.4);
-
-  /* Focus & Interactive */
-  --ring: #2dd4bf;
-  --ring-offset: #0a0e1a;
-
-  /* Gradients - Cải thiện với màu sắc hài hòa hơn */
-  --gradient-primary: linear-gradient(135deg, #14b8a6 0%, #2dd4bf 50%, #5eead4 100%);
-  --gradient-accent: linear-gradient(135deg, #fcd34d 0%, #fbbf24 50%, #fb923c 100%);
-  --gradient-hero: linear-gradient(135deg, #0f172a 0%, #1e293b 30%, #334155 60%, #1e1b4b 100%);
-  --gradient-warm: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
-
-  /* Orb colors - Tăng độ sáng và đẹp hơn */
-  --orb-1: rgba(45, 212, 191, 0.15);
-  --orb-2: rgba(252, 211, 77, 0.12);
-  --orb-3: rgba(240, 171, 252, 0.12);
-
-  --fs-scale: 1;
-}
 
 /* ===== BASE STYLES ===== */
 html,
@@ -248,21 +200,7 @@ body {
   position: relative;
 }
 
-/* Dark mode background pattern overlay */
-[data-theme="dark"] body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image:
-    radial-gradient(circle at 20% 50%, rgba(45, 212, 191, 0.04) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(252, 211, 77, 0.04) 0%, transparent 50%),
-    radial-gradient(circle at 40% 20%, rgba(240, 171, 252, 0.04) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: 0;
-}
+
 
 /* Ensure content is above background */
 #root {

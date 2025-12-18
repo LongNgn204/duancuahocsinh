@@ -34,16 +34,16 @@ export default function OnboardingModal({ open, onClose }) {
             className="max-w-lg md:max-w-2xl lg:max-w-3xl w-full"
           >
             <div
-              className="rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl"
+              className="rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col"
               style={{
                 background: 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(250,245,255,0.98) 100%)',
                 border: '1px solid rgba(139, 92, 246, 0.2)',
               }}
             >
               {/* Header decoration */}
-              <div className="h-2 md:h-3 bg-gradient-to-r from-[--brand] via-[--secondary] to-[--accent]" />
+              <div className="h-2 md:h-3 bg-gradient-to-r from-[--brand] via-[--secondary] to-[--accent] flex-shrink-0" />
 
-              <div className="p-6 md:p-10 lg:p-12">
+              <div className="p-6 md:p-10 lg:p-12 overflow-y-auto flex-1">
                 {/* Icon */}
                 <div className="flex justify-center mb-5 md:mb-8">
                   <div className="w-16 h-16 md:w-24 md:h-24 lg:w-28 lg:h-28 rounded-2xl md:rounded-3xl bg-gradient-to-br from-[--brand] to-[--secondary] flex items-center justify-center shadow-lg md:shadow-xl">
@@ -77,8 +77,10 @@ export default function OnboardingModal({ open, onClose }) {
                     </motion.div>
                   ))}
                 </div>
+              </div>
 
-                {/* Actions */}
+              {/* Actions - Fixed at bottom, outside scroll area */}
+              <div className="p-6 md:p-10 lg:p-12 pt-4 md:pt-6 flex-shrink-0 border-t border-[--surface-border]">
                 <Button
                   onClick={onClose}
                   variant="primary"

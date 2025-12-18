@@ -26,7 +26,9 @@ import {
     getUserStats, addUserXP,
     submitChatFeedback, getChatMetrics,
     // Phase 8 additions - Bookmarks
-    getBookmarks, addBookmark, deleteBookmark, deleteBookmarkById
+    getBookmarks, addBookmark, deleteBookmark, deleteBookmarkById,
+    // Phase 10 additions - Chat Threads Sync
+    getChatThreads, saveChatThread, saveChatMessages, deleteChatThread, syncChatThreads
 } from './data-api.js';
 
 import {
@@ -152,6 +154,13 @@ function matchRoute(pathname, method) {
     // Data routes - Chat Feedback & Metrics
     if (pathname === '/api/data/chat/feedback' && method === 'POST') return 'data:chat:feedback';
     if (pathname === '/api/data/chat/metrics' && method === 'GET') return 'data:chat:metrics';
+
+    // Data routes - Chat Threads Sync
+    if (pathname === '/api/data/chat/threads' && method === 'GET') return 'data:chat:threads:list';
+    if (pathname === '/api/data/chat/threads' && method === 'POST') return 'data:chat:threads:save';
+    if (pathname === '/api/data/chat/messages' && method === 'POST') return 'data:chat:messages:save';
+    if (pathname.match(/^\/api\/data\/chat\/threads\/[a-zA-Z0-9_]+$/) && method === 'DELETE') return 'data:chat:threads:delete';
+    if (pathname === '/api/data/chat/sync' && method === 'POST') return 'data:chat:sync';
 
     // Data routes - User Stats / Gamification
     if (pathname === '/api/data/user-stats' && method === 'GET') return 'data:user-stats:get';
@@ -395,6 +404,23 @@ export default {
                     break;
                 case 'data:bookmarks:delete-id':
                     response = await deleteBookmarkById(request, env, extractId(url.pathname));
+                    break;
+
+                // Chat Threads Sync endpoints
+                case 'data:chat:threads:list':
+                    response = await getChatThreads(request, env);
+                    break;
+                case 'data:chat:threads:save':
+                    response = await saveChatThread(request, env);
+                    break;
+                case 'data:chat:messages:save':
+                    response = await saveChatMessages(request, env);
+                    break;
+                case 'data:chat:threads:delete':
+                    response = await deleteChatThread(request, env, extractId(url.pathname));
+                    break;
+                case 'data:chat:sync':
+                    response = await syncChatThreads(request, env);
                     break;
 
                 // AI Chat - delegate to existing ai-proxy logic

@@ -1085,3 +1085,59 @@ export async function toggleBookmark(bookmarkType, itemId, metadata = null) {
     }
 }
 
+// =============================================================================
+// CHAT THREADS SYNC API
+// Chú thích: Sync lịch sử chat AI để user xem lại trên các thiết bị
+// =============================================================================
+
+/**
+ * Lấy danh sách chat threads từ server
+ * @param {number} limit - Số lượng tối đa
+ * @returns {Promise<{threads: Array}>}
+ */
+export async function getChatThreads(limit = 50) {
+    return apiRequest(`/api/data/chat/threads?limit=${limit}`);
+}
+
+/**
+ * Lưu/cập nhật thread
+ * @param {string} id - Thread ID
+ * @param {string} title - Tiêu đề thread
+ */
+export async function saveChatThread(id, title) {
+    return apiRequest('/api/data/chat/threads', {
+        method: 'POST',
+        body: JSON.stringify({ id, title }),
+    });
+}
+
+/**
+ * Lưu messages vào thread
+ * @param {string} threadId - Thread ID
+ * @param {Array} messages - Danh sách messages [{role, content, ts, feedback?}]
+ */
+export async function saveChatMessages(threadId, messages) {
+    return apiRequest('/api/data/chat/messages', {
+        method: 'POST',
+        body: JSON.stringify({ thread_id: threadId, messages }),
+    });
+}
+
+/**
+ * Xóa thread và messages
+ * @param {string} threadId - Thread ID
+ */
+export async function deleteChatThreadFromServer(threadId) {
+    return apiRequest(`/api/data/chat/threads/${threadId}`, { method: 'DELETE' });
+}
+
+/**
+ * Sync toàn bộ threads từ client lên server
+ * @param {Array} threads - Danh sách threads [{id, title, createdAt, updatedAt, messages}]
+ */
+export async function syncChatThreadsToServer(threads) {
+    return apiRequest('/api/data/chat/sync', {
+        method: 'POST',
+        body: JSON.stringify({ threads }),
+    });
+}

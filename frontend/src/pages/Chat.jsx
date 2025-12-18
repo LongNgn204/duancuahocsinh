@@ -35,11 +35,11 @@ function Avatar({ role }) {
   const isUser = role === 'user';
   return (
     <div className={`
-      w-10 h-10 rounded-xl grid place-items-center text-lg
-      transition-all duration-200 overflow-hidden
+      w-10 h-10 md:w-11 md:h-11 rounded-2xl grid place-items-center text-lg
+      transition-all duration-300 overflow-hidden shrink-0
       ${isUser
-        ? 'bg-gradient-to-br from-[--brand] to-[--brand-light] text-white shadow-md'
-        : 'bg-white shadow-md border border-[--surface-border]'
+        ? 'bg-gradient-to-br from-amber-400 via-orange-400 to-pink-400 text-white shadow-lg shadow-orange-500/20'
+        : 'bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-purple-500/30 ring-2 ring-purple-300/30'
       }
     `}>
       {isUser ? (
@@ -49,6 +49,11 @@ function Avatar({ role }) {
           src="/ai-avatar.png"
           alt="AI"
           className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = '';
+            e.target.parentElement.innerHTML = '🤖';
+          }}
         />
       )}
     </div>
@@ -84,23 +89,23 @@ function Bubble({ role, children, onCopy, onPlayTTS, onPauseTTS, onResumeTTS, on
   return (
     <motion.div
       className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}
-      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+      initial={{ opacity: 0, y: 12, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.25, ease: 'easeOut' }}
     >
       <Avatar role={role} />
 
       <div className={`flex-1 max-w-[85%] ${isUser ? 'flex flex-col items-end' : ''}`}>
         <div
           className={`
-            rounded-2xl px-4 py-3 shadow-sm
+            rounded-2xl px-4 py-3 relative
             ${isUser
-              ? 'bg-gradient-to-br from-[--brand] to-[--brand-light] text-white rounded-tr-md'
-              : 'glass-card rounded-tl-md'
+              ? 'bg-gradient-to-br from-[--brand] via-pink-500 to-rose-500 text-white rounded-tr-sm shadow-lg shadow-pink-500/20'
+              : 'bg-white/90 backdrop-blur-sm rounded-tl-sm shadow-lg shadow-purple-500/10 border border-purple-100/50'
             }
           `}
         >
-          <div className={`text-[15px] leading-relaxed prose prose-sm max-w-none ${isUser ? 'text-white prose-invert' : 'text-[--text]'}`}>
+          <div className={`text-[15px] leading-relaxed prose prose-sm max-w-none ${isUser ? 'text-white prose-invert' : 'text-gray-800'}`}>
             {children}
           </div>
         </div>
@@ -382,42 +387,42 @@ export default function Chat() {
           </div>
 
           {/* Right: Chat Thread */}
-          <Card className="flex flex-col h-full overflow-hidden">
+          <Card className="flex flex-col h-full overflow-hidden border-0 shadow-xl">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-[--surface-border] bg-gradient-to-r from-[--brand]/5 to-transparent">
+            <div className="flex items-center justify-between p-4 border-b border-purple-100/50 bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50">
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[--brand] to-[--brand-light] flex items-center justify-center shadow-lg shrink-0">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30 ring-2 ring-purple-300/30 shrink-0">
                   <Bot className="w-5 h-5 text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className="font-semibold text-[--text] truncate">{currentThread?.title || 'Cuộc trò chuyện mới'}</h2>
-                  <p className="text-xs text-[--muted]">{messages.length} tin nhắn</p>
+                  <h2 className="font-bold text-gray-800 truncate text-lg">{currentThread?.title || 'Cuộc trò chuyện mới'}</h2>
+                  <p className="text-xs text-purple-500 font-medium">{messages.length} tin nhắn</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <Button variant="ghost" size="icon-sm" onClick={clearChat} aria-label="Xoá hội thoại" title="Xóa hội thoại">
+                <Button variant="ghost" size="icon-sm" onClick={clearChat} aria-label="Xoá hội thoại" title="Xóa hội thoại" className="hover:bg-red-50 hover:text-red-500">
                   <Trash2 size={16} />
                 </Button>
               </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-gradient-to-b from-transparent to-[--surface]/30" role="list" aria-label="Tin nhắn">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 bg-gradient-to-b from-purple-50/30 via-transparent to-pink-50/30" role="list" aria-label="Tin nhắn">
               {messages.length === 0 && (
                 <div className="h-full flex flex-col items-center justify-center text-center px-4">
                   <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                    className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[--brand]/20 to-[--secondary]/20 flex items-center justify-center mb-6 shadow-lg"
+                    transition={{ duration: 0.4, type: 'spring' }}
+                    className="w-24 h-24 rounded-3xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mb-6 shadow-xl shadow-purple-500/30 ring-4 ring-purple-300/30"
                   >
-                    <Bot className="w-10 h-10 text-[--brand]" />
+                    <Bot className="w-12 h-12 text-white" />
                   </motion.div>
                   <motion.h3
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="font-semibold text-xl text-[--text] mb-3"
+                    className="font-bold text-2xl text-gray-800 mb-3"
                   >
                     Xin chào! 👋
                   </motion.h3>
@@ -425,9 +430,9 @@ export default function Chat() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="text-[--text-secondary] max-w-md leading-relaxed"
+                    className="text-gray-600 max-w-md leading-relaxed"
                   >
-                    Mình là <span className="font-semibold text-[--brand]">Bạn Đồng Hành</span>, luôn sẵn sàng lắng nghe bạn.
+                    Mình là <span className="font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">Bạn Đồng Hành</span>, luôn sẵn sàng lắng nghe bạn.
                     <br />
                     Hãy chia sẻ bất cứ điều gì bạn đang nghĩ nhé!
                   </motion.p>
@@ -549,9 +554,9 @@ export default function Chat() {
             </AnimatePresence>
 
             {/* Input */}
-            <div className="p-4 border-t border-[--surface-border] bg-[--surface]/50 backdrop-blur-sm">
-              <form onSubmit={onSubmit} className="flex items-end gap-2">
-                <div className="flex-1 glass rounded-2xl p-3 flex items-end gap-2 border border-[--surface-border]">
+            <div className="p-4 border-t border-purple-100/50 bg-gradient-to-r from-purple-50/50 via-white to-pink-50/50 backdrop-blur-sm">
+              <form onSubmit={onSubmit} className="flex items-end gap-3">
+                <div className="flex-1 bg-white rounded-2xl p-3 flex items-end gap-2 border border-purple-200/50 shadow-lg shadow-purple-500/5 focus-within:ring-2 focus-within:ring-purple-400/30 focus-within:border-purple-300 transition-all">
                   {/* Mic visualizer */}
                   {speech.supported && speech.listening && (
                     <div className="mb-1">
@@ -571,13 +576,13 @@ export default function Chat() {
                     }}
                     placeholder="Chia sẻ điều bạn đang nghĩ..."
                     rows={1}
-                    className="flex-1 bg-transparent resize-none outline-none text-[--text] placeholder:text-[--muted] py-2 px-3 min-h-[44px] max-h-32 text-sm leading-relaxed"
+                    className="flex-1 bg-transparent resize-none outline-none text-gray-800 placeholder:text-gray-400 py-2 px-3 min-h-[44px] max-h-32 text-sm leading-relaxed"
                     aria-label="Ô nhập tin nhắn"
                   />
 
                   {/* Action buttons */}
                   <div className="flex items-center gap-1 mb-1">
-                    <label className="p-2 rounded-xl cursor-pointer text-[--muted] hover:text-[--text] hover:bg-[--surface-border] transition-colors touch-target" title="Thêm ảnh">
+                    <label className="p-2 rounded-xl cursor-pointer text-gray-400 hover:text-purple-600 hover:bg-purple-50 transition-colors touch-target" title="Thêm ảnh">
                       <Image size={18} />
                       <input type="file" accept="image/*" onChange={onPickImages} className="hidden" multiple />
                     </label>
@@ -586,9 +591,9 @@ export default function Chat() {
                       <button
                         type="button"
                         onClick={speech.listening ? speech.stop : speech.start}
-                        className={`p-2 rounded-xl transition-colors touch-target ${speech.listening
-                          ? 'bg-red-500 text-white shadow-lg'
-                          : 'text-[--muted] hover:text-[--text] hover:bg-[--surface-border]'
+                        className={`p-2 rounded-xl transition-all touch-target ${speech.listening
+                          ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/30 animate-pulse'
+                          : 'text-gray-400 hover:text-purple-600 hover:bg-purple-50'
                           }`}
                         aria-label={speech.listening ? 'Dừng ghi âm' : 'Ghi âm'}
                         title={speech.listening ? 'Dừng ghi âm' : 'Ghi âm'}
@@ -600,15 +605,14 @@ export default function Chat() {
                 </div>
 
                 {/* Send button */}
-                <Button
+                <button
                   type="submit"
-                  size="icon"
                   disabled={loading || (!text.trim() && images.length === 0)}
                   aria-label="Gửi"
-                  className="w-12 h-12 shrink-0"
+                  className="w-12 h-12 shrink-0 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95"
                 >
                   <Send size={18} />
-                </Button>
+                </button>
               </form>
 
               {/* Quick actions */}

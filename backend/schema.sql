@@ -453,3 +453,41 @@ CREATE TABLE IF NOT EXISTS user_memory_logs (
 
 CREATE INDEX IF NOT EXISTS idx_memory_logs_user ON user_memory_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_memory_logs_type ON user_memory_logs(log_type);
+
+-- =============================================================================
+-- PHASE 10 ADDITIONS: Chat Threads Sync cho User
+-- Chú thích: Lưu trữ chat threads để user có thể xem lại lịch sử chat
+-- =============================================================================
+
+-- Bảng chat_threads: Lưu các cuộc hội thoại
+CREATE TABLE IF NOT EXISTS chat_threads (
+  id TEXT PRIMARY KEY,           -- Thread ID (ví dụ: t_abc123)
+  user_id INTEGER NOT NULL,
+  title TEXT DEFAULT 'Cuộc trò chuyện mới',
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now')),
+  
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_threads_user ON chat_threads(user_id);
+CREATE INDEX IF NOT EXISTS idx_chat_threads_updated ON chat_threads(updated_at DESC);
+
+-- Bảng chat_messages: Lưu tin nhắn trong mỗi thread
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  thread_id TEXT NOT NULL,
+  user_id INTEGER NOT NULL,
+  role TEXT NOT NULL,            -- 'user' hoặc 'assistant'
+  content TEXT NOT NULL,
+  timestamp TEXT DEFAULT (datetime('now')),
+  feedback TEXT,                 -- 'up', 'down', null
+  trace_id TEXT,                 -- Trace ID cho tracking
+  
+  FOREIGN KEY (thread_id) REFERENCES chat_threads(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_messages_thread ON chat_messages(thread_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_user ON chat_messages(user_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_timestamp ON chat_messages(timestamp);
