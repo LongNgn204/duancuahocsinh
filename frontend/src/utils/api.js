@@ -280,10 +280,10 @@ if (typeof window !== 'undefined') {
  * @param {string} password 
  * @returns {Promise<{success: boolean, user: Object}>}
  */
-export async function register(username, password) {
+export async function register(username, password, displayName = '') {
     const data = await apiRequest('/api/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, display_name: displayName }),
     });
 
     if (data.success && data.user) {

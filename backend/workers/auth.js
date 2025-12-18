@@ -112,7 +112,7 @@ function generateUsernameSuggestions(username) {
 export async function handleRegister(request, env) {
     try {
         const body = await request.json();
-        const { username, password } = body;
+        const { username, password, display_name } = body;
 
         // Validate username
         const usernameValidation = validateUsername(username);
@@ -145,10 +145,13 @@ export async function handleRegister(request, env) {
         // Hash password
         const { hash, salt } = await hashPassword(password);
 
-        // Create new user với password_hash và password_salt
+        // Create new user với password_hash, password_salt và display_name
+        // Nếu không có display_name, dùng username làm mặc định
+        const finalDisplayName = display_name && display_name.trim() ? display_name.trim() : trimmedUsername;
+
         const result = await env.ban_dong_hanh_db.prepare(
-            'INSERT INTO users (username, password_hash, password_salt) VALUES (?, ?, ?) RETURNING id, username, created_at'
-        ).bind(trimmedUsername, hash, salt).first();
+            'INSERT INTO users (username, password_hash, password_salt, display_name) VALUES (?, ?, ?, ?) RETURNING id, username, display_name, created_at'
+        ).bind(trimmedUsername, hash, salt, finalDisplayName).first();
 
         // Create default settings
         await env.ban_dong_hanh_db.prepare(
@@ -160,6 +163,7 @@ export async function handleRegister(request, env) {
             user: {
                 id: result.id,
                 username: result.username,
+                display_name: result.display_name,
                 created_at: result.created_at
             }
         }, 201);
@@ -190,7 +194,7 @@ export async function handleLogin(request, env) {
 
         // Find user với password_hash và password_salt
         const user = await env.ban_dong_hanh_db.prepare(
-            'SELECT id, username, created_at, password_hash, password_salt FROM users WHERE username = ?'
+            'SELECT id, username, display_name, created_at, password_hash, password_salt FROM users WHERE username = ?'
         ).bind(trimmedUsername).first();
 
         if (!user) {
@@ -261,7 +265,7 @@ export async function handleLogin(request, env) {
 
         // Get updated user with last_login
         const updatedUser = await env.ban_dong_hanh_db.prepare(
-            'SELECT id, username, created_at, COALESCE(last_login, NULL) as last_login FROM users WHERE id = ?'
+            'SELECT id, username, display_name, created_at, COALESCE(last_login, NULL) as last_login FROM users WHERE id = ?'
         ).bind(user.id).first();
 
         console.log('[Auth] SELECT result:', {
@@ -275,6 +279,7 @@ export async function handleLogin(request, env) {
         const responseUser = {
             id: updatedUser.id,
             username: updatedUser.username,
+            display_name: updatedUser.display_name || updatedUser.username,
             created_at: updatedUser.created_at,
         };
 
@@ -343,7 +348,7 @@ export async function handleGetMe(request, env) {
         }
 
         const user = await env.ban_dong_hanh_db.prepare(
-            'SELECT id, username, created_at, last_login FROM users WHERE id = ?'
+            'SELECT id, username, display_name, created_at, last_login FROM users WHERE id = ?'
         ).bind(parseInt(userId)).first();
 
         if (!user) {

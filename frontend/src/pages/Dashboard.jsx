@@ -30,23 +30,30 @@ const quickActions = [
     label: 'Trò chuyện AI',
     icon: Bot,
     description: 'Tâm sự với bạn đồng hành AI',
-    color: 'from-teal-500 to-cyan-500',
-    badge: 'HOT'
+    color: 'from-pink-500 to-rose-500',
+    badge: 'HOT',
+    image: '/chat-bg.png'
   },
   {
     path: '/wellness',
     label: 'Liều thuốc tinh thần',
     icon: Sparkles,
-    description: 'Bài tập thở và động viên',
-    color: 'from-pink-500 to-rose-500',
-    badge: 'MỚI'
+    description: 'Thư giãn, thiền và chữa lành',
+    color: 'from-violet-500 to-purple-500',
+    badge: 'MỚI',
+    image: '/wellness-bg.png'
   },
   {
-    path: '/breathing',
+    path: '/breathing', // Note: User might want 'breathing' separate or merged, keeping as is but maybe updating label/image?
+    // Wait, the generated image 'wellness_card_bg' fits 'Liều thuốc tinh thần' (wellness).
+    // The previous code had 'breathing' as separate.
+    // I will use 'wellness-bg.png' for 'wellness' and maybe 'chat-bg.png' for chat.
+    // Let's reuse images or gradients where we don't have one.
     label: 'Góc An Yên',
     icon: Heart,
     description: 'Thư giãn và bình tĩnh',
     color: 'from-purple-500 to-indigo-500',
+    // No image generated for breathing specifically, maybe reuse wellness or keep as gradient
   },
   {
     path: '/games',
@@ -54,6 +61,7 @@ const quickActions = [
     icon: Gamepad2,
     description: 'Mini games rèn luyện',
     color: 'from-amber-500 to-orange-500',
+    image: '/games-bg.png'
   },
 ];
 
@@ -85,8 +93,8 @@ export default function Dashboard() {
 
       if (loggedIn) {
         const user = getCurrentUser();
-        if (user?.username) {
-          setUserName(user.username);
+        if (user) {
+          setUserName(user.display_name || user.username || 'bạn');
         }
 
         try {
@@ -326,19 +334,50 @@ export default function Dashboard() {
               transition={{ delay: 0.1 + idx * 0.05 }}
             >
               <Link to={action.path}>
-                <Card variant="interactive" className="h-full group">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow`}>
-                      <action.icon className="w-6 h-6 text-white" />
-                    </div>
-                    {action.badge && (
-                      <Badge variant="accent" size="sm">{action.badge}</Badge>
-                    )}
-                  </div>
-                  <h3 className="font-semibold text-[--text] mb-1 group-hover:text-[--brand] transition-colors">
-                    {action.label}
-                  </h3>
-                  <p className="text-sm text-[--muted]">{action.description}</p>
+                <Card variant="interactive" className="h-full group relative overflow-hidden boarder-0">
+                  {action.image ? (
+                    <>
+                      <div className="absolute inset-0">
+                        <img
+                          src={action.image}
+                          alt={action.label}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                      </div>
+
+                      <div className="relative z-10 flex flex-col h-full justify-end p-2">
+                        <div className="flex items-start justify-between mb-auto">
+                          <div className="bg-white/20 backdrop-blur-md p-2 rounded-xl">
+                            <action.icon className="w-6 h-6 text-white" />
+                          </div>
+                          {action.badge && (
+                            <Badge variant="accent" size="sm" className="shadow-lg">{action.badge}</Badge>
+                          )}
+                        </div>
+
+                        <h3 className="font-bold text-lg text-white mb-1 group-hover:text-pink-200 transition-colors mt-8">
+                          {action.label}
+                        </h3>
+                        <p className="text-sm text-white/90 font-medium">{action.description}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-start justify-between mb-3">
+                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow`}>
+                          <action.icon className="w-6 h-6 text-white" />
+                        </div>
+                        {action.badge && (
+                          <Badge variant="accent" size="sm">{action.badge}</Badge>
+                        )}
+                      </div>
+                      <h3 className="font-semibold text-[--text] mb-1 group-hover:text-[--brand] transition-colors">
+                        {action.label}
+                      </h3>
+                      <p className="text-sm text-[--muted]">{action.description}</p>
+                    </>
+                  )}
                 </Card>
               </Link>
             </motion.div>

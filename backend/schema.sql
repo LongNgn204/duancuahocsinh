@@ -5,6 +5,7 @@
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT NOT NULL UNIQUE,
+  display_name TEXT, -- Tên hiển thị (Tên của bạn là gì)
   is_admin INTEGER DEFAULT 0, -- 1 = admin có quyền quản trị
   created_at TEXT DEFAULT (datetime('now')),
   last_login TEXT

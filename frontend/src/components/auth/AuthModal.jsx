@@ -9,6 +9,7 @@ import { register, login, checkUsername } from '../../utils/api';
 export default function AuthModal({ isOpen, onClose, onSuccess }) {
     const [mode, setMode] = useState('login'); // 'login' | 'register'
     const [username, setUsername] = useState('');
+    const [displayName, setDisplayName] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -50,7 +51,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
 
         try {
             if (mode === 'register') {
-                const result = await register(username.trim(), password);
+                const result = await register(username.trim(), password, displayName.trim());
                 if (result.success) {
                     onSuccess?.(result.user);
                     onClose();
@@ -160,6 +161,29 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                                 Chỉ cần nhớ tên này để đăng nhập lại sau
                             </p>
                         </div>
+
+                        {/* Display Name - Only for Register */}
+                        {mode === 'register' && (
+                            <div>
+                                <label className="block text-sm font-medium mb-2">
+                                    Tên của bạn là gì?
+                                </label>
+                                <div className="relative">
+                                    <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[--muted]" />
+                                    <input
+                                        type="text"
+                                        value={displayName}
+                                        onChange={(e) => setDisplayName(e.target.value)}
+                                        placeholder="Ví dụ: Minh Thư, Hoàng Nam..."
+                                        className="w-full pl-10 pr-4 py-3 bg-[--bg] border border-[--border] rounded-xl focus:ring-2 focus:ring-[--brand] focus:border-transparent outline-none transition-all"
+                                        maxLength={50}
+                                    />
+                                </div>
+                                <p className="text-xs text-[--muted] mt-1">
+                                    Tên này sẽ hiển thị trên Dashboard
+                                </p>
+                            </div>
+                        )}
 
                         {/* Chú thích: Password field với toggle show/hide */}
                         <div>

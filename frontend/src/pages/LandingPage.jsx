@@ -161,16 +161,18 @@ export default function LandingPage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
                     >
-                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-                            <span className="gradient-text">Bạn Đồng Hành</span>
-                            <br />
-                            <span className="text-[--text]">Cùng nhau phát triển Trường học Hạnh phúc</span>
-                        </h1>
-
-                        <p className="text-lg md:text-xl text-[--text-secondary] max-w-2xl mx-auto mb-8 leading-relaxed">
-                            Nền tảng hỗ trợ phát triển toàn diện cho cộng đồng giáo dục Việt Nam.
-                            <span className="text-[--brand] font-medium"> An toàn, Thân thiện, Miễn phí.</span>
-                        </p>
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ duration: 0.8 }}
+                            className="mb-8"
+                        >
+                            <img
+                                src="/landing-hero.png"
+                                alt="Bạn Đồng Hành - Cùng nhau phát triển Trường học Hạnh phúc"
+                                className="w-full max-w-4xl mx-auto rounded-3xl shadow-2xl"
+                            />
+                        </motion.div>
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <Link to="/app">
