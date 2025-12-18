@@ -118,12 +118,22 @@ export function useVoiceAgentCF({ onSOS } = {}) {
             }
 
             // Hiển thị transcript (interim hoặc final)
-            setTranscript(finalTranscript || interimTranscript);
+            const currentText = finalTranscript || interimTranscript;
+            setTranscript(currentText);
 
-            // Nếu có final transcript, gửi đến LLM
+            // Nếu có final transcript
             if (finalTranscript) {
                 console.log('[VoiceAgent] Final transcript:', finalTranscript);
-                sendToLLM(finalTranscript);
+
+                // Make autoSubmit optional
+                if (options?.autoSubmit !== false) {
+                    sendToLLM(finalTranscript);
+                }
+
+                // Allow external handling
+                if (options?.onResult) {
+                    options.onResult(finalTranscript);
+                }
             }
         };
 

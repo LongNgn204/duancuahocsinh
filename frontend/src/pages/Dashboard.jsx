@@ -12,7 +12,7 @@ import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import GlowOrbs, { GlowOrbsSmall } from '../components/ui/GlowOrbs';
-import { isLoggedIn, getCurrentUser, getUserStats, getBreathingSessions, getGratitudeList, getJournalList } from '../utils/api';
+import { isLoggedIn, getCurrentUser, getUserStats, getBreathingSessions, getGratitudeList, getJournalList, getMe, setCurrentUser } from '../utils/api';
 
 // Mood options với icons và colors
 const moods = [
@@ -97,7 +97,18 @@ export default function Dashboard() {
           setUserName(user.display_name || user.username || 'bạn');
         }
 
+        if (user) {
+          setUserName(user.display_name || user.username || 'bạn');
+        }
+
         try {
+          // Refresh User Data (để lấy display_name mới nhất nếu có)
+          const latestUserRes = await getMe().catch(() => null);
+          if (latestUserRes && latestUserRes.user) {
+            setCurrentUser(latestUserRes.user);
+            setUserName(latestUserRes.user.display_name || latestUserRes.user.username || 'bạn');
+          }
+
           // Fetch user stats từ backend
           const userStats = await getUserStats().catch(() => null);
 

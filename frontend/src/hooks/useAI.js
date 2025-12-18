@@ -308,13 +308,15 @@ export function useAI() {
       // Lấy userId cho persistent memory
       const currentUser = getCurrentUser();
       const userId = currentUser?.id || null;
+      const userName = currentUser?.display_name || currentUser?.username || 'Bạn';
 
       const stream = await streamFromEndpoint(`${url}?stream=true`, {
         message: trimmed,
         history: historyCap,
         images,
         memorySummary,
-        userId  // Gửi userId để backend có thể load/save memory
+        userId,  // Gửi userId để backend có thể load/save memory
+        userName // Gửi tên người dùng để AI xưng hô
       });
 
       if (stream.type === 'json') {
@@ -456,5 +458,6 @@ export function useAI() {
     renameChat,
     clearChat,
     setFeedback,
+    syncing, // Export syncing state
   };
 }

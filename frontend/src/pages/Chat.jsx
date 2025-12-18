@@ -1,751 +1,386 @@
 // src/pages/Chat.jsx
-// Chú thích: Chat v4.0 - Hợp nhất Text Chat và Voice Chat với tab switching
-import { useEffect, useMemo, useRef, useState } from 'react';
+// Chú thích: Chat Unified - Gộp Text & Voice, Giao diện Theme Rainbow/Học tập
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAI } from '../hooks/useAI';
+import { useVoiceAgentCF } from '../hooks/useVoiceAgentCF';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Button from '../components/ui/Button';
-import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
-import { useSpeech } from '../hooks/useSpeech';
-import MicVisualizer from '../components/chat/MicVisualizer';
-import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import ChatList from '../components/chat/ChatList';
-import SOSOverlay from '../components/sos/SOSOverlay';
-import VoiceChat from '../components/chat/VoiceChat';
 import {
-  Send, Mic, MicOff, Image, RotateCcw, Edit3,
-  Copy, Volume2, VolumeX, ThumbsUp, ThumbsDown,
-  Sparkles, Plus, Trash2, MessageCircle, Settings, Play, Pause,
-  Bot, Headphones
+  Send, Mic, MicOff, Volume2, VolumeX,
+  Sparkles, Plus, Image as ImageIcon, X,
+  Menu, Cloud, Check, Loader2, StopCircle
 } from 'lucide-react';
-
 
 function formatTime(ts) {
   try {
     const d = new Date(ts);
     return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-  } catch (_) {
-    return '';
-  }
+  } catch (_) { return ''; }
 }
 
-function Avatar({ role }) {
-  const isUser = role === 'user';
-  return (
-    <div className={`
-      w-10 h-10 md:w-11 md:h-11 rounded-2xl grid place-items-center text-lg
-      transition-all duration-300 overflow-hidden shrink-0
-      ${isUser
-        ? 'bg-gradient-to-br from-amber-400 via-orange-400 to-pink-400 text-white shadow-lg shadow-orange-500/20'
-        : 'bg-white shadow-lg shadow-purple-500/30 ring-2 ring-purple-300/30'
-      }
-    `}>
-      {isUser ? (
-        '🧑'
-      ) : (
-        <img
-          src="/chatbot-icon.png"
-          alt="AI"
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = '';
-            e.target.parentElement.innerHTML = '🤖';
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-function Feedback({ value, onUp, onDown }) {
-  return (
-    <div className="flex items-center gap-2">
-      <button
-        type="button"
-        onClick={onUp}
-        className={`p-1.5 rounded-lg transition-colors ${value === 'up' ? 'bg-[--brand]/20 text-[--brand]' : 'text-[--muted] hover:text-[--text] hover:bg-[--surface-border]'}`}
-        aria-label="Hài lòng"
-      >
-        <ThumbsUp size={14} />
-      </button>
-      <button
-        type="button"
-        onClick={onDown}
-        className={`p-1.5 rounded-lg transition-colors ${value === 'down' ? 'bg-red-500/20 text-red-500' : 'text-[--muted] hover:text-[--text] hover:bg-[--surface-border]'}`}
-        aria-label="Chưa hài lòng"
-      >
-        <ThumbsDown size={14} />
-      </button>
-    </div>
-  );
-}
-
-function Bubble({ role, children, onCopy, onPlayTTS, onPauseTTS, onResumeTTS, onStopTTS, speaking, paused, ts, feedbackUI, isLatest, onTtsSettings }) {
-  const isUser = role === 'user';
-
+// Bong bóng chat
+function Bubble({ role, children, ts, isUser }) {
   return (
     <motion.div
-      className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}
-      initial={{ opacity: 0, y: 12, scale: 0.97 }}
+      className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''} mb-6`}
+      initial={{ opacity: 0, y: 10, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.25, ease: 'easeOut' }}
     >
-      <Avatar role={role} />
+      {/* Avatar */}
+      <div className={`
+        w-10 h-10 rounded-full grid place-items-center text-lg shrink-0 shadow-lg
+        ${isUser
+          ? 'bg-gradient-to-br from-indigo-300 via-purple-300 to-pink-300 text-white'
+          : 'bg-white text-indigo-500' // AI Avatar white
+        }
+      `}>
+        {isUser ? '🧑' : '🤖'}
+      </div>
 
-      <div className={`flex-1 max-w-[85%] ${isUser ? 'flex flex-col items-end' : ''}`}>
-        <div
-          className={`
-            rounded-2xl px-4 py-3 relative
-            ${isUser
-              ? 'bg-gradient-to-br from-[--brand] via-pink-500 to-rose-500 text-white rounded-tr-sm shadow-lg shadow-pink-500/20'
-              : 'bg-white/90 backdrop-blur-sm rounded-tl-sm shadow-lg shadow-purple-500/10 border border-purple-100/50'
-            }
-          `}
-        >
-          <div className={`text-[15px] leading-relaxed prose prose-sm max-w-none ${isUser ? 'text-white prose-invert' : 'text-gray-800'}`}>
-            {children}
+      <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[85%] md:max-w-[75%]`}>
+        <div className={`
+          px-5 py-3.5 rounded-2xl relative shadow-sm backdrop-blur-md
+          ${isUser
+            ? 'bg-gradient-to-br from-indigo-500/80 to-purple-600/80 text-white rounded-tr-sm border border-indigo-200/20'
+            : 'bg-white/80 text-slate-800 rounded-tl-sm border border-white/50'
+          }
+        `}>
+          <div className={`text-[15px] leading-relaxed prose prose-sm max-w-none ${isUser ? 'prose-invert' : 'text-slate-800'}`}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {String(children).replace(/\n/g, '  \n')}
+            </ReactMarkdown>
           </div>
         </div>
-
-        {/* Meta info */}
-        <div className={`mt-2 flex items-center gap-3 text-xs text-[--muted] ${isUser ? 'flex-row-reverse' : ''}`}>
-          <span>{formatTime(ts)}</span>
-
-          {!isUser && (
-            <>
-              <button
-                type="button"
-                onClick={onCopy}
-                className="flex items-center gap-1 hover:text-[--text] transition-colors"
-              >
-                <Copy size={12} /> Sao chép
-              </button>
-              <div className="flex items-center gap-1">
-                {speaking ? (
-                  <>
-                    {paused ? (
-                      <button
-                        type="button"
-                        onClick={onResumeTTS}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[--brand]/20 text-[--brand] hover:bg-[--brand]/30 transition-colors"
-                        title="Tiếp tục đọc"
-                      >
-                        <Play size={14} /> <span className="text-xs">Tiếp tục</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={onPauseTTS}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-[--brand]/20 text-[--brand] hover:bg-[--brand]/30 transition-colors animate-pulse"
-                        title="Tạm dừng"
-                      >
-                        <Pause size={14} /> <span className="text-xs">Tạm dừng</span>
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={onStopTTS}
-                      className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-[--surface-border] transition-colors"
-                      title="Dừng đọc"
-                    >
-                      <VolumeX size={14} /> <span className="text-xs">Dừng</span>
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={onPlayTTS}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[--brand]/10 text-[--brand] hover:bg-[--brand]/20 transition-colors font-medium"
-                    title="Đọc tin nhắn"
-                  >
-                    <Volume2 size={16} className="animate-pulse" />
-                    <span className="text-xs font-semibold">Đọc</span>
-                  </button>
-                )}
-                {onTtsSettings && (
-                  <button
-                    type="button"
-                    onClick={onTtsSettings}
-                    className="p-1.5 rounded-lg hover:bg-[--surface-border] transition-colors"
-                    title="Cài đặt TTS"
-                  >
-                    <Settings size={14} />
-                  </button>
-                )}
-              </div>
-              {feedbackUI}
-            </>
-          )}
-        </div>
+        <span className="text-[10px] text-slate-500 font-medium mt-1 px-1 opacity-70">
+          {formatTime(ts)}
+        </span>
       </div>
     </motion.div>
   );
 }
 
+// Visualizer cho Voice Mode Overlay
+function VoiceVisualizer({ listening }) {
+  return (
+    <div className="flex items-center justify-center gap-1 h-12">
+      {[...Array(5)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="w-2 bg-white rounded-full"
+          animate={listening ? {
+            height: [10, 30, 10],
+            opacity: [0.5, 1, 0.5]
+          } : { height: 8, opacity: 0.3 }}
+          transition={{
+            duration: 0.8,
+            repeat: Infinity,
+            delay: i * 0.1
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+
 export default function Chat() {
+  const scrollRef = useRef(null);
+  const [inputText, setInputText] = useState('');
+  const [showSidebar, setShowSidebar] = useState(false); // Mobile sidebar
+  const [autoRead, setAutoRead] = useState(false); // Tự động đọc tin nhắn mới
+
+  // --- UseAI Hook (Text & Sync) ---
   const {
     messages,
-    loading,
+    loading: aiLoading,
     sendMessage,
-    sos,
-    clearSOS,
     threads,
     currentId,
     setCurrentThread,
     newChat,
     deleteChat,
     renameChat,
-    clearChat,
-    setFeedback,
+    syncing // New prop
   } = useAI();
 
-  const [text, setText] = useState('');
-  const [images, setImages] = useState([]);
-  const [info, setInfo] = useState('');
-  const endRef = useRef(null);
-  const inputRef = useRef(null);
+  // --- Voice Hook (STT & TTS) ---
+  const handleVoiceResult = (text) => {
+    if (text && text.trim()) {
+      sendMessage(text);
+    }
+  };
 
-  // Mic
-  const speech = useSpeech({ lang: 'vi-VN' });
-  useEffect(() => {
-    if (speech.text) setText((t) => (t ? `${t} ${speech.text}` : speech.text));
-  }, [speech.text]);
-
-  // TTS
   const {
-    isSupported: ttsSupported,
-    isSpeaking: speaking,
-    isPaused: ttsPaused,
+    status: voiceStatus,
+    startListening,
+    stopListening,
     speak,
-    pause: pauseTTS,
-    resume: resumeTTS,
-    stop,
-    vietnameseVoices,
-    selectedVoice,
-    setSelectedVoice,
-  } = useTextToSpeech();
+    stopSpeaking,
+    isSupported: voiceSupported
+  } = useVoiceAgentCF({
+    autoSubmit: false, // Tắt tự động gửi của hook cũ
+    onResult: handleVoiceResult // Xử lý thủ công để dùng sendMessage
+  });
 
-  // TTS settings state
-  const [ttsRate, setTtsRate] = useState(1); // 0.5 - 2
-  const [showTtsSettings, setShowTtsSettings] = useState(false);
+  const isListening = voiceStatus === 'listening';
+  const isSpeaking = voiceStatus === 'speaking';
 
+  // --- Auto Scroll ---
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading, sos, currentId]);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, voiceStatus]);
 
-  // aria-live
-  const liveRegionRef = useRef(null);
+  // --- Auto Read New AI Messages ---
+  const lastMsgCount = useRef(messages.length);
   useEffect(() => {
-    const last = messages[messages.length - 1];
-    if (last?.role === 'assistant' && liveRegionRef.current) {
-      liveRegionRef.current.textContent = last.content;
+    if (messages.length > lastMsgCount.current) {
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg.role === 'assistant' && autoRead) {
+        speak(lastMsg.content);
+      }
+      lastMsgCount.current = messages.length;
     }
-  }, [messages]);
+  }, [messages, autoRead, speak]);
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    if (!text.trim() && images.length === 0) return;
-    await sendMessage(text, images);
-    setText('');
-    setImages([]);
+  const handleSend = () => {
+    if (!inputText.trim()) return;
+    sendMessage(inputText);
+    setInputText('');
   };
 
-  const lastUserText = useMemo(() => {
-    for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === 'user') return messages[i].content;
-    }
-    return '';
-  }, [messages]);
-
-  const onCopyMsg = async (content) => {
-    try {
-      await navigator.clipboard.writeText(content);
-      setInfo('Đã sao chép');
-      setTimeout(() => setInfo(''), 1200);
-    } catch (_) {
-      setInfo('Không thể sao chép');
-      setTimeout(() => setInfo(''), 1200);
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
 
-  const onResendLast = () => {
-    if (!lastUserText) return;
-    sendMessage(lastUserText, []);
-    setInfo('Đã gửi lại');
-    setTimeout(() => setInfo(''), 1200);
+  const toggleVoice = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
   };
-
-  const onPickImages = async (e) => {
-    const files = Array.from(e.target.files || []);
-    const accepted = files.filter((f) => f.type.startsWith('image/') && f.size <= 2 * 1024 * 1024);
-    const readers = await Promise.all(
-      accepted.map(
-        (f) =>
-          new Promise((res) => {
-            const r = new FileReader();
-            r.onload = () => res(r.result);
-            r.readAsDataURL(f);
-          }),
-      ),
-    );
-    setImages((prev) => [...prev, ...readers]);
-    e.target.value = '';
-  };
-
-  const currentThread = threads.find(t => t.id === currentId);
-  const [chatMode, setChatMode] = useState('text'); // 'text' | 'voice'
 
   return (
-    <div className="min-h-[70vh] space-y-4" role="main">
-      {/* Mode Tabs */}
-      <Card className="p-2">
-        <div className="flex items-center gap-2">
-          <div className="flex-1 flex gap-1.5 p-1 bg-[--surface-border] rounded-xl">
+    <div className="relative h-screen w-full overflow-hidden flex bg-slate-50">
+      {/* BACKGROUND FULLSCREEN */}
+      <img
+        src="/chat-bg-rainbow.png"
+        alt="Background"
+        className="absolute inset-0 w-full h-full object-cover z-0"
+      />
+
+      {/* Glass Overlay for readability (light tint) */}
+      <div className="absolute inset-0 bg-white/30 backdrop-blur-[2px] z-0"></div>
+
+      {/* --- SIDEBAR (History) --- */}
+      {/* Desktop: Always visible / Mobile: Slide over */}
+      <div className={`
+            fixed md:relative z-30 h-full w-72 shrink-0
+            transform transition-transform duration-300 ease-in-out
+            ${showSidebar ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+            bg-white/60 backdrop-blur-xl border-r border-white/50 shadow-xl md:shadow-none
+        `}>
+        <div className="h-full flex flex-col p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold text-slate-700 flex items-center gap-2">
+              <Sparkles className="text-purple-500 w-5 h-5" />
+              Lịch sử
+            </h2>
+            <Button variant="ghost" size="icon" onClick={() => setShowSidebar(false)} className="md:hidden">
+              <X size={20} />
+            </Button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2">
+            <ChatList
+              threads={threads}
+              currentId={currentId}
+              setCurrentThread={setCurrentThread}
+              deleteChat={deleteChat}
+              renameChat={renameChat}
+            />
+          </div>
+
+          <Button
+            onClick={() => { newChat(); if (window.innerWidth < 768) setShowSidebar(false); }}
+            className="mt-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg hover:shadow-xl w-full"
+          >
+            <Plus size={18} className="mr-2" /> Cuộc trò chuyện mới
+          </Button>
+        </div>
+      </div>
+
+      {/* Sidebar Backdrop Mobile */}
+      {showSidebar && (
+        <div
+          className="fixed inset-0 bg-black/20 z-20 md:hidden"
+          onClick={() => setShowSidebar(false)}
+        ></div>
+      )}
+
+
+      {/* --- MAIN CHAT AREA --- */}
+      <div className="relative z-10 flex-1 flex flex-col h-full overflow-hidden">
+
+        {/* Header */}
+        <div className="h-16 shrink-0 flex items-center justify-between px-4 md:px-6 bg-white/40 backdrop-blur-md border-b border-white/40 shadow-sm">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => setShowSidebar(true)} className="md:hidden text-slate-700">
+              <Menu size={24} />
+            </Button>
+            <div>
+              <h1 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+                Bạn Đồng Hành AI
+                {/* Sync Status Badge */}
+                {syncing ? (
+                  <span className="text-xs font-normal text-amber-600 bg-amber-100/80 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Loader2 size={10} className="animate-spin" /> Lưu...
+                  </span>
+                ) : (
+                  <span className="text-xs font-normal text-green-600 bg-green-100/80 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Check size={10} /> Đã lưu
+                  </span>
+                )}
+              </h1>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setChatMode('text')}
-              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg transition-all relative ${chatMode === 'text'
-                ? 'bg-[--surface] text-[--brand] shadow-sm font-medium'
-                : 'text-[--muted] hover:text-[--text]'
-                }`}
+              onClick={() => setAutoRead(!autoRead)}
+              className={`p-2 rounded-full transition-all ${autoRead ? 'bg-indigo-100 text-indigo-600' : 'text-slate-500 hover:bg-white/50'}`}
+              title={autoRead ? "Tắt tự động đọc" : "Bật tự động đọc"}
             >
-              <MessageCircle size={18} />
-              <span className="text-sm hidden sm:inline">Chat văn bản</span>
-              <span className="text-sm sm:hidden">Văn bản</span>
-            </button>
-            <button
-              onClick={() => setChatMode('voice')}
-              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg transition-all relative ${chatMode === 'voice'
-                ? 'bg-[--surface] text-[--brand] shadow-sm font-medium'
-                : 'text-[--muted] hover:text-[--text]'
-                }`}
-            >
-              <Headphones size={18} />
-              <span className="text-sm hidden sm:inline">Nói chuyện</span>
-              <span className="text-sm sm:hidden">Nói</span>
+              {autoRead ? <Volume2 size={20} /> : <VolumeX size={20} />}
             </button>
           </div>
         </div>
-      </Card>
 
-      {/* Voice Chat Mode */}
-      {chatMode === 'voice' && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 10 }}
+        {/* Messages List */}
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scroll-smooth"
         >
-          <VoiceChat />
-        </motion.div>
-      )}
-
-      {/* Text Chat Mode */}
-      {chatMode === 'text' && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 10 }}
-          className="h-[calc(100vh-20rem)] md:h-[calc(100vh-18rem)] flex flex-col lg:grid lg:grid-cols-[320px_1fr] gap-4"
-        >
-          {/* A11y live region */}
-          <div aria-live="polite" aria-atomic="false" className="sr-only" ref={liveRegionRef} />
-
-          {/* Left: Conversation List */}
-          <div className="hidden lg:block">
-            <Card className="h-full flex flex-col overflow-hidden">
-              {/* Header */}
-              <div className="p-4 border-b border-[--surface-border] bg-gradient-to-r from-[--brand]/5 to-transparent">
-                <h3 className="font-semibold text-[--text] mb-3 flex items-center gap-2">
-                  <MessageCircle size={18} className="text-[--brand]" />
-                  Hội thoại
-                </h3>
-                <Button
-                  onClick={() => { newChat(); setText(''); setImages([]); }}
-                  variant="primary"
-                  className="w-full"
-                  icon={<Plus size={18} />}
-                >
-                  Chat mới
-                </Button>
+          {messages.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center text-slate-600">
+              <div className="w-24 h-24 bg-white/50 backdrop-blur-sm rounded-full flex items-center justify-center mb-6 shadow-lg animate-float">
+                <img src="/chatbot-icon.png" alt="AI" className="w-16 h-16 object-contain opacity-90" />
               </div>
-
-              {/* List */}
-              <div className="flex-1 overflow-y-auto p-2">
-                <ChatList
-                  threads={threads}
-                  currentId={currentId}
-                  onNew={() => { newChat(); setText(''); setImages([]); }}
-                  onSelect={(id) => setCurrentThread(id)}
-                  onRename={(id, name) => renameChat(id, name)}
-                  onDelete={(id) => deleteChat(id)}
-                  minimal
-                />
-              </div>
-            </Card>
-          </div>
-
-          {/* Right: Chat Thread */}
-          <Card className="flex flex-col h-full overflow-hidden border-0 shadow-xl">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-purple-100/50 bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center shadow-lg shadow-purple-500/30 ring-2 ring-purple-300/30 shrink-0 overflow-hidden">
-                  <img src="/chatbot-icon.png" alt="AI" className="w-full h-full object-cover" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="font-bold text-gray-800 truncate text-lg">{currentThread?.title || 'Cuộc trò chuyện mới'}</h2>
-                  <p className="text-xs text-purple-500 font-medium">{messages.length} tin nhắn</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Button variant="ghost" size="icon-sm" onClick={clearChat} aria-label="Xoá hội thoại" title="Xóa hội thoại" className="hover:bg-red-50 hover:text-red-500">
-                  <Trash2 size={16} />
-                </Button>
-              </div>
+              <h3 className="text-xl font-bold mb-2 text-slate-800">Xin chào bạn!</h3>
+              <p className="max-w-md text-slate-600 bg-white/40 p-4 rounded-2xl backdrop-blur-sm">
+                Mình là trợ lý ảo tâm lý của bạn. Hôm nay bạn cảm thấy thế nào? Hãy chia sẻ với mình nhé!
+              </p>
             </div>
+          ) : (
+            messages.map((m, idx) => (
+              <Bubble
+                key={idx}
+                role={m.role}
+                ts={m.ts}
+                isUser={m.role === 'user'}
+              >
+                {m.content}
+              </Bubble>
+            ))
+          )}
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-5 bg-gradient-to-b from-purple-50/30 via-transparent to-pink-50/30" role="list" aria-label="Tin nhắn">
-              {messages.length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center text-center px-4">
-                  <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.4, type: 'spring' }}
-                    className="w-24 h-24 rounded-3xl bg-white flex items-center justify-center mb-6 shadow-xl shadow-purple-500/30 ring-4 ring-purple-300/30 overflow-hidden"
-                  >
-                    <img src="/chatbot-icon.png" alt="AI" className="w-full h-full object-cover" />
-                  </motion.div>
-                  <motion.h3
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="font-bold text-2xl text-gray-800 mb-3"
-                  >
-                    Xin chào! 👋
-                  </motion.h3>
-                  <motion.p
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="text-gray-600 max-w-md leading-relaxed"
-                  >
-                    Mình là <span className="font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">Bạn Đồng Hành</span>, luôn sẵn sàng lắng nghe bạn.
-                    <br />
-                    Hãy chia sẻ bất cứ điều gì bạn đang nghĩ nhé!
-                  </motion.p>
+          {/* Thinking Indicator */}
+          {aiLoading && (
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-white grid place-items-center shadow-sm">🤖</div>
+              <div className="bg-white/80 px-4 py-3 rounded-2xl rounded-tl-sm border border-white/50">
+                <div className="flex gap-1.5">
+                  <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
+                  <span className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                  <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
                 </div>
-              )}
-
-              <AnimatePresence>
-                {messages.map((m, i) => (
-                  <Bubble
-                    key={i}
-                    role={m.role}
-                    ts={m.ts}
-                    isLatest={i === messages.length - 1}
-                    onCopy={() => onCopyMsg(m.content)}
-                    onPlayTTS={() => {
-                      if (m.role === 'assistant') {
-                        const text = typeof m.content === 'string'
-                          ? m.content
-                          : (m.content?.reply || m.content?.text || JSON.stringify(m.content));
-                        speak(text, {
-                          rate: ttsRate,
-                          voice: selectedVoice,
-                        });
-                      }
-                    }}
-                    onPauseTTS={pauseTTS}
-                    onResumeTTS={resumeTTS}
-                    onStopTTS={stop}
-                    speaking={speaking}
-                    paused={ttsPaused}
-                    onTtsSettings={() => setShowTtsSettings(true)}
-                    feedbackUI={
-                      m.role === 'assistant' ? (
-                        <Feedback
-                          value={m.feedback}
-                          onUp={() => {
-                            setFeedback(i, 'up', m.messageId || m.traceId);
-                            setInfo('Cảm ơn bạn!');
-                            setTimeout(() => setInfo(''), 1200);
-                          }}
-                          onDown={() => {
-                            setFeedback(i, 'down', m.messageId || m.traceId);
-                            setInfo('Đã ghi nhận!');
-                            setTimeout(() => setInfo(''), 1200);
-                          }}
-                        />
-                      ) : null
-                    }
-                  >
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        a: ({ href, children }) => (
-                          <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
-                        )
-                      }}
-                    >
-                      {typeof m.content === 'string'
-                        ? m.content
-                        : (m.content?.reply || m.content?.text || JSON.stringify(m.content))}
-                    </ReactMarkdown>
-
-                  </Bubble>
-
-                ))}
-              </AnimatePresence>
-
-              {loading && (
-                <motion.div
-                  className="flex items-center gap-3"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  <Avatar role="assistant" />
-                  <div className="glass-card rounded-2xl rounded-tl-md px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-[--brand] animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <div className="w-2 h-2 rounded-full bg-[--brand] animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <div className="w-2 h-2 rounded-full bg-[--brand] animate-bounce" style={{ animationDelay: '300ms' }} />
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-              <div ref={endRef} />
-            </div>
-
-            {/* Image previews */}
-            {images.length > 0 && (
-              <div className="px-4 pb-2 flex gap-2 flex-wrap">
-                {images.map((src, idx) => (
-                  <div key={idx} className="relative">
-                    <img src={src} alt="preview" className="w-16 h-16 object-cover rounded-xl border-2 border-[--surface-border]" />
-                    <button
-                      onClick={() => setImages(imgs => imgs.filter((_, i) => i !== idx))}
-                      className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
               </div>
-            )}
-
-            {/* Info toast */}
-            <AnimatePresence>
-              {info && (
-                <motion.div
-                  className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50"
-                  initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                >
-                  <div className="px-4 py-2 rounded-xl bg-[--text] text-white shadow-lg backdrop-blur-sm flex items-center gap-2">
-                    <Sparkles size={14} />
-                    <span className="text-sm font-medium">{info}</span>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Input */}
-            <div className="p-4 border-t border-purple-100/50 bg-gradient-to-r from-purple-50/50 via-white to-pink-50/50 backdrop-blur-sm">
-              <form onSubmit={onSubmit} className="flex items-end gap-3">
-                <div className="flex-1 bg-white rounded-2xl p-3 flex items-end gap-2 border border-purple-200/50 shadow-lg shadow-purple-500/5 focus-within:ring-2 focus-within:ring-purple-400/30 focus-within:border-purple-300 transition-all">
-                  {/* Mic visualizer */}
-                  {speech.supported && speech.listening && (
-                    <div className="mb-1">
-                      <MicVisualizer active={speech.listening} height={24} bars={16} />
-                    </div>
-                  )}
-
-                  <textarea
-                    ref={inputRef}
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        onSubmit(e);
-                      }
-                    }}
-                    placeholder="Chia sẻ điều bạn đang nghĩ..."
-                    rows={1}
-                    className="flex-1 bg-transparent resize-none outline-none text-gray-800 placeholder:text-gray-400 py-2 px-3 min-h-[44px] max-h-32 text-sm leading-relaxed"
-                    aria-label="Ô nhập tin nhắn"
-                  />
-
-                  {/* Action buttons */}
-                  <div className="flex items-center gap-1 mb-1">
-                    <label className="p-2 rounded-xl cursor-pointer text-gray-400 hover:text-purple-600 hover:bg-purple-50 transition-colors touch-target" title="Thêm ảnh">
-                      <Image size={18} />
-                      <input type="file" accept="image/*" onChange={onPickImages} className="hidden" multiple />
-                    </label>
-
-                    {speech.supported && (
-                      <button
-                        type="button"
-                        onClick={speech.listening ? speech.stop : speech.start}
-                        className={`p-2 rounded-xl transition-all touch-target ${speech.listening
-                          ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/30 animate-pulse'
-                          : 'text-gray-400 hover:text-purple-600 hover:bg-purple-50'
-                          }`}
-                        aria-label={speech.listening ? 'Dừng ghi âm' : 'Ghi âm'}
-                        title={speech.listening ? 'Dừng ghi âm' : 'Ghi âm'}
-                      >
-                        {speech.listening ? <MicOff size={18} /> : <Mic size={18} />}
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Send button */}
-                <button
-                  type="submit"
-                  disabled={loading || (!text.trim() && images.length === 0)}
-                  aria-label="Gửi"
-                  className="w-12 h-12 shrink-0 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95"
-                >
-                  <Send size={18} />
-                </button>
-              </form>
-
-              {/* Quick actions */}
-              {lastUserText && (
-                <div className="mt-3 flex items-center gap-3 text-xs">
-                  <button
-                    type="button"
-                    onClick={onResendLast}
-                    className="flex items-center gap-1.5 text-[--muted] hover:text-[--text] transition-colors px-2 py-1 rounded-lg hover:bg-[--surface-border]"
-                  >
-                    <RotateCcw size={12} /> Gửi lại
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { if (lastUserText) { setText(lastUserText); inputRef.current?.focus(); } }}
-                    className="flex items-center gap-1.5 text-[--muted] hover:text-[--text] transition-colors px-2 py-1 rounded-lg hover:bg-[--surface-border]"
-                  >
-                    <Edit3 size={12} /> Sửa
-                  </button>
-                </div>
-              )}
-            </div>
-          </Card>
-
-          {/* SOS Overlay - với Hotline và Map */}
-          <SOSOverlay
-            isOpen={!!sos}
-            riskLevel={sos?.level || 'high'}
-            triggerText={typeof sos === 'string' ? sos : sos?.message}
-            onClose={clearSOS}
-          />
-
-          {/* TTS Settings Modal */}
-          {showTtsSettings && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <Card className="max-w-md w-full">
-                <div className="p-4 border-b border-[--surface-border] flex items-center justify-between">
-                  <h3 className="font-semibold text-[--text]">Cài đặt Text-to-Speech</h3>
-                  <button
-                    onClick={() => setShowTtsSettings(false)}
-                    className="p-1 hover:bg-[--surface-border] rounded-lg transition-colors"
-                  >
-                    <span className="text-xl">×</span>
-                  </button>
-                </div>
-                <div className="p-4 space-y-4">
-                  {/* Tốc độ đọc */}
-                  <div>
-                    <label className="block text-sm font-medium text-[--text] mb-2">
-                      Tốc độ đọc: {ttsRate.toFixed(2)}x
-                    </label>
-                    <input
-                      type="range"
-                      min="0.5"
-                      max="2"
-                      step="0.1"
-                      value={ttsRate}
-                      onChange={(e) => setTtsRate(parseFloat(e.target.value))}
-                      className="w-full"
-                    />
-                    <div className="flex justify-between text-xs text-[--muted] mt-1">
-                      <span>0.5x</span>
-                      <span>1x</span>
-                      <span>1.5x</span>
-                      <span>2x</span>
-                    </div>
-                  </div>
-
-                  {/* Chọn giọng */}
-                  {vietnameseVoices.length > 0 && (
-                    <div>
-                      <label className="block text-sm font-medium text-[--text] mb-2">
-                        Giọng đọc
-                      </label>
-                      <select
-                        value={selectedVoice?.name || ''}
-                        onChange={(e) => {
-                          const voice = vietnameseVoices.find(v => v.name === e.target.value);
-                          if (voice) setSelectedVoice(voice);
-                        }}
-                        className="w-full px-3 py-2 rounded-lg border border-[--surface-border] bg-[--surface] text-[--text]"
-                      >
-                        {vietnameseVoices.map((voice) => (
-                          <option key={voice.name} value={voice.name}>
-                            {voice.name} {voice.default ? '(Mặc định)' : ''}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="text-xs text-[--muted] mt-1">
-                        {selectedVoice && (
-                          selectedVoice.name.includes('Female') || selectedVoice.name.includes('Nữ')
-                            ? 'Giọng nữ'
-                            : selectedVoice.name.includes('Male') || selectedVoice.name.includes('Nam')
-                              ? 'Giọng nam'
-                              : 'Giọng mặc định'
-                        )}
-                      </p>
-                    </div>
-                  )}
-
-                  {vietnameseVoices.length === 0 && (
-                    <p className="text-sm text-[--muted]">
-                      Không tìm thấy giọng tiếng Việt. Trình duyệt sẽ sử dụng giọng mặc định.
-                    </p>
-                  )}
-
-                  {/* Test button */}
-                  <Button
-                    onClick={() => {
-                      speak('Đây là giọng đọc mẫu. Bạn có thể điều chỉnh tốc độ và giọng đọc theo ý thích.', {
-                        rate: ttsRate,
-                        voice: selectedVoice,
-                      });
-                    }}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    <Volume2 size={16} /> Nghe thử
-                  </Button>
-                </div>
-              </Card>
             </div>
           )}
-        </motion.div>
-      )}
+        </div>
 
-      {/* SOS Overlay - Global (cho cả voice mode) */}
-      <SOSOverlay
-        isOpen={!!sos}
-        riskLevel={sos?.level || 'high'}
-        triggerText={typeof sos === 'string' ? sos : sos?.message}
-        onClose={clearSOS}
-      />
+        {/* --- VOICE OVERLAY (Khi đang nghe) --- */}
+        <AnimatePresence>
+          {isListening && (
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 50 }}
+              className="absolute inset-x-0 bottom-24 mx-auto w-max z-20"
+            >
+              <div className="bg-gradient-to-r from-indigo-600/90 to-purple-600/90 text-white px-8 py-4 rounded-3xl shadow-2xl backdrop-blur-md flex flex-col items-center gap-2">
+                <span className="text-sm font-medium animate-pulse">Đang lắng nghe...</span>
+                <VoiceVisualizer listening={true} />
+                <button
+                  onClick={stopListening}
+                  className="mt-2 text-xs text-white/70 hover:text-white bg-white/10 px-3 py-1 rounded-full transition-colors"
+                >
+                  Dừng lại
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+
+        {/* Input Area */}
+        <div className="p-4 md:p-5 bg-white/60 backdrop-blur-xl border-t border-white/50">
+          <div className="max-w-4xl mx-auto flex items-end gap-3">
+            {/* Voice Button */}
+            {voiceSupported && (
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={toggleVoice}
+                className={`
+                            p-3 rounded-full shadow-lg transition-all duration-300
+                            ${isListening
+                    ? 'bg-red-500 text-white shadow-red-500/30 ring-4 ring-red-200'
+                    : 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:shadow-purple-500/30'
+                  }
+                        `}
+                title={isListening ? "Dừng nói" : "Nói chuyện"}
+              >
+                {isListening ? <MicOff size={24} /> : <Mic size={24} />}
+              </motion.button>
+            )}
+
+            {/* Text Input */}
+            <div className="flex-1 bg-white/80 backdrop-blur-sm rounded-3xl shadow-inner border border-white/60 focus-within:ring-2 focus-within:ring-indigo-300 transition-all flex items-end px-4 py-3">
+              <textarea
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={isListening ? "Đang nghe giọng nói của bạn..." : "Nhập tin nhắn..."}
+                className="w-full bg-transparent border-none outline-none resize-none max-h-32 text-slate-800 placeholder:text-slate-400 py-1"
+                rows={1}
+                style={{ minHeight: '24px' }}
+              />
+            </div>
+
+            {/* Send Button */}
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={handleSend}
+              disabled={!inputText.trim() || aiLoading}
+              className="p-3 bg-white text-indigo-600 rounded-full shadow-md hover:bg-indigo-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-indigo-100"
+            >
+              <Send size={24} className={inputText.trim() ? "translate-x-0.5 ml-0.5" : ""} />
+            </motion.button>
+          </div>
+          <p className="text-center text-[10px] text-slate-500 mt-2 font-medium">
+            AI có thể mắc lỗi. Hãy kiểm chứng thông tin quan trọng.
+          </p>
+        </div>
+
+      </div>
     </div>
   );
 }

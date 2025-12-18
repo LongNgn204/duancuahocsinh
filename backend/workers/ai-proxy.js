@@ -362,7 +362,7 @@ export default {
       return addTraceHeader(json({ error: 'invalid_json' }, 400, origin), trace.traceId);
     }
 
-    const { message, history = [], memorySummary = '', userId = null } = body || {};
+    const { message, history = [], memorySummary = '', userId = null, userName = null } = body || {};
 
     // Validate message
     if (!message || typeof message !== 'string') {
@@ -537,6 +537,11 @@ export default {
         trace.log('warn', 'user_memory_load_failed', { error: error.message });
         // Continue without memory - fallback to stateless
       }
+    }
+
+    // Explicitly add userName if provided from frontend
+    if (userName) {
+      userMemoryContext = `Tên của user là: ${userName}.\n` + userMemoryContext;
     }
 
     // ========================================================================
