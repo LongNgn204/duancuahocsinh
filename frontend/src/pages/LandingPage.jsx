@@ -175,7 +175,7 @@ export default function LandingPage() {
                             className="mb-6 inline-block"
                         >
                             <span className="px-4 py-2 rounded-full bg-white/70 dark:bg-slate-800/70 border border-white/50 dark:border-white/10 text-pink-600 dark:text-pink-400 text-sm font-semibold shadow-sm backdrop-blur-md">
-                                ✨ Nền tảng chăm sóc tinh thần học đường #1
+                                ✨ Nền tảng chăm sóc tinh thần học đường
                             </span>
                         </motion.div>
 
@@ -432,7 +432,8 @@ export default function LandingPage() {
                                 </div>
                             </div>
                             <p className="text-sm text-[--text-secondary]">
-                                Nền tảng hỗ trợ phát triển toàn diện cho cộng đồng giáo dục Việt Nam.
+                                Nền tảng hỗ trợ phát triể
+                                n toàn diện cho cộng đồng giáo dục Việt Nam.
                             </p>
                         </div>
 
