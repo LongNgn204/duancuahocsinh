@@ -9,14 +9,14 @@ import { useSettings } from '../hooks/useSettings';
 
 import { useTourStatus } from '../components/tour/TourGuide';
 import { useAuth } from '../hooks/useAuth';
-import { exportAllData, importData, deleteAccount } from '../utils/api';
+import { exportAllData, importData, deleteAccount, updateProfile, setCurrentUser } from '../utils/api';
 import {
   Settings as SettingsIcon, Type, Globe, Sun,
   Bell, Shield, Info, Heart, Sparkles, RotateCcw,
   ChevronRight, ExternalLink, HelpCircle, Download, Upload,
   Trash2, Database, User, Eye, EyeOff, Volume2, VolumeX,
   Zap, HardDrive, RefreshCw, AlertCircle, CheckCircle2,
-  Clock, Mail, Phone, Lock, FileText, DownloadCloud
+  Clock, Mail, Phone, Lock, FileText, DownloadCloud, Edit2, Save
 } from 'lucide-react';
 
 function SettingRow({ icon: Icon, title, description, children }) {
@@ -77,6 +77,12 @@ export default function Settings() {
   const [sleepReminder, setSleepReminder] = useState(true);
   const [incognitoMode, setIncognitoMode] = useState(false);
   const [syncEnabled, setSyncEnabled] = useState(isLoggedIn);
+
+  // Display name editing state
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newDisplayName, setNewDisplayName] = useState(user?.display_name || '');
+  const [isSavingName, setIsSavingName] = useState(false);
+  const [nameUpdateMessage, setNameUpdateMessage] = useState('');
 
   const resetAll = () => {
     if (confirm('Bạn có chắc muốn khôi phục tất cả cài đặt về mặc định?')) {
@@ -248,19 +254,100 @@ export default function Settings() {
             <Card.Content>
               <SettingRow
                 icon={User}
-                title="Tên người dùng"
-                description={user?.username || 'Chưa đặt tên'}
+                title="Tên đăng nhập"
+                description="Dùng để đăng nhập vào hệ thống"
               >
                 <Badge variant="info">{user?.username || 'Khách'}</Badge>
               </SettingRow>
 
-              <div className="pt-4 space-y-2">
-                <Button variant="outline" className="w-full justify-between" iconRight={<ChevronRight size={16} />}>
-                  Chỉnh sửa hồ sơ
-                </Button>
-                <Button variant="outline" className="w-full justify-between" iconRight={<ChevronRight size={16} />}>
-                  Đổi mật khẩu
-                </Button>
+              {/* Display Name Editor */}
+              <div className="py-4 border-b border-[--surface-border]">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3 flex-1">
+                    <div className="w-10 h-10 rounded-xl bg-[--brand]/10 flex items-center justify-center shrink-0">
+                      <Edit2 size={20} className="text-[--brand]" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-[--text] mb-1">Tên hiển thị</h4>
+                      <p className="text-sm text-[--muted] mb-3">Tên này sẽ hiển thị trên Dashboard và Chat</p>
+
+                      {isEditingName ? (
+                        <div className="space-y-3">
+                          <input
+                            type="text"
+                            value={newDisplayName}
+                            onChange={(e) => setNewDisplayName(e.target.value)}
+                            placeholder="Nhập tên hiển thị..."
+                            className="w-full px-4 py-2.5 bg-[--bg] border border-[--border] rounded-xl focus:ring-2 focus:ring-[--brand] focus:border-transparent outline-none transition-all text-sm"
+                            maxLength={50}
+                            autoFocus
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={async () => {
+                                setIsSavingName(true);
+                                setNameUpdateMessage('');
+                                try {
+                                  const result = await updateProfile(newDisplayName.trim());
+                                  if (result.success) {
+                                    // Update local user data
+                                    setCurrentUser(result.user);
+                                    setNameUpdateMessage('✅ Đã cập nhật tên hiển thị!');
+                                    setIsEditingName(false);
+                                    setTimeout(() => setNameUpdateMessage(''), 3000);
+                                  }
+                                } catch (error) {
+                                  setNameUpdateMessage('❌ Lỗi: ' + (error.message || 'Không thể cập nhật'));
+                                } finally {
+                                  setIsSavingName(false);
+                                }
+                              }}
+                              disabled={isSavingName || !newDisplayName.trim()}
+                              icon={<Save size={14} />}
+                            >
+                              {isSavingName ? 'Đang lưu...' : 'Lưu'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setIsEditingName(false);
+                                setNewDisplayName(user?.display_name || '');
+                                setNameUpdateMessage('');
+                              }}
+                              disabled={isSavingName}
+                            >
+                              Hủy
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="text-[--text] font-medium">{user?.display_name || user?.username || 'Chưa đặt'}</span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setIsEditingName(true)}
+                            icon={<Edit2 size={14} />}
+                          >
+                            Sửa
+                          </Button>
+                        </div>
+                      )}
+
+                      {nameUpdateMessage && (
+                        <motion.p
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="text-sm mt-2 font-medium"
+                        >
+                          {nameUpdateMessage}
+                        </motion.p>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </Card.Content>
           </Card>

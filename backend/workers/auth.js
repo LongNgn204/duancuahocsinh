@@ -487,3 +487,55 @@ export async function adminResetPassword(request, env, userId) {
 
 // Export cho testing
 export { validateUsername, generateUsernameSuggestions };
+/**
+ * Handler cập nhật thông tin profile (display_name)
+ * PUT /api/auth/profile
+ * Headers: X-User-Id
+ * Body: { display_name }
+ */
+export async function handleUpdateProfile(request, env) {
+    try {
+        // Get user ID from header
+        const userId = request.headers.get('X-User-Id');
+        if (!userId) {
+            return createJsonResponse({ error: 'unauthorized', message: 'Vui lòng đăng nhập' }, 401);
+        }
+
+        const body = await request.json();
+        const { display_name } = body;
+
+        // Validate display_name
+        if (!display_name || typeof display_name !== 'string') {
+            return createJsonResponse({ error: 'invalid_input', message: 'Tên hiển thị không hợp lệ' }, 400);
+        }
+
+        const trimmedName = display_name.trim();
+        if (trimmedName.length < 1 || trimmedName.length > 50) {
+            return createJsonResponse({ error: 'invalid_length', message: 'Tên hiển thị phải từ 1-50 ký tự' }, 400);
+        }
+
+        // Update display_name in database
+        const result = await env.ban_dong_hanh_db.prepare(
+            'UPDATE users SET display_name = ? WHERE id = ? RETURNING id, username, display_name, created_at'
+        ).bind(trimmedName, userId).first();
+
+        if (!result) {
+            return createJsonResponse({ error: 'user_not_found', message: 'Không tìm thấy người dùng' }, 404);
+        }
+
+        return createJsonResponse({
+            success: true,
+            user: {
+                id: result.id,
+                username: result.username,
+                display_name: result.display_name,
+                created_at: result.created_at
+            },
+            message: 'Cập nhật tên hiển thị thành công'
+        }, 200);
+
+    } catch (error) {
+        console.error('[Auth] Update profile error:', error.message);
+        return createJsonResponse({ error: 'server_error', message: error.message }, 500);
+    }
+}

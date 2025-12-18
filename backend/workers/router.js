@@ -8,6 +8,7 @@ import {
     handleCheckUsername,
     handleGetMe,
     handleDeleteAccount,
+    handleUpdateProfile,
     adminResetPassword
 } from './auth.js';
 
@@ -102,6 +103,7 @@ function matchRoute(pathname, method) {
     if (pathname === '/api/auth/login' && method === 'POST') return 'auth:login';
     if (pathname === '/api/auth/check' && method === 'GET') return 'auth:check';
     if (pathname === '/api/auth/me' && method === 'GET') return 'auth:me';
+    if (pathname === '/api/auth/profile' && method === 'PUT') return 'auth:profile:update';
     if (pathname === '/api/auth/account' && method === 'DELETE') return 'auth:delete';
 
     // Data routes - Gratitude
@@ -274,6 +276,9 @@ export default {
                     break;
                 case 'auth:me':
                     response = await handleGetMe(request, env);
+                    break;
+                case 'auth:profile:update':
+                    response = await handleUpdateProfile(request, env);
                     break;
                 case 'auth:delete':
                     response = await handleDeleteAccount(request, env);

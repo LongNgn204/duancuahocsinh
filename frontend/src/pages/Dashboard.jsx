@@ -93,13 +93,6 @@ export default function Dashboard() {
 
       if (loggedIn) {
         const user = getCurrentUser();
-        if (user) {
-          setUserName(user.display_name || user.username || 'bạn');
-        }
-
-        if (user) {
-          setUserName(user.display_name || user.username || 'bạn');
-        }
 
         try {
           // Refresh User Data (để lấy display_name mới nhất nếu có)

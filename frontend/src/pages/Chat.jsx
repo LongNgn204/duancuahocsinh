@@ -203,9 +203,10 @@ export default function Chat() {
             <ChatList
               threads={threads}
               currentId={currentId}
-              setCurrentThread={setCurrentThread}
-              deleteChat={deleteChat}
-              renameChat={renameChat}
+              onSelect={(id) => { setCurrentThread(id); if (window.innerWidth < 768) setShowSidebar(false); }}
+              onDelete={deleteChat}
+              onRename={renameChat}
+              minimal={true}
             />
           </div>
 
@@ -231,22 +232,23 @@ export default function Chat() {
       <div className="relative z-10 flex-1 flex flex-col h-full overflow-hidden">
 
         {/* Header */}
-        <div className="h-16 shrink-0 flex items-center justify-between px-4 md:px-6 bg-white/40 backdrop-blur-md border-b border-white/40 shadow-sm">
+        <div className="h-16 shrink-0 flex items-center justify-between px-4 md:px-6 bg-white/50 backdrop-blur-xl border-b border-white/50 shadow-sm">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => setShowSidebar(true)} className="md:hidden text-slate-700">
+            <Button variant="ghost" size="icon" onClick={() => setShowSidebar(true)} className="md:hidden text-slate-700 hover:bg-white/50">
               <Menu size={24} />
             </Button>
             <div>
-              <h1 className="font-bold text-slate-800 text-lg flex items-center gap-2">
-                Bạn Đồng Hành AI
+              <h1 className="font-bold text-slate-800 text-lg md:text-xl flex items-center gap-2">
+                <span className="hidden md:inline">Bạn Đồng Hành AI</span>
+                <span className="md:hidden">Chat AI</span>
                 {/* Sync Status Badge */}
                 {syncing ? (
-                  <span className="text-xs font-normal text-amber-600 bg-amber-100/80 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <Loader2 size={10} className="animate-spin" /> Lưu...
+                  <span className="text-[11px] font-medium text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full flex items-center gap-1.5 border border-amber-200">
+                    <Loader2 size={11} className="animate-spin" /> Đang lưu
                   </span>
                 ) : (
-                  <span className="text-xs font-normal text-green-600 bg-green-100/80 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <Check size={10} /> Đã lưu
+                  <span className="text-[11px] font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full flex items-center gap-1.5 border border-emerald-200">
+                    <Check size={11} /> Đã lưu
                   </span>
                 )}
               </h1>
@@ -267,17 +269,35 @@ export default function Chat() {
         {/* Messages List */}
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scroll-smooth"
+          className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 space-y-6 scroll-smooth custom-scrollbar"
         >
           {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center text-slate-600">
-              <div className="w-24 h-24 bg-white/50 backdrop-blur-sm rounded-full flex items-center justify-center mb-6 shadow-lg animate-float">
-                <img src="/chatbot-icon.png" alt="AI" className="w-16 h-16 object-contain opacity-90" />
-              </div>
-              <h3 className="text-xl font-bold mb-2 text-slate-800">Xin chào bạn!</h3>
-              <p className="max-w-md text-slate-600 bg-white/40 p-4 rounded-2xl backdrop-blur-sm">
-                Mình là trợ lý ảo tâm lý của bạn. Hôm nay bạn cảm thấy thế nào? Hãy chia sẻ với mình nhé!
-              </p>
+            <div className="h-full flex flex-col items-center justify-center text-center text-slate-600 max-w-2xl mx-auto">
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5 }}
+                className="w-28 h-28 bg-gradient-to-br from-indigo-100 to-purple-100 backdrop-blur-sm rounded-3xl flex items-center justify-center mb-6 shadow-xl border border-white/50"
+              >
+                <span className="text-5xl">🤖</span>
+              </motion.div>
+              <motion.h3
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="text-2xl font-bold mb-3 text-slate-800"
+              >
+                Xin chào bạn! 👋
+              </motion.h3>
+              <motion.p
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="max-w-md text-slate-600 bg-white/60 p-5 rounded-3xl backdrop-blur-md shadow-sm border border-white/50 leading-relaxed"
+              >
+                Mình là <span className="font-semibold text-indigo-600">Bạn Đồng Hành</span> - trợ lý tâm lý ảo của bạn. 💙<br />
+                Hôm nay bạn cảm thấy thế nào? Hãy thoải mái chia sẻ với mình nhé!
+              </motion.p>
             </div>
           ) : (
             messages.map((m, idx) => (

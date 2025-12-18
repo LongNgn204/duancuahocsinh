@@ -344,6 +344,17 @@ export async function getMe() {
     return apiRequest('/api/auth/me');
 }
 
+/**
+ * Cập nhật thông tin profile (display_name)
+ * @param {string} displayName - Tên hiển thị mới
+ */
+export async function updateProfile(displayName) {
+    return apiRequest('/api/auth/profile', {
+        method: 'PUT',
+        body: JSON.stringify({ display_name: displayName }),
+    });
+}
+
 // =============================================================================
 // DATA API - GRATITUDE
 // =============================================================================
