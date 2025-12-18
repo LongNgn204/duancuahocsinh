@@ -24,7 +24,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
         setSuggestions([]);
         setUsernameAvailable(null);
 
-        if (mode === 'register' && value.trim().length >= 3) {
+        if (mode === 'register' && value.trim().length >= 2) {
             try {
                 const result = await checkUsername(value.trim());
                 setUsernameAvailable(result.available);
@@ -39,8 +39,8 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
         if (!username.trim() || loading) return;
 
         // Chú thích: Validate password phía client
-        if (password.length < 6) {
-            setError('Mật khẩu phải có ít nhất 6 ký tự');
+        if (password.length < 4) {
+            setError('Mật khẩu phải có ít nhất 4 ký tự');
             return;
         }
 
@@ -143,7 +143,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                                     placeholder="Nhập tên của bạn..."
                                     className="w-full pl-10 pr-10 py-3 bg-[--bg] border border-[--border] rounded-xl focus:ring-2 focus:ring-[--brand] focus:border-transparent outline-none transition-all"
                                     autoFocus
-                                    minLength={3}
+                                    minLength={2}
                                     maxLength={30}
                                 />
                                 {mode === 'register' && usernameAvailable !== null && (
@@ -174,7 +174,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder={requireSetPassword ? 'Nhập mật khẩu mới (ít nhất 6 ký tự)...' : 'Nhập mật khẩu...'}
                                     className="w-full pl-10 pr-12 py-3 bg-[--bg] border border-[--border] rounded-xl focus:ring-2 focus:ring-[--brand] focus:border-transparent outline-none transition-all"
-                                    minLength={6}
+                                    minLength={4}
                                     maxLength={100}
                                 />
                                 <button
@@ -188,7 +188,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                             </div>
                             <p className="text-xs text-[--muted] mt-1">
                                 {mode === 'register' || requireSetPassword
-                                    ? 'Mật khẩu phải có ít nhất 6 ký tự'
+                                    ? 'Mật khẩu phải có ít nhất 4 ký tự'
                                     : 'Nhập mật khẩu đã đăng ký'
                                 }
                             </p>
@@ -226,7 +226,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                             type="submit"
                             variant="primary"
                             className="w-full"
-                            disabled={loading || username.trim().length < 3}
+                            disabled={loading || username.trim().length < 2}
                         >
                             {loading ? 'Đang xử lý...' : mode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản'}
                         </Button>

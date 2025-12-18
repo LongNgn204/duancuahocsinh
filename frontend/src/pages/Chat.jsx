@@ -39,14 +39,14 @@ function Avatar({ role }) {
       transition-all duration-300 overflow-hidden shrink-0
       ${isUser
         ? 'bg-gradient-to-br from-amber-400 via-orange-400 to-pink-400 text-white shadow-lg shadow-orange-500/20'
-        : 'bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-purple-500/30 ring-2 ring-purple-300/30'
+        : 'bg-white shadow-lg shadow-purple-500/30 ring-2 ring-purple-300/30'
       }
     `}>
       {isUser ? (
         '🧑'
       ) : (
         <img
-          src="/ai-avatar.png"
+          src="/chatbot-icon.png"
           alt="AI"
           className="w-full h-full object-cover"
           onError={(e) => {
@@ -391,8 +391,8 @@ export default function Chat() {
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-purple-100/50 bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50">
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30 ring-2 ring-purple-300/30 shrink-0">
-                  <Bot className="w-5 h-5 text-white" />
+                <div className="w-11 h-11 rounded-2xl bg-white flex items-center justify-center shadow-lg shadow-purple-500/30 ring-2 ring-purple-300/30 shrink-0 overflow-hidden">
+                  <img src="/chatbot-icon.png" alt="AI" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h2 className="font-bold text-gray-800 truncate text-lg">{currentThread?.title || 'Cuộc trò chuyện mới'}</h2>
@@ -414,9 +414,9 @@ export default function Chat() {
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.4, type: 'spring' }}
-                    className="w-24 h-24 rounded-3xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center mb-6 shadow-xl shadow-purple-500/30 ring-4 ring-purple-300/30"
+                    className="w-24 h-24 rounded-3xl bg-white flex items-center justify-center mb-6 shadow-xl shadow-purple-500/30 ring-4 ring-purple-300/30 overflow-hidden"
                   >
-                    <Bot className="w-12 h-12 text-white" />
+                    <img src="/chatbot-icon.png" alt="AI" className="w-full h-full object-cover" />
                   </motion.div>
                   <motion.h3
                     initial={{ opacity: 0, y: 10 }}

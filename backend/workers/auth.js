@@ -48,8 +48,8 @@ function validatePassword(password) {
         return { valid: false, error: 'Mật khẩu không được để trống' };
     }
 
-    if (password.length < 6) {
-        return { valid: false, error: 'Mật khẩu phải có ít nhất 6 ký tự' };
+    if (password.length < 4) {
+        return { valid: false, error: 'Mật khẩu phải có ít nhất 4 ký tự' };
     }
 
     if (password.length > 100) {
@@ -71,17 +71,18 @@ function validateUsername(username) {
 
     const trimmed = username.trim();
 
-    if (trimmed.length < 3) {
-        return { valid: false, error: 'Tên tài khoản phải có ít nhất 3 ký tự' };
+    if (trimmed.length < 2) {
+        return { valid: false, error: 'Tên tài khoản phải có ít nhất 2 ký tự' };
     }
 
-    if (trimmed.length > 30) {
-        return { valid: false, error: 'Tên tài khoản không quá 30 ký tự' };
+    if (trimmed.length > 50) {
+        return { valid: false, error: 'Tên tài khoản không quá 50 ký tự' };
     }
 
-    // Chỉ cho phép chữ cái, số, underscore, dấu gạch ngang
-    if (!/^[a-zA-Z0-9_\-\u00C0-\u024F\u1E00-\u1EFF]+$/u.test(trimmed)) {
-        return { valid: false, error: 'Tên tài khoản chỉ được chứa chữ cái, số, _ và -' };
+    // Cho phép chữ cái (bao gồm tiếng Việt), số, dấu cách, underscore, dấu gạch ngang
+    // Chấp nhận hầu hết ký tự Unicode phổ biến
+    if (/[<>"';&|\\]/.test(trimmed)) {
+        return { valid: false, error: 'Tên tài khoản không được chứa ký tự đặc biệt < > " \' ; & | \\' };
     }
 
     return { valid: true };
