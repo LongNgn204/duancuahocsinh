@@ -1,5 +1,5 @@
 // src/components/gratitude/GratitudeJar.jsx
-// Chú thích: Gratitude v3.0 - Modern UI với 3D jar visual, floating cards, enhanced animations
+// Chú thích: Gratitude v4.0 - Mind Garden Gamification & Deep Reflection
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Card from '../ui/Card';
@@ -9,47 +9,37 @@ import GlowOrbs from '../ui/GlowOrbs';
 import { toDayStr, computeStreakFromEntries } from '../../utils/gratitude';
 import {
   Plus, Download, Search, Filter, X, Sparkles,
-  Heart, Calendar, Tag, Flame, ChevronDown
+  Heart, Calendar, Tag, Flame, ChevronDown, Sprout, Flower, Trees, RefreshCw
 } from 'lucide-react';
 
 const STORAGE_KEY = 'gratitude';
-const SUGGESTIONS = [
-  { label: 'Gia đình', emoji: '👨‍👩‍👧' },
-  { label: 'Bạn bè', emoji: '👫' },
-  { label: 'Sức khỏe', emoji: '💪' },
-  { label: 'Học tập', emoji: '📚' },
-  { label: 'Tự nhiên', emoji: '🌿' },
-  { label: 'Âm nhạc', emoji: '🎵' },
+
+// Deep reflection prompts instead of simple tags
+const REFLECTIVE_PROMPTS = [
+  "Điều gì đã khiến bạn mỉm cười hôm nay?",
+  "Một bài học nhỏ bạn nhận ra từ khó khăn?",
+  "Ai đó đã giúp đỡ bạn thầm lặng?",
+  "Một vẻ đẹp của thiên nhiên bạn đã để ý?",
+  "Một món ăn ngon mà bạn đã thưởng thức?",
+  "Một việc tốt bạn đã làm cho người khác?",
+  "Một khoảnh khắc bình yên trong ngày?",
+  "Một kỹ năng cá nhân bạn đang tiến bộ?",
 ];
 
-// Sparkline component
-function Sparkline({ entries, days = 14 }) {
-  const data = useMemo(() => {
-    const today = new Date();
-    const arr = [];
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(today.getDate() - i);
-      const key = toDayStr(d);
-      const has = entries.some((e) => toDayStr(new Date(e.date)) === key);
-      arr.push({ day: key, v: has ? 1 : 0 });
-    }
-    return arr;
-  }, [entries, days]);
+// Garden Visual Assets (Simple Emoji/SVG representation for now)
+const FLOWERS = ['🌻', '🌷', '🪷', '🌹', '🌺', '🌸', '🌼', '💐'];
+const TREES = ['🌱', '🪴', '🌳', '🌲']; // Levels of growth
 
-  return (
-    <div className="flex items-end gap-1 h-8">
-      {data.map((d, i) => (
-        <motion.div
-          key={d.day}
-          className={`w-2 rounded-full transition-colors ${d.v ? 'bg-gradient-to-t from-[--brand] to-[--brand-light]' : 'bg-[--surface-border]'}`}
-          initial={{ height: 4 }}
-          animate={{ height: d.v ? 24 : 8 }}
-          transition={{ delay: i * 0.03 }}
-        />
-      ))}
-    </div>
-  );
+function getFlower(id) {
+  // Deterministic flower based on ID
+  return FLOWERS[id % FLOWERS.length];
+}
+
+function getTreeLevel(streak) {
+  if (streak < 3) return 0; // Sprout
+  if (streak < 10) return 1; // Pot
+  if (streak < 30) return 2; // Tree
+  return 3; // Old Tree
 }
 
 // Entry card component
@@ -62,10 +52,10 @@ function EntryCard({ entry, style }) {
       whileHover={{ scale: 1.02, rotate: 0, y: -4 }}
       transition={{ duration: 0.3 }}
     >
-      <Card variant="interactive" className="relative overflow-hidden">
-        {/* Decorative gradient */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[--brand] via-[--secondary] to-[--accent]" />
-
+      <Card variant="interactive" className="relative overflow-hidden group">
+        <div className="absolute top-2 right-2 opacity-20 group-hover:opacity-100 transition-opacity text-2xl">
+          {getFlower(entry.id)}
+        </div>
         <div className="p-4">
           <div className="flex items-center justify-between text-xs text-[--muted] mb-3">
             <div className="flex items-center gap-2">
@@ -87,13 +77,74 @@ function EntryCard({ entry, style }) {
   );
 }
 
+// MIND GARDEN COMPONENT
+function MindGardenView({ entries, streak }) {
+  const treeLevel = getTreeLevel(streak);
+  const TreeIcon = TREES[treeLevel];
+
+  // Visualize last 20 entries as flowers
+  const gardenEntries = entries.slice(-20);
+
+  return (
+    <Card variant="gradient" className="min-h-[300px] relative overflow-hidden flex flex-col items-center justify-end pb-8">
+      {/* Sky & Sun */}
+      <div className="absolute top-4 right-8">
+        <motion.div
+          className="text-6xl"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
+        >
+          ☀️
+        </motion.div>
+      </div>
+
+      {/* Main Tree (Streak) */}
+      <motion.div
+        className="relative z-10 text-[8rem] md:text-[10rem] drop-shadow-2xl mb-4 text-center"
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring' }}
+      >
+        {TreeIcon}
+        <div className="text-base font-bold bg-white/80 backdrop-blur px-3 py-1 rounded-full absolute -bottom-4 left-1/2 -translate-x-1/2 shadow-sm whitespace-nowrap">
+          Cấp độ {treeLevel + 1}
+        </div>
+      </motion.div>
+
+      {/* Grass Field */}
+      <div className="w-full flex flex-wrap justify-center items-end gap-2 px-4 z-20 mt-8">
+        {gardenEntries.map((e, i) => (
+          <motion.div
+            key={e.id}
+            className="text-3xl cursor-help relative group"
+            initial={{ scale: 0, y: 50 }}
+            animate={{ scale: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+            whileHover={{ scale: 1.5, y: -10 }}
+            title={e.text}
+          >
+            {getFlower(e.id)}
+            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-black/80 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+              {e.text.slice(0, 60)}...
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Ground */}
+      <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-green-500/20 to-transparent" />
+    </Card>
+  );
+}
+
 export default function GratitudeJar() {
   const [entries, setEntries] = useState([]);
   const [text, setText] = useState('');
   const [tag, setTag] = useState('');
   const [filter, setFilter] = useState('');
-  const [filterTag, setFilterTag] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [viewMode, setViewMode] = useState('garden'); // 'garden' || 'list'
+  const [prompt, setPrompt] = useState(REFLECTIVE_PROMPTS[0]);
 
   // Load from localStorage
   useEffect(() => {
@@ -127,6 +178,12 @@ export default function GratitudeJar() {
     setText('');
     setTag('');
     setShowForm(false);
+    shufflePrompt();
+  };
+
+  const shufflePrompt = () => {
+    const random = REFLECTIVE_PROMPTS[Math.floor(Math.random() * REFLECTIVE_PROMPTS.length)];
+    setPrompt(random);
   };
 
   const exportJSON = () => {
@@ -141,25 +198,13 @@ export default function GratitudeJar() {
 
   const streak = useMemo(() => computeStreakFromEntries(entries), [entries]);
 
-  const allTags = useMemo(() =>
-    Array.from(new Set(entries.map((e) => e.tag).filter(Boolean))),
-    [entries]
-  );
-
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
-    const tg = filterTag.trim().toLowerCase();
     return entries
       .filter((e) => (q ? e.text.toLowerCase().includes(q) : true))
-      .filter((e) => (tg ? (e.tag || '').toLowerCase() === tg : true))
       .slice()
       .reverse();
-  }, [entries, filter, filterTag]);
-
-  // Random rotation for cards
-  const getCardStyle = (idx) => ({
-    rotate: (idx % 2 === 0 ? 1 : -1) * (Math.random() * 1.5),
-  });
+  }, [entries, filter]);
 
   return (
     <div className="min-h-[70vh] relative">
@@ -167,217 +212,127 @@ export default function GratitudeJar() {
 
       <div className="relative z-10 max-w-5xl mx-auto space-y-6">
         {/* Header */}
-        <motion.div
-          className="flex flex-col md:flex-row md:items-center justify-between gap-4"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
               <span className="text-3xl">🏺</span>
-              <span className="gradient-text">Lọ Biết Ơn</span>
+              <span className="gradient-text">Vườn Tâm Trí</span>
             </h1>
             <p className="text-[--muted] text-sm mt-1">
-              Ghi lại những điều tốt đẹp mỗi ngày
+              Nuôi dưỡng khu vườn tâm hồn bằng lòng biết ơn mỗi ngày
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
-            <Sparkline entries={entries} />
-            <Badge variant="primary" icon={<Flame size={14} />} size="lg">
-              {streak} ngày streak
-            </Badge>
+          <div className="flex items-center gap-4 bg-white/50 backdrop-blur rounded-2xl p-1 border border-[--surface-border]">
+            <button
+              onClick={() => setViewMode('garden')}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${viewMode === 'garden' ? 'bg-white shadow text-[--brand]' : 'text-[--muted] hover:text-[--text]'}`}
+            >
+              Khu vườn
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-white shadow text-[--brand]' : 'text-[--muted] hover:text-[--text]'}`}
+            >
+              Nhật ký
+            </button>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Add New Entry */}
-        <Card variant="highlight" size="lg">
-          <AnimatePresence mode="wait">
-            {!showForm ? (
-              <motion.div
-                key="collapsed"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center justify-between"
+        {/* VIEW: GARDEN */}
+        {viewMode === 'garden' && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <MindGardenView entries={entries} streak={streak} />
+            <div className="mt-4 flex justify-between items-center px-4">
+              <div className="text-sm text-[--muted]">
+                Streak hiện tại: <span className="font-bold text-[--brand]">{streak} ngày</span> 🔥
+              </div>
+              <Button
+                size="lg"
+                onClick={() => setShowForm(true)}
+                className="shadow-xl"
+                icon={<Plus size={18} />}
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[--accent] to-orange-500 flex items-center justify-center shadow-lg">
-                    <Heart className="w-6 h-6 text-white" fill="white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-[--text]">Hôm nay bạn biết ơn điều gì?</h3>
-                    <p className="text-xs text-[--muted]">Mỗi niềm biết ơn nhỏ tạo nên hạnh phúc lớn</p>
-                  </div>
-                </div>
-                <Button
-                  onClick={() => setShowForm(true)}
-                  icon={<Plus size={18} />}
-                >
-                  Viết ngay
-                </Button>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="expanded"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-              >
+                Gieo hạt giống mới
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* INPUT FORM (Modal or Expandable) */}
+        <AnimatePresence>
+          {showForm && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <Card variant="highlight" size="lg" className="border-2 border-[--brand]/20">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-[--text]">Điều biết ơn hôm nay</h3>
-                  <button
-                    onClick={() => setShowForm(false)}
-                    className="p-2 rounded-lg hover:bg-[--surface-border] text-[--muted]"
-                  >
-                    <X size={18} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="text-[--brand]" size={20} />
+                    <h3 className="font-semibold text-lg italic text-[--text-secondary]">"{prompt}"</h3>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={shufflePrompt} className="p-2 hover:bg-black/5 rounded-full" title="Đổi câu hỏi">
+                      <RefreshCw size={16} />
+                    </button>
+                    <button onClick={() => setShowForm(false)} className="p-2 hover:bg-black/5 rounded-full">
+                      <X size={16} />
+                    </button>
+                  </div>
                 </div>
 
                 <textarea
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  placeholder="Hôm nay mình biết ơn..."
-                  rows={3}
-                  className="w-full p-4 rounded-xl glass border-0 focus:ring-2 focus:ring-[--ring] resize-none text-[--text] placeholder:text-[--muted]"
+                  placeholder="Chia sẻ suy nghĩ của bạn..."
+                  rows={4}
+                  className="w-full p-4 rounded-xl glass border-0 focus:ring-2 focus:ring-[--ring] resize-none text-[--text] placeholder:text-[--muted] text-lg"
                   autoFocus
                 />
 
-                {/* Quick suggestions */}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {SUGGESTIONS.map((s) => (
-                    <Button
-                      key={s.label}
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setText((t) => (t ? `${t} ${s.label}` : s.label))}
-                    >
-                      {s.emoji} {s.label}
-                    </Button>
-                  ))}
+                <div className="mt-4 flex justify-end gap-3">
+                  <Button variant="ghost" onClick={() => setShowForm(false)}>Huỷ</Button>
+                  <Button onClick={addEntry} disabled={!text.trim()}>Lưu vào vườn</Button>
                 </div>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-                {/* Tag input */}
-                <div className="mt-4 flex items-center gap-3">
-                  <div className="flex-1 flex items-center gap-2 glass rounded-xl px-3 py-2">
-                    <Tag size={16} className="text-[--muted]" />
-                    <input
-                      value={tag}
-                      onChange={(e) => setTag(e.target.value)}
-                      placeholder="Thêm tag (tuỳ chọn)"
-                      className="flex-1 bg-transparent outline-none text-sm text-[--text] placeholder:text-[--muted]"
-                    />
-                  </div>
-                  <Button onClick={addEntry} disabled={!text.trim()}>
-                    Thêm vào lọ
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </Card>
-
-        {/* Filter & Search */}
-        <Card size="sm">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {/* Search */}
-            <div className="flex-1 flex items-center gap-2 glass rounded-xl px-3 py-2">
-              <Search size={16} className="text-[--muted]" />
-              <input
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                placeholder="Tìm kiếm..."
-                className="flex-1 bg-transparent outline-none text-sm text-[--text] placeholder:text-[--muted]"
-              />
-            </div>
-
-            {/* Tag filter */}
-            <div className="relative">
-              <div className="flex items-center gap-2 glass rounded-xl px-3 py-2 cursor-pointer">
-                <Filter size={16} className="text-[--muted]" />
-                <select
-                  value={filterTag}
-                  onChange={(e) => setFilterTag(e.target.value)}
-                  className="bg-transparent outline-none text-sm text-[--text] cursor-pointer pr-6 appearance-none"
-                >
-                  <option value="">Tất cả tags</option>
-                  {allTags.map((t) => (
-                    <option key={t} value={t}>#{t}</option>
-                  ))}
-                </select>
-                <ChevronDown size={14} className="absolute right-3 text-[--muted] pointer-events-none" />
-              </div>
-            </div>
-
-            {filterTag && (
-              <Button variant="ghost" size="sm" onClick={() => setFilterTag('')}>
-                Xoá lọc
-              </Button>
-            )}
-
-            {/* Export */}
-            <Button variant="outline" size="sm" onClick={exportJSON} icon={<Download size={16} />}>
-              Export
-            </Button>
-          </div>
-        </Card>
-
-        {/* Entries Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <AnimatePresence>
-            {filtered.map((e, idx) => (
-              <EntryCard key={e.id} entry={e} style={getCardStyle(idx)} />
-            ))}
-          </AnimatePresence>
-        </div>
-
-        {/* Empty state */}
-        {filtered.length === 0 && (
+        {/* VIEW: LIST */}
+        {viewMode === 'list' && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="space-y-4"
           >
-            <Card variant="gradient" size="lg" className="text-center">
-              <div className="text-5xl mb-4">✨</div>
-              <h3 className="text-xl font-semibold text-[--text] mb-2">
-                {entries.length === 0 ? 'Lọ đang trống' : 'Không tìm thấy kết quả'}
-              </h3>
-              <p className="text-[--muted] max-w-md mx-auto">
-                {entries.length === 0
-                  ? 'Hãy bắt đầu bằng việc viết một điều nhỏ bé mà bạn biết ơn hôm nay. Mỗi ngày một chút, lọ sẽ đầy những điều tốt đẹp!'
-                  : 'Thử tìm với từ khóa khác hoặc xoá bộ lọc.'}
-              </p>
-              {entries.length === 0 && (
-                <Button
-                  className="mt-6"
-                  onClick={() => setShowForm(true)}
-                  icon={<Plus size={18} />}
-                >
-                  Viết điều biết ơn đầu tiên
-                </Button>
-              )}
+            <Card size="sm">
+              <div className="flex items-center gap-2 glass rounded-xl px-3 py-2">
+                <Search size={16} className="text-[--muted]" />
+                <input
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  placeholder="Tìm kiếm ký ức..."
+                  className="flex-1 bg-transparent outline-none text-sm text-[--text] placeholder:text-[--muted]"
+                />
+              </div>
             </Card>
-          </motion.div>
-        )}
 
-        {/* Stats */}
-        {entries.length > 0 && (
-          <Card size="md" className="text-center">
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <div className="text-2xl font-bold gradient-text">{entries.length}</div>
-                <div className="text-xs text-[--muted]">Điều biết ơn</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold gradient-text">{streak}</div>
-                <div className="text-xs text-[--muted]">Ngày streak</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold gradient-text">{allTags.length}</div>
-                <div className="text-xs text-[--muted]">Chủ đề</div>
-              </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filtered.map((e, idx) => (
+                <EntryCard key={e.id} entry={e} style={{}} />
+              ))}
+              {filtered.length === 0 && (
+                <p className="text-center text-[--muted] col-span-full py-12">Chưa có ký ức nào.</p>
+              )}
             </div>
-          </Card>
+          </motion.div>
         )}
       </div>
     </div>
