@@ -7,7 +7,8 @@ import {
     handleLogin,
     handleCheckUsername,
     handleGetMe,
-    handleDeleteAccount
+    handleDeleteAccount,
+    adminResetPassword
 } from './auth.js';
 
 import {
@@ -204,6 +205,8 @@ function matchRoute(pathname, method) {
     if (pathname === '/api/admin/activity-data' && method === 'GET') return 'admin:activity-data';
     if (pathname === '/api/admin/chat-analytics' && method === 'GET') return 'admin:chat-analytics';
     if (pathname === '/api/admin/reports' && method === 'GET') return 'admin:reports';
+    if (pathname.match(/^\/api\/admin\/users\/\d+\/reset-password$/) && method === 'POST') return 'admin:users:reset-password';
+    if (pathname === '/api/admin/sync-logs' && method === 'GET') return 'admin:sync-logs';
 
     return null;
 }
@@ -533,7 +536,12 @@ export default {
                 case 'admin:comprehensive-stats':
                 case 'admin:activity-data':
                 case 'admin:chat-analytics':
+                case 'admin:chat-analytics':
                 case 'admin:reports':
+                case 'admin:users:reset-password':
+                case 'admin:sync-logs':
+                case 'admin:users:reset-password':
+                case 'admin:sync-logs':
                     // Verify JWT token for all admin routes
                     const adminAuthHeader = request.headers.get('Authorization');
                     if (!adminAuthHeader || !adminAuthHeader.startsWith('Bearer ')) {
@@ -872,6 +880,49 @@ export default {
                                 } catch (reportsError) {
                                     console.error('[Admin] reports error:', reportsError.message);
                                     response = json({ items: [], pendingCount: 0 });
+                                }
+                                break;
+
+                            case 'admin:users:reset-password':
+                                {
+                                    // extract user id from /api/admin/users/:id/reset-password
+                                    const match = url.pathname.match(/\/api\/admin\/users\/(\d+)\/reset-password/);
+                                    if (!match) {
+                                        response = json({ error: 'invalid_path' }, 400);
+                                        break;
+                                    }
+                                    response = await adminResetPassword(request, env, match[1]);
+                                }
+                                break;
+
+                            case 'admin:sync-logs':
+                                try {
+                                    const limit = Math.min(parseInt(url.searchParams.get('limit') || '50'), 100);
+                                    const offset = Math.max(parseInt(url.searchParams.get('offset') || '0'), 0);
+
+                                    // Get logs with user info
+                                    const logs = await env.ban_dong_hanh_db.prepare(`
+                                        SELECT sl.*, u.username, u.display_name 
+                                        FROM sync_logs sl
+                                        LEFT JOIN users u ON sl.user_id = u.id
+                                        ORDER BY sl.created_at DESC 
+                                        LIMIT ? OFFSET ?
+                                     `).bind(limit, offset).all();
+
+                                    // Get total count
+                                    const total = await env.ban_dong_hanh_db.prepare(
+                                        'SELECT COUNT(*) as count FROM sync_logs'
+                                    ).first();
+
+                                    response = json({
+                                        items: logs.results,
+                                        total: total.count || 0,
+                                        limit,
+                                        offset
+                                    });
+                                } catch (err) {
+                                    console.error('Error fetching sync logs:', err);
+                                    response = json({ items: [], total: 0, error: err.message });
                                 }
                                 break;
 

@@ -446,5 +446,44 @@ export async function handleDeleteAccount(request, env) {
     }
 }
 
+/**
+ * Admin reset password for user
+ * POST /api/admin/users/:id/reset-password
+ */
+export async function adminResetPassword(request, env, userId) {
+    // Note: Caller (router) must verify admin token BEFORE calling this
+    try {
+        const body = await request.json();
+        const { newPassword } = body;
+
+        if (!newPassword || newPassword.length < 4) {
+            return createJsonResponse({ error: 'invalid_password', message: 'Mật khẩu phải từ 4 ký tự' }, 400);
+        }
+
+        // Check if user exists
+        const user = await env.ban_dong_hanh_db.prepare(
+            'SELECT id FROM users WHERE id = ?'
+        ).bind(userId).first();
+
+        if (!user) {
+            return createJsonResponse({ error: 'user_not_found' }, 404);
+        }
+
+        // Hash new password
+        const { hash, salt } = await hashPassword(newPassword);
+
+        // Update DB
+        await env.ban_dong_hanh_db.prepare(
+            'UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?'
+        ).bind(hash, salt, userId).run();
+
+        return createJsonResponse({ success: true, message: 'Đã đặt lại mật khẩu thành công' });
+
+    } catch (error) {
+        console.error('[Auth] AdminResetPassword error:', error.message);
+        return createJsonResponse({ error: 'server_error', message: error.message }, 500);
+    }
+}
+
 // Export cho testing
 export { validateUsername, generateUsernameSuggestions };

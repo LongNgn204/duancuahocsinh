@@ -42,6 +42,21 @@ CREATE TABLE IF NOT EXISTS journal (
 CREATE INDEX IF NOT EXISTS idx_journal_user ON journal(user_id);
 CREATE INDEX IF NOT EXISTS idx_journal_date ON journal(created_at);
 
+-- Bảng sync_logs: ghi lại lịch sử đồng bộ dữ liệu
+CREATE TABLE IF NOT EXISTS sync_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  action TEXT NOT NULL, -- 'import', 'export', 'auto_sync'
+  details TEXT, -- JSON summary: {"gratitude": 5, "journal": 2}
+  status TEXT DEFAULT 'success', -- 'success', 'failed'
+  ip_address TEXT,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_sync_logs_user ON sync_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_sync_logs_date ON sync_logs(created_at);
+
 -- Bảng focus_sessions: lịch sử Pomodoro
 CREATE TABLE IF NOT EXISTS focus_sessions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

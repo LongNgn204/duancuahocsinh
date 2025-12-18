@@ -766,9 +766,41 @@ export async function importData(request, env) {
         }
 
         console.log('[Import] Successfully imported for user', userId, ':', imported);
+
+        // LOGGING: Save to sync_logs
+        try {
+            await env.ban_dong_hanh_db.prepare(
+                'INSERT INTO sync_logs (user_id, action, details, status, ip_address) VALUES (?, ?, ?, ?, ?)'
+            ).bind(
+                userId,
+                'import',
+                JSON.stringify(imported),
+                'success',
+                request.headers.get('CF-Connecting-IP') || 'unknown'
+            ).run();
+        } catch (logErr) {
+            console.error('[Import] Failed to save sync log:', logErr);
+        }
+
         return json({ success: true, imported });
     } catch (error) {
         console.error('[Data] importData error:', error.message);
+
+        // LOGGING: Save failed attempt if authenticated
+        if (getUserId(request)) {
+            try {
+                await env.ban_dong_hanh_db.prepare(
+                    'INSERT INTO sync_logs (user_id, action, details, status, ip_address) VALUES (?, ?, ?, ?, ?)'
+                ).bind(
+                    getUserId(request),
+                    'import',
+                    JSON.stringify({ error: error.message }),
+                    'failed',
+                    request.headers.get('CF-Connecting-IP') || 'unknown'
+                ).run();
+            } catch (ignore) { }
+        }
+
         return json({ error: 'server_error', message: error.message }, 500);
     }
 }

@@ -13,7 +13,7 @@ import {
     getForumStats, getAdminLogs, getBannedUsers, getForumPosts,
     deleteForumPost, toggleLockPost, banUser, unbanUser,
     adminLogin, isAdminLoggedIn, adminLogout, getSOSLogs, getAllUsers,
-    getChatMetrics
+    getChatMetrics, adminResetUserPassword, getSyncLogs
 } from '../utils/api';
 
 // =============================================================================
@@ -44,7 +44,8 @@ function AdminSidebar({ activeTab, setActiveTab, collapsed, setCollapsed }) {
         { id: 'users', label: 'Người dùng bị cấm', icon: Ban },
         { id: 'sos', label: 'SOS Logs', icon: AlertTriangle },
         { id: 'chat-metrics', label: 'Chat Analytics', icon: MessageSquare },
-        { id: 'logs', label: 'Nhật ký hoạt động', icon: Activity },
+        { id: 'logs', label: 'Nhật ký admin', icon: Activity },
+        { id: 'sync-logs', label: 'Lịch sử đồng bộ', icon: Database },
     ];
 
     const handleLogout = () => {
@@ -871,6 +872,22 @@ function AllUsersTab({ users, loading, onRefresh, sortBy, setSortBy }) {
         return null;
     };
 
+    const handleResetPassword = async (userId) => {
+        const newPassword = prompt(`Nhập mật khẩu mới cho user #${userId}:`);
+        if (!newPassword || newPassword.trim().length < 4) {
+            if (newPassword !== null) alert("Mật khẩu phải từ 4 ký tự!");
+            return;
+        }
+
+        try {
+            await adminResetUserPassword(userId, newPassword);
+            alert("Đã đặt lại mật khẩu thành công!");
+            onRefresh();
+        } catch (error) {
+            alert("Lỗi: " + error.message);
+        }
+    };
+
     return (
         <div className="space-y-4">
             {/* Filters */}
@@ -928,6 +945,7 @@ function AllUsersTab({ users, loading, onRefresh, sortBy, setSortBy }) {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nhật ký</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">SOS (7 ngày)</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hành động</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -971,6 +989,14 @@ function AllUsersTab({ users, loading, onRefresh, sortBy, setSortBy }) {
                                         </td>
                                         <td className="px-6 py-4">
                                             {getSupportBadge(user)}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <button
+                                                onClick={() => handleResetPassword(user.id)}
+                                                className="px-3 py-1 bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400 rounded-lg text-xs font-medium hover:bg-yellow-200 dark:hover:bg-yellow-900/60 transition-colors"
+                                            >
+                                                Reset Password
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
@@ -1317,6 +1343,112 @@ function LogItem({ log }) {
 }
 
 // =============================================================================
+// SYNC LOGS TAB
+// =============================================================================
+
+function SyncLogsTab() {
+    const [logs, setLogs] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [total, setTotal] = useState(0);
+    const [page, setPage] = useState(1);
+    const limit = 20;
+
+    useEffect(() => {
+        loadLogs();
+    }, [page]);
+
+    const loadLogs = async () => {
+        setLoading(true);
+        try {
+            const offset = (page - 1) * limit;
+            const result = await getSyncLogs(limit, offset);
+            setLogs(result.items || []);
+            setTotal(result.total || 0);
+        } catch (error) {
+            console.error("Load sync logs error:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const StatusBadge = ({ status }) => {
+        if (status === 'success') return <span className="text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-xs px-2 py-1 rounded">Thành công</span>;
+        return <span className="text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400 text-xs px-2 py-1 rounded">Thất bại</span>;
+    };
+
+    return (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <Database className="w-5 h-5 text-blue-500" />
+                    Lịch sử đồng bộ ({total})
+                </h3>
+                <button onClick={loadLogs} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                </button>
+            </div>
+
+            <div className="overflow-x-auto">
+                <table className="w-full">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thời gian</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hành động</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Chi tiết</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                        {logs.length === 0 ? (
+                            <tr><td colSpan={6} className="text-center py-8 text-gray-500">Chưa có dữ liệu</td></tr>
+                        ) : (
+                            logs.map(log => (
+                                <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                    <td className="px-6 py-4 text-sm text-gray-500">{formatDate(log.created_at)}</td>
+                                    <td className="px-6 py-4 text-sm">
+                                        <div className="font-medium">{log.display_name || log.username || `#${log.user_id}`}</div>
+                                        {log.username && <div className="text-xs text-gray-400">@{log.username}</div>}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm">{log.action}</td>
+                                    <td className="px-6 py-4"><StatusBadge status={log.status} /></td>
+                                    <td className="px-6 py-4 text-sm text-gray-500">{log.ip_address}</td>
+                                    <td className="px-6 py-4 text-xs text-gray-400 font-mono max-w-xs truncate">
+                                        {log.details}
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Pagination */}
+            {total > limit && (
+                <div className="flex justify-center mt-6 gap-2">
+                    <button
+                        disabled={page === 1}
+                        onClick={() => setPage(p => p - 1)}
+                        className="px-3 py-1 border rounded disabled:opacity-50"
+                    >
+                        Trước
+                    </button>
+                    <span className="px-3 py-1">Trang {page} / {Math.ceil(total / limit)}</span>
+                    <button
+                        disabled={page >= Math.ceil(total / limit)}
+                        onClick={() => setPage(p => p + 1)}
+                        className="px-3 py-1 border rounded disabled:opacity-50"
+                    >
+                        Sau
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
+
+// =============================================================================
 // MAIN ADMIN DASHBOARD
 // =============================================================================
 
@@ -1541,7 +1673,9 @@ export default function AdminDashboard() {
                                 {activeTab === 'users' && 'Người dùng bị cấm'}
                                 {activeTab === 'sos' && 'SOS Logs'}
                                 {activeTab === 'chat-metrics' && 'Chat Analytics'}
-                                {activeTab === 'logs' && 'Nhật ký hoạt động'}
+
+                                {activeTab === 'logs' && 'Nhật ký admin'}
+                                {activeTab === 'sync-logs' && 'Lịch sử đồng bộ'}
                             </h1>
                             <p className="text-sm text-indigo-600/70 dark:text-indigo-300/70 font-medium">
                                 Quản trị forum Bạn Đồng Hành
@@ -1645,6 +1779,16 @@ export default function AdminDashboard() {
                                 exit={{ opacity: 0, y: -10 }}
                             >
                                 <LogsTab logs={logs} />
+                            </motion.div>
+                        )}
+                        {activeTab === 'sync-logs' && (
+                            <motion.div
+                                key="sync-logs"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                            >
+                                <SyncLogsTab />
                             </motion.div>
                         )}
                     </AnimatePresence>

@@ -668,6 +668,17 @@ export async function toggleLockPost(postId) {
     return adminApiRequest(`/api/forum/post/${postId}/lock`, { method: 'POST' });
 }
 
+export async function adminResetUserPassword(userId, newPassword) {
+    return adminApiRequest(`/api/admin/users/${userId}/reset-password`, {
+        method: 'POST',
+        body: JSON.stringify({ newPassword }),
+    });
+}
+
+export async function getSyncLogs(limit = 50, offset = 0) {
+    return adminApiRequest(`/api/admin/sync-logs?limit=${limit}&offset=${offset}`);
+}
+
 // =============================================================================
 // SYNC HELPER - Enhanced Auto-Sync
 // =============================================================================
