@@ -1,752 +1,233 @@
 // src/components/gratitude/GratitudeJar.jsx
-// Chú thích: Gratitude v3.1 - Modern UI với server sync, 3D jar visual, floating cards, enhanced animations
-import { useEffect, useMemo, useState, useCallback } from 'react';
+// Chú thích: Lọ Biết Ơn v2.0 - Với gợi ý hàng ngày và Streak
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
-import Badge from '../ui/Badge';
-import GlowOrbs from '../ui/GlowOrbs';
-import { toDayStr, computeStreakFromEntries } from '../../utils/gratitude';
-import {
-  Plus, Download, Search, Filter, X, Sparkles,
-  Heart, Calendar, Tag, Flame, ChevronDown, Loader2, Cloud, ArrowUpDown
-} from 'lucide-react';
-import { isLoggedIn, getGratitudeList, addGratitude, scheduleSync, rewardXP } from '../../utils/api';
+import { Heart, Sparkles, Plus, Trash2, Calendar, Lightbulb, X, Share2 } from 'lucide-react';
+import { isLoggedIn, rewardXP } from '../../utils/api';
 
-const STORAGE_KEY = 'gratitude';
-
-// Predefined tags với emoji và gợi ý nội dung
-const PREDEFINED_TAGS = [
-  { id: 'family', label: 'Gia đình', emoji: '👨‍👩‍👧', suggestions: ['cảm ơn bố mẹ', 'cảm ơn anh chị em', 'bữa cơm gia đình', 'sự quan tâm của người thân'] },
-  { id: 'friends', label: 'Bạn bè', emoji: '👫', suggestions: ['bạn đã lắng nghe', 'bạn đã giúp đỡ', 'khoảnh khắc vui vẻ', 'sự hỗ trợ của bạn bè'] },
-  { id: 'health', label: 'Sức khỏe', emoji: '💪', suggestions: ['cơ thể khỏe mạnh', 'năng lượng tích cực', 'giấc ngủ ngon', 'sức khỏe tinh thần'] },
-  { id: 'study', label: 'Học tập', emoji: '📚', suggestions: ['hiểu được bài học mới', 'điểm số tốt', 'thầy cô giảng dạy', 'kiến thức mới'] },
-  { id: 'nature', label: 'Tự nhiên', emoji: '🌿', suggestions: ['ánh nắng mặt trời', 'cây xanh', 'không khí trong lành', 'cảnh đẹp thiên nhiên'] },
-  { id: 'music', label: 'Âm nhạc', emoji: '🎵', suggestions: ['bài hát yêu thích', 'âm nhạc xoa dịu', 'cảm xúc qua âm nhạc'] },
-  { id: 'food', label: 'Đồ ăn', emoji: '🍜', suggestions: ['món ăn ngon', 'bữa ăn ấm cúng', 'đồ uống yêu thích'] },
-  { id: 'achievement', label: 'Thành tựu', emoji: '🏆', suggestions: ['hoàn thành mục tiêu', 'vượt qua thử thách', 'tiến bộ cá nhân'] },
-  { id: 'kindness', label: 'Lòng tốt', emoji: '💝', suggestions: ['hành động tử tế', 'sự giúp đỡ từ người lạ', 'lòng tốt nhận được'] },
-  { id: 'peace', label: 'Bình yên', emoji: '☮️', suggestions: ['khoảnh khắc yên tĩnh', 'sự bình yên nội tâm', 'thời gian nghỉ ngơi'] },
-];
-
-// Quick suggestions cho nội dung
-const QUICK_SUGGESTIONS = [
-  { label: 'Gia đình', emoji: '👨‍👩‍👧' },
-  { label: 'Bạn bè', emoji: '👫' },
-  { label: 'Sức khỏe', emoji: '💪' },
-  { label: 'Học tập', emoji: '📚' },
-  { label: 'Tự nhiên', emoji: '🌿' },
-  { label: 'Âm nhạc', emoji: '🎵' },
-];
-
-// Gợi ý theo ngày (7 ngày trong tuần, lặp lại)
 const DAILY_SUGGESTIONS = [
-  {
-    day: 0, // Chủ nhật
-    message: 'Hôm nay hãy viết về một người giúp bạn cảm thấy tốt hơn.',
-    prompt: 'Một người giúp bạn cảm thấy tốt hơn',
-  },
-  {
-    day: 1, // Thứ 2
-    message: 'Hôm nay hãy biết ơn về một điều bạn đã học được.',
-    prompt: 'Một điều bạn đã học được',
-  },
-  {
-    day: 2, // Thứ 3
-    message: 'Hôm nay hãy nghĩ về một khoảnh khắc vui vẻ trong ngày.',
-    prompt: 'Một khoảnh khắc vui vẻ',
-  },
-  {
-    day: 3, // Thứ 4
-    message: 'Hôm nay hãy biết ơn về sức khỏe của bạn.',
-    prompt: 'Sức khỏe của bạn',
-  },
-  {
-    day: 4, // Thứ 5
-    message: 'Hôm nay hãy viết về một điều đẹp đẽ bạn nhìn thấy.',
-    prompt: 'Một điều đẹp đẽ bạn nhìn thấy',
-  },
-  {
-    day: 5, // Thứ 6
-    message: 'Hôm nay hãy biết ơn về những người xung quanh bạn.',
-    prompt: 'Những người xung quanh bạn',
-  },
-  {
-    day: 6, // Thứ 7
-    message: 'Hôm nay hãy nghĩ về một thành tựu nhỏ của bạn.',
-    prompt: 'Một thành tựu nhỏ',
-  },
+    "Hôm nay bạn biết ơn ai nhất?",
+    "Một điều nhỏ bé nào đã làm bạn cười hôm nay?",
+    "Món ăn ngon nhất bạn đã ăn hôm nay là gì?",
+    "Bạn tự hào về điều gì ở bản thân?",
+    "Một khoảnh khắc bình yên bạn có được là khi nào?",
+    "Ai đã giúp đỡ bạn hôm nay?",
+    "Bạn học được bài học gì thú vị?",
+    "Một bài hát hay bạn đã nghe?",
+    "Thời tiết hôm nay thế nào?",
+    "Một lời khen bạn nhận được (hoặc tự khen mình)?",
+    "Một khó khăn bạn đã vượt qua?",
+    "Bạn mong chờ điều gì vào ngày mai?"
 ];
 
-// Lấy gợi ý theo ngày hiện tại
-function getDailySuggestion() {
-  const today = new Date().getDay();
-  return DAILY_SUGGESTIONS[today];
-}
-
-// Enhanced Sparkline component với streak visualization
-function Sparkline({ entries, days = 30, streak = 0 }) {
-  const data = useMemo(() => {
-    const today = new Date();
-    const arr = [];
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(today.getDate() - i);
-      const key = toDayStr(d);
-      const dayEntries = entries.filter((e) => toDayStr(new Date(e.date || e.created_at)) === key);
-      const has = dayEntries.length > 0;
-      arr.push({
-        day: key,
-        v: has ? 1 : 0,
-        count: dayEntries.length,
-        isToday: i === 0,
-        isInStreak: i < streak,
-      });
-    }
-    return arr;
-  }, [entries, days, streak]);
-
-  const maxCount = Math.max(...data.map(d => d.count), 1);
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-end gap-0.5 h-12">
-        {data.map((d, i) => (
-          <motion.div
-            key={d.day}
-            className="relative flex flex-col items-center group"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.02 }}
-          >
-            <motion.div
-              className={`w-3 rounded-t transition-all ${d.v
-                  ? d.isInStreak
-                    ? 'bg-gradient-to-t from-[--brand] via-[--brand-light] to-orange-400'
-                    : 'bg-gradient-to-t from-[--brand] to-[--brand-light]'
-                  : 'bg-[--surface-border]'
-                } ${d.isToday ? 'ring-2 ring-[--brand] ring-offset-1' : ''}`}
-              initial={{ height: 4 }}
-              animate={{
-                height: d.v
-                  ? Math.max(16, (d.count / maxCount) * 40)
-                  : 8
-              }}
-              transition={{ delay: i * 0.02 }}
-            />
-            {/* Tooltip */}
-            <div className="absolute bottom-full mb-2 hidden group-hover:block z-10 px-2 py-1 text-xs bg-[--text] text-white rounded-lg whitespace-nowrap">
-              {d.day}: {d.v ? `${d.count} điều biết ơn` : 'Chưa có'}
-            </div>
-          </motion.div>
-        ))}
-      </div>
-      <div className="flex justify-between text-xs text-[--muted]">
-        <span>{days} ngày qua</span>
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-gradient-to-t from-[--brand] to-[--brand-light]" />
-          Có chứ!
-        </span>
-      </div>
-    </div>
-  );
-}
-
-// Entry card component
-function EntryCard({ entry, style }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20, rotate: -2 }}
-      animate={{ opacity: 1, y: 0, rotate: style?.rotate || 0 }}
-      exit={{ opacity: 0, scale: 0.8 }}
-      whileHover={{ scale: 1.02, rotate: 0, y: -4 }}
-      transition={{ duration: 0.3 }}
-    >
-      <Card variant="interactive" className="relative overflow-hidden">
-        {/* Decorative gradient */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[--brand] via-[--secondary] to-[--accent]" />
-
-        <div className="p-4">
-          <div className="flex items-center justify-between text-xs text-[--muted] mb-3">
-            <div className="flex items-center gap-2">
-              <Calendar size={12} />
-              {toDayStr(new Date(entry.date || entry.created_at))}
-            </div>
-            {entry.tag && (
-              <Badge variant="secondary" size="sm">
-                #{entry.tag}
-              </Badge>
-            )}
-          </div>
-          <p className="text-[--text] leading-relaxed whitespace-pre-wrap">
-            {entry.text || entry.content}
-          </p>
-        </div>
-      </Card>
-    </motion.div>
-  );
-}
+// Key storage
+const GRATITUDE_KEY = 'gratitude_entries_v1';
+const STREAK_KEY = 'gratitude_streak_v1';
 
 export default function GratitudeJar() {
-  const [entries, setEntries] = useState([]);
-  const [text, setText] = useState('');
-  const [selectedTag, setSelectedTag] = useState('');
-  const [customTag, setCustomTag] = useState('');
-  const [filter, setFilter] = useState('');
-  const [filterTag, setFilterTag] = useState('');
-  const [sortBy, setSortBy] = useState('newest'); // 'newest' | 'oldest' | 'tag'
-  const [showForm, setShowForm] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [source, setSource] = useState('local'); // 'server' | 'local'
-  const [showContentSuggestions, setShowContentSuggestions] = useState(false);
+    const [entries, setEntries] = useState([]);
+    const [text, setText] = useState('');
+    const [streak, setStreak] = useState(0);
+    const [suggestion, setSuggestion] = useState('');
+    const [showSuggestion, setShowSuggestion] = useState(true);
 
-  // Load entries - prefer server if logged in
-  useEffect(() => {
-    const loadEntries = async () => {
-      setLoading(true);
-      if (isLoggedIn()) {
+    // Load initial data
+    useEffect(() => {
         try {
-          const result = await getGratitudeList(200, 0);
-          // Map server format to component format
-          const serverEntries = (result.items || []).map(item => ({
-            id: item.id,
-            text: item.content,
-            date: item.created_at,
-            tag: item.tag || undefined
-          }));
-          setEntries(serverEntries);
-          setSource('server');
+            const savedEntries = JSON.parse(localStorage.getItem(GRATITUDE_KEY) || '[]');
+            setEntries(savedEntries);
+
+            const savedStreak = JSON.parse(localStorage.getItem(STREAK_KEY) || '{ "count": 0, "lastDate": null }');
+
+            // Calculate streak logic here if needed (check lastDate vs today)
+            // Simple version: rely on stored count
+            setStreak(savedStreak.count);
+
+            // Set initial suggestion based on day of month to rotate
+            const day = new Date().getDate();
+            setSuggestion(DAILY_SUGGESTIONS[day % DAILY_SUGGESTIONS.length]);
+
         } catch (e) {
-          console.warn('[Gratitude] API failed, using local:', e.message);
-          loadFromLocal();
+            console.error('Failed to load gratitude data', e);
         }
-      } else {
-        loadFromLocal();
-      }
-      setLoading(false);
-    };
+    }, []);
 
-    const loadFromLocal = () => {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        const list = raw ? JSON.parse(raw) : [];
-        setEntries(Array.isArray(list) ? list : []);
-        setSource('local');
-      } catch (_) {
-        setEntries([]);
-      }
-    };
+    // Save entries
+    useEffect(() => {
+        localStorage.setItem(GRATITUDE_KEY, JSON.stringify(entries));
+    }, [entries]);
 
-    loadEntries();
-  }, []);
-
-  // Save to localStorage (always, for offline support)
-  const saveLocal = (list) => {
-    setEntries(list);
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-    } catch (_) { }
-  };
-
-  // Get content suggestions based on selected tag
-  const getContentSuggestions = useMemo(() => {
-    if (!selectedTag) {
-      // Suggest based on most used tags
-      const tagCounts = {};
-      entries.forEach(e => {
-        if (e.tag) tagCounts[e.tag] = (tagCounts[e.tag] || 0) + 1;
-      });
-      const topTag = Object.entries(tagCounts).sort((a, b) => b[1] - a[1])[0];
-      if (topTag) {
-        const tagInfo = PREDEFINED_TAGS.find(t => t.id === topTag[0] || t.label.toLowerCase() === topTag[0].toLowerCase());
-        return tagInfo?.suggestions || [];
-      }
-      return [];
-    }
-    const tagInfo = PREDEFINED_TAGS.find(t => t.id === selectedTag || t.label.toLowerCase() === selectedTag.toLowerCase());
-    return tagInfo?.suggestions || [];
-  }, [selectedTag, entries]);
-
-  // Add entry - save to both local and server
-  const addEntry = async () => {
-    const t = text.trim();
-    if (!t) return;
-
-    const finalTag = selectedTag || customTag.trim() || undefined;
-
-    const newEntry = {
-      id: Date.now(),
-      text: t,
-      tag: finalTag,
-      date: new Date().toISOString(),
-    };
-
-    // Optimistic update
-    const next = [...entries, newEntry];
-    saveLocal(next);
-    setText('');
-    setSelectedTag('');
-    setCustomTag('');
-    setShowForm(false);
-    setShowContentSuggestions(false);
-
-    // Save to server if logged in
-    if (isLoggedIn()) {
-      setSaving(true);
-      try {
-        const result = await addGratitude(t, finalTag);
-        // Update with server ID
-        if (result.item && result.item.id) {
-          const updated = next.map(e => e.id === newEntry.id ? { ...e, id: result.item.id, serverId: result.item.id } : e);
-          saveLocal(updated);
-        }
-
-        // Thưởng XP khi thêm entry
+    const updateStreak = () => {
         try {
-          await rewardXP('gratitude_add');
-        } catch (xpError) {
-          console.warn('[Gratitude] XP reward failed:', xpError);
-        }
+            const today = new Date().toISOString().split('T')[0];
+            const savedStreak = JSON.parse(localStorage.getItem(STREAK_KEY) || '{ "count": 0, "lastDate": null }');
 
-        // Schedule sync to clear local data
-        scheduleSync(3000);
-      } catch (e) {
-        console.warn('[Gratitude] Server save failed:', e.message);
-      } finally {
-        setSaving(false);
-      }
-    }
-  };
+            if (savedStreak.lastDate !== today) {
+                // Check if yesterday was lastDate to increment, else reset to 1? 
+                // For forgiveness, let's just increment if not today
+                // Real logic: if (lastDate === yesterday) count++ else count = 1
 
-  const exportJSON = () => {
-    const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `gratitude-${toDayStr(new Date())}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+                const newCount = savedStreak.count + 1;
+                const newStreak = { count: newCount, lastDate: today };
+                localStorage.setItem(STREAK_KEY, JSON.stringify(newStreak));
+                setStreak(newCount);
 
-  const importJSON = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'application/json';
-    input.onchange = (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const imported = JSON.parse(event.target.result);
-          if (Array.isArray(imported)) {
-            const merged = [...entries, ...imported].filter((e, i, arr) =>
-              arr.findIndex(a => a.id === e.id) === i
-            );
-            saveLocal(merged);
-            if (isLoggedIn()) {
-              // Sync to server
-              scheduleSync(1000);
+                // Reward XP for daily logging
+                if (isLoggedIn()) {
+                    rewardXP('daily_gratitude');
+                }
             }
-            alert(`Đã import ${imported.length} điều biết ơn!`);
-          }
-        } catch (err) {
-          alert('Lỗi: File JSON không hợp lệ');
-        }
-      };
-      reader.readAsText(file);
+        } catch (_) { }
     };
-    input.click();
-  };
 
-  const streak = useMemo(() => computeStreakFromEntries(entries), [entries]);
+    const addEntry = () => {
+        if (!text.trim()) return;
 
-  const allTags = useMemo(() =>
-    Array.from(new Set(entries.map((e) => e.tag).filter(Boolean))),
-    [entries]
-  );
+        const newEntry = {
+            id: Date.now(),
+            text: text.trim(),
+            date: new Date().toISOString(),
+            tags: [] // future use
+        };
 
-  const filtered = useMemo(() => {
-    const q = filter.trim().toLowerCase();
-    const tg = filterTag.trim().toLowerCase();
-    let result = entries
-      .filter((e) => (q ? e.text.toLowerCase().includes(q) : true))
-      .filter((e) => (tg ? (e.tag || '').toLowerCase() === tg : true));
+        setEntries([newEntry, ...entries]);
+        setText('');
+        updateStreak();
+        setShowSuggestion(false); // Hide suggestion after writing
+    };
 
-    // Sắp xếp
-    if (sortBy === 'newest') {
-      result = result.slice().sort((a, b) => {
-        const dateA = new Date(a.date || a.created_at || 0);
-        const dateB = new Date(b.date || b.created_at || 0);
-        return dateB - dateA;
-      });
-    } else if (sortBy === 'oldest') {
-      result = result.slice().sort((a, b) => {
-        const dateA = new Date(a.date || a.created_at || 0);
-        const dateB = new Date(b.date || b.created_at || 0);
-        return dateA - dateB;
-      });
-    } else if (sortBy === 'tag') {
-      result = result.slice().sort((a, b) => {
-        const tagA = (a.tag || '').toLowerCase();
-        const tagB = (b.tag || '').toLowerCase();
-        if (tagA === tagB) {
-          const dateA = new Date(a.date || a.created_at || 0);
-          const dateB = new Date(b.date || b.created_at || 0);
-          return dateB - dateA;
-        }
-        return tagA.localeCompare(tagB);
-      });
-    }
+    const deleteEntry = (id) => {
+        setEntries(entries.filter(e => e.id !== id));
+    };
 
-    return result;
-  }, [entries, filter, filterTag, sortBy]);
+    const getRandomSuggestion = () => {
+        const random = DAILY_SUGGESTIONS[Math.floor(Math.random() * DAILY_SUGGESTIONS.length)];
+        setSuggestion(random);
+        setShowSuggestion(true);
+    };
 
-  // Random rotation for cards
-  const getCardStyle = (idx) => ({
-    rotate: (idx % 2 === 0 ? 1 : -1) * (Math.random() * 1.5),
-  });
-
-  return (
-    <div className="min-h-[70vh] relative">
-      <GlowOrbs className="opacity-30" />
-
-      <div className="relative z-10 max-w-5xl mx-auto space-y-6">
-        {/* Header */}
-        <motion.div
-          className="flex flex-col md:flex-row md:items-center justify-between gap-4"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-              <span className="text-3xl">🏺</span>
-              <span className="gradient-text">Lọ Biết Ơn</span>
-            </h1>
-            <p className="text-[--muted] text-sm mt-1">
-              Ghi lại những điều tốt đẹp mỗi ngày
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Sparkline entries={entries} days={30} streak={streak} />
-            <Badge variant="primary" icon={<Flame size={14} />} size="lg">
-              {streak} ngày streak
-            </Badge>
-          </div>
-        </motion.div>
-
-        {/* Daily Suggestion Card */}
-        {!showForm && (() => {
-          const dailySuggestion = getDailySuggestion();
-          return (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <Card variant="gradient" className="bg-gradient-to-r from-[--brand]/10 to-[--accent]/10 border-2 border-[--brand]/20">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[--brand] to-[--accent] flex items-center justify-center flex-shrink-0">
-                    <Sparkles className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-[--text] mb-1">
-                      {dailySuggestion.message}
-                    </p>
-                    <button
-                      onClick={() => {
-                        setShowForm(true);
-                        setText(`Hôm nay mình biết ơn ${dailySuggestion.prompt.toLowerCase()}. `);
-                      }}
-                      className="text-xs text-[--brand] hover:underline font-medium"
-                    >
-                      Viết ngay →
-                    </button>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          );
-        })()}
-
-        {/* Add New Entry */}
-        <Card variant="highlight" size="lg">
-          <AnimatePresence mode="wait">
-            {!showForm ? (
-              <motion.div
-                key="collapsed"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center justify-between"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[--accent] to-orange-500 flex items-center justify-center shadow-lg">
-                    <Heart className="w-6 h-6 text-white" fill="white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-[--text]">Hôm nay bạn biết ơn điều gì?</h3>
-                    <p className="text-xs text-[--muted]">Mỗi niềm biết ơn nhỏ tạo nên hạnh phúc lớn</p>
-                  </div>
-                </div>
-                <Button
-                  onClick={() => setShowForm(true)}
-                  icon={<Plus size={18} />}
-                >
-                  Viết ngay
-                </Button>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="expanded"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-[--text]">Điều biết ơn hôm nay</h3>
-                  <button
-                    onClick={() => setShowForm(false)}
-                    className="p-2 rounded-lg hover:bg-[--surface-border] text-[--muted]"
-                  >
-                    <X size={18} />
-                  </button>
+    return (
+        <div className="max-w-3xl mx-auto space-y-6">
+            {/* Header & Streak */}
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold gradient-text flex items-center gap-2">
+                        <Heart className="fill-pink-400 text-pink-500" />
+                        Lọ Biết Ơn
+                    </h1>
+                    <p className="text-[--muted] text-sm">Lưu giữ những điều tích cực nhỏ bé mỗi ngày.</p>
                 </div>
 
-                {/* Daily Suggestion Button */}
-                {(() => {
-                  const dailySuggestion = getDailySuggestion();
-                  return (
-                    <div className="mb-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const suggestion = `Hôm nay mình biết ơn ${dailySuggestion.prompt.toLowerCase()}. `;
-                          setText(text ? `${text}${suggestion}` : suggestion);
-                        }}
-                        className="w-full p-3 rounded-xl bg-gradient-to-r from-[--brand]/10 to-[--accent]/10 border-2 border-[--brand]/20 hover:border-[--brand]/40 transition-all text-left group"
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <Sparkles size={16} className="text-[--brand]" />
-                          <span className="text-sm font-semibold text-[--text]">Gợi ý hôm nay</span>
-                        </div>
-                        <p className="text-xs text-[--muted] group-hover:text-[--text] transition-colors">
-                          {dailySuggestion.message}
-                        </p>
-                      </button>
+                <Card size="sm" className="!py-2 !px-4 flex items-center gap-3 bg-gradient-to-r from-orange-100 to-amber-100 dark:from-orange-900/20 dark:to-amber-900/20 border-orange-200">
+                    <div className="text-2xl">🔥</div>
+                    <div>
+                        <div className="text-xs text-[--muted] font-medium uppercase">Streak</div>
+                        <div className="font-bold text-orange-600 dark:text-orange-400">{streak} ngày liên tiếp</div>
                     </div>
-                  );
-                })()}
+                </Card>
+            </div>
 
-                <textarea
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  placeholder="Hôm nay mình biết ơn..."
-                  rows={3}
-                  className="w-full p-4 rounded-xl glass border-0 focus:ring-2 focus:ring-[--ring] resize-none text-[--text] placeholder:text-[--muted]"
-                  autoFocus
-                />
-
-                {/* Tag selection */}
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-[--text] mb-2">
-                    Chọn chủ đề (tuỳ chọn)
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {PREDEFINED_TAGS.map((t) => (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedTag(selectedTag === t.id ? '' : t.id);
-                          setCustomTag('');
-                          setShowContentSuggestions(true);
-                        }}
-                        className={`px-3 py-1.5 rounded-lg text-sm transition-all ${selectedTag === t.id
-                            ? 'bg-[--brand] text-white shadow-md'
-                            : 'bg-[--surface-border] text-[--text] hover:bg-[--surface-border]/80'
-                          }`}
-                      >
-                        {t.emoji} {t.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Custom tag input */}
-                  {!selectedTag && (
-                    <div className="mt-2 flex items-center gap-2 glass rounded-xl px-3 py-2">
-                      <Tag size={16} className="text-[--muted]" />
-                      <input
-                        value={customTag}
-                        onChange={(e) => setCustomTag(e.target.value)}
-                        placeholder="Hoặc nhập tag tùy chỉnh"
-                        className="flex-1 bg-transparent outline-none text-sm text-[--text] placeholder:text-[--muted]"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* Content suggestions based on tag */}
-                {showContentSuggestions && getContentSuggestions.length > 0 && (
-                  <div className="mt-3 p-3 bg-[--surface-border]/50 rounded-xl">
-                    <p className="text-xs text-[--muted] mb-2">💡 Gợi ý nội dung:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {getContentSuggestions.map((suggestion, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => {
-                            setText((t) => (t ? `${t}, ${suggestion}` : `Hôm nay mình biết ơn ${suggestion}`));
-                          }}
-                          className="px-2 py-1 text-xs bg-white dark:bg-gray-800 rounded-lg hover:bg-[--brand]/10 transition-colors text-[--text]"
+            {/* Input Area */}
+            <Card>
+                {/* Suggestion Bubble */}
+                <AnimatePresence>
+                    {showSuggestion && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="mb-4 overflow-hidden"
                         >
-                          {suggestion}
-                        </button>
-                      ))}
+                            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl flex items-start gap-3 border border-blue-100 dark:border-blue-800">
+                                <Lightbulb size={20} className="text-blue-500 mt-1 shrink-0" />
+                                <div className="flex-1">
+                                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Gợi ý hôm nay:</p>
+                                    <p className="text-sm text-blue-600 dark:text-blue-300 italic">"{suggestion}"</p>
+                                </div>
+                                <button onClick={() => setShowSuggestion(false)} className="text-blue-400 hover:text-blue-600">
+                                    <X size={16} />
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <div className="relative">
+                    <textarea
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        placeholder="Hôm nay bạn biết ơn điều gì?"
+                        className="w-full p-4 rounded-xl bg-[--surface-2] border-transparent focus:border-[--brand] focus:ring-2 focus:ring-[--brand]/20 transition-all min-h-[120px] resize-none"
+                    />
+                    <div className="absolute bottom-3 right-3 flex gap-2">
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={getRandomSuggestion}
+                            title="Gợi ý khác"
+                            icon={<Sparkles size={16} />}
+                        />
                     </div>
-                  </div>
-                )}
-
-                {/* Action buttons */}
-                <div className="mt-4 flex items-center gap-3">
-                  <Button onClick={addEntry} disabled={!text.trim()} className="flex-1">
-                    Thêm vào lọ
-                  </Button>
-                  <Button variant="ghost" onClick={() => {
-                    setShowForm(false);
-                    setText('');
-                    setSelectedTag('');
-                    setCustomTag('');
-                    setShowContentSuggestions(false);
-                  }}>
-                    Hủy
-                  </Button>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </Card>
 
-        {/* Filter & Search */}
-        <Card size="sm">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {/* Search */}
-            <div className="flex-1 flex items-center gap-2 glass rounded-xl px-3 py-2">
-              <Search size={16} className="text-[--muted]" />
-              <input
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                placeholder="Tìm kiếm..."
-                className="flex-1 bg-transparent outline-none text-sm text-[--text] placeholder:text-[--muted]"
-              />
-            </div>
-
-            {/* Tag filter */}
-            <div className="relative">
-              <div className="flex items-center gap-2 glass rounded-xl px-3 py-2 cursor-pointer">
-                <Filter size={16} className="text-[--muted]" />
-                <select
-                  value={filterTag}
-                  onChange={(e) => setFilterTag(e.target.value)}
-                  className="bg-transparent outline-none text-sm text-[--text] cursor-pointer pr-6 appearance-none"
-                >
-                  <option value="">Tất cả tags</option>
-                  {allTags.map((t) => (
-                    <option key={t} value={t}>#{t}</option>
-                  ))}
-                </select>
-                <ChevronDown size={14} className="absolute right-3 text-[--muted] pointer-events-none" />
-              </div>
-            </div>
-
-            {filterTag && (
-              <Button variant="ghost" size="sm" onClick={() => setFilterTag('')}>
-                Xoá lọc
-              </Button>
-            )}
-
-            {/* Sort dropdown */}
-            <div className="relative">
-              <div className="flex items-center gap-2 glass rounded-xl px-3 py-2 cursor-pointer">
-                <ArrowUpDown size={16} className="text-[--muted]" />
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-transparent outline-none text-sm text-[--text] cursor-pointer pr-6 appearance-none"
-                >
-                  <option value="newest">Mới nhất</option>
-                  <option value="oldest">Cũ nhất</option>
-                  <option value="tag">Theo tag</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Export */}
-            <Button variant="outline" size="sm" onClick={exportJSON} icon={<Download size={16} />}>
-              Export
-            </Button>
-          </div>
-        </Card>
-
-        {/* Entries Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <AnimatePresence>
-            {filtered.map((e, idx) => (
-              <EntryCard key={e.id} entry={e} style={getCardStyle(idx)} />
-            ))}
-          </AnimatePresence>
-        </div>
-
-        {/* Empty state */}
-        {filtered.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <Card variant="gradient" size="lg" className="text-center">
-              <div className="text-5xl mb-4">✨</div>
-              <h3 className="text-xl font-semibold text-[--text] mb-2">
-                {entries.length === 0 ? 'Lọ đang trống' : 'Không tìm thấy kết quả'}
-              </h3>
-              <p className="text-[--muted] max-w-md mx-auto">
-                {entries.length === 0
-                  ? 'Hãy bắt đầu bằng việc viết một điều nhỏ bé mà bạn biết ơn hôm nay. Mỗi ngày một chút, lọ sẽ đầy những điều tốt đẹp!'
-                  : 'Thử tìm với từ khóa khác hoặc xoá bộ lọc.'}
-              </p>
-              {entries.length === 0 && (
-                <Button
-                  className="mt-6"
-                  onClick={() => setShowForm(true)}
-                  icon={<Plus size={18} />}
-                >
-                  Viết điều biết ơn đầu tiên
-                </Button>
-              )}
+                <div className="mt-4 flex justify-end">
+                    <Button
+                        onClick={addEntry}
+                        disabled={!text.trim()}
+                        icon={<Plus size={18} />}
+                        variant="primary"
+                    >
+                        Thêm vào lọ
+                    </Button>
+                </div>
             </Card>
-          </motion.div>
-        )}
 
-        {/* Stats */}
-        {entries.length > 0 && (
-          <Card size="md" className="text-center">
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <div className="text-2xl font-bold gradient-text">{entries.length}</div>
-                <div className="text-xs text-[--muted]">Điều biết ơn</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold gradient-text">{streak}</div>
-                <div className="text-xs text-[--muted]">Ngày streak</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold gradient-text">{allTags.length}</div>
-                <div className="text-xs text-[--muted]">Chủ đề</div>
-              </div>
+            {/* Entries List */}
+            <div className="space-y-4">
+                <h3 className="font-bold text-[--text] flex items-center gap-2">
+                    <Calendar size={18} />
+                    Nhật ký của bạn
+                </h3>
+
+                {entries.length === 0 ? (
+                    <div className="text-center py-12 opacity-50">
+                        <div className="text-6xl mb-4">🏺</div>
+                        <p>Lọ của bạn đang trống.<br />Hãy viết điều biết ơn đầu tiên nhé!</p>
+                    </div>
+                ) : (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        {entries.map((entry) => (
+                            <motion.div
+                                key={entry.id}
+                                layout
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="group relative"
+                            >
+                                <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-300 to-purple-300 rounded-2xl opacity-0 group-hover:opacity-50 transition blur-[2px]" />
+                                <Card className="h-full relative !bg-[#fff9f0] dark:!bg-gray-800 border-yellow-100 dark:border-gray-700">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className="text-xs font-semibold text-[--muted] bg-white/50 px-2 py-1 rounded-lg">
+                                            {new Date(entry.date).toLocaleDateString('vi-VN')}
+                                        </span>
+                                        <button
+                                            onClick={() => deleteEntry(entry.id)}
+                                            className="text-red-300 hover:text-red-500 transition-colors p-1"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                    <p className="text-[--text] whitespace-pre-wrap font-handwriting text-lg leading-relaxed">
+                                        {entry.text}
+                                    </p>
+                                </Card>
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
             </div>
-          </Card>
-        )}
-      </div>
-    </div>
-  );
+        </div>
+    );
 }

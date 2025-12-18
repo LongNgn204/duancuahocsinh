@@ -22,7 +22,7 @@ function formatTime(ts) {
 }
 
 // Bong bóng chat
-function Bubble({ role, children, ts, isUser }) {
+function Bubble({ role, children, ts, isUser, onRead }) {
   return (
     <motion.div
       className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''} mb-6`}
@@ -42,7 +42,7 @@ function Bubble({ role, children, ts, isUser }) {
 
       <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[85%] md:max-w-[75%]`}>
         <div className={`
-          px-5 py-3.5 rounded-2xl relative shadow-sm backdrop-blur-md
+          px-5 py-3.5 rounded-2xl relative shadow-sm backdrop-blur-md group
           ${isUser
             ? 'bg-gradient-to-br from-indigo-500/80 to-purple-600/80 text-white rounded-tr-sm border border-indigo-200/20'
             : 'bg-white/80 text-slate-800 rounded-tl-sm border border-white/50'
@@ -53,6 +53,17 @@ function Bubble({ role, children, ts, isUser }) {
               {String(children).replace(/\n/g, '  \n')}
             </ReactMarkdown>
           </div>
+
+          {/* TTS Button for Assistant */}
+          {!isUser && (
+            <button
+              onClick={() => onRead && onRead(children)}
+              className="absolute -right-8 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-all bg-white/50 hover:bg-white rounded-full backdrop-blur-sm"
+              title="Đọc tin nhắn"
+            >
+              <Volume2 size={14} />
+            </button>
+          )}
         </div>
         <span className="text-[10px] text-slate-500 font-medium mt-1 px-1 opacity-70">
           {formatTime(ts)}
@@ -306,6 +317,7 @@ export default function Chat() {
                 role={m.role}
                 ts={m.ts}
                 isUser={m.role === 'user'}
+                onRead={speak}
               >
                 {m.content}
               </Bubble>
