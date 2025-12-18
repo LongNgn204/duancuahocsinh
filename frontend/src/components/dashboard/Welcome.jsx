@@ -23,7 +23,7 @@ export default function Welcome({ userName, greeting = 'Chào' }) {
 
       <p className="text-[--text-secondary] mt-3 max-w-md mx-auto">
         Hôm nay bạn cảm thấy thế nào? Hãy chọn tâm trạng hoặc
-        bắt đầu trò chuyện với mình nhé.
+        bắt đầu trò chuyện với mình nhé. Quý bạn
       </p>
     </motion.div>
   );
