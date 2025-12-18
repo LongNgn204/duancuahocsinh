@@ -1,12 +1,12 @@
 // src/pages/LandingPage.jsx
-// Chú thích: Landing Page - Design mới với hero, features, benefits, testimonials
+// Chú thích: Landing Page - Design mới với hero full-width background
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     Bot, Heart, Sparkles, Gamepad2, Brain, Shield,
     Users, Clock, Award, ArrowRight, CheckCircle, Star,
     BookOpen, TrendingUp, Moon, Target, Mail, Phone,
-    RefreshCw, Headphones, Smile
+    RefreshCw, Headphones, Smile, ChevronDown
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
@@ -150,54 +150,80 @@ const testimonials = [
 
 export default function LandingPage() {
     return (
-        <div className="min-h-screen overflow-hidden">
+        <div className="min-h-screen overflow-x-hidden">
             {/* ===== HERO SECTION ===== */}
-            <section className="relative min-h-screen flex items-center justify-center px-4 py-20">
-                <GlowOrbs />
+            <section className="relative min-h-screen flex items-center justify-center px-4 overflow-hidden">
+                {/* Background Image with Overlay */}
+                <div
+                    className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+                    style={{ backgroundImage: "url('/landing-bg.png')" }}
+                >
+                    <div className="absolute inset-0 bg-white/40 dark:bg-slate-900/60 backdrop-blur-[2px]"></div>
+                    <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white dark:from-slate-950 to-transparent"></div>
+                </div>
 
-                <div className="relative z-10 max-w-6xl mx-auto text-center">
+                <div className="relative z-10 max-w-5xl mx-auto text-center py-20">
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6 }}
+                        transition={{ duration: 0.8 }}
                     >
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            transition={{ duration: 0.8 }}
-                            className="mb-8"
+                            transition={{ delay: 0.2, duration: 0.8 }}
+                            className="mb-6 inline-block"
                         >
-                            <img
-                                src="/landing-hero.png"
-                                alt="Bạn Đồng Hành - Cùng nhau phát triển Trường học Hạnh phúc"
-                                className="w-full max-w-4xl mx-auto rounded-3xl shadow-2xl"
-                            />
+                            <span className="px-4 py-2 rounded-full bg-white/70 dark:bg-slate-800/70 border border-white/50 dark:border-white/10 text-pink-600 dark:text-pink-400 text-sm font-semibold shadow-sm backdrop-blur-md">
+                                ✨ Nền tảng chăm sóc tinh thần học đường #1
+                            </span>
                         </motion.div>
+
+                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-purple-700 via-pink-600 to-rose-500 dark:from-purple-300 dark:via-pink-300 dark:to-rose-300 bg-clip-text text-transparent mb-6 drop-shadow-sm leading-tight">
+                            Bạn Đồng Hành
+                            <br />
+                            <span className="text-3xl md:text-5xl lg:text-6xl text-slate-800 dark:text-white/90 font-semibold mt-2 block">
+                                Cùng nhau kiến tạo Trường học Hạnh phúc
+                            </span>
+                        </h1>
+
+                        <p className="text-lg md:text-xl text-slate-700 dark:text-slate-200/90 mb-10 max-w-2xl mx-auto leading-relaxed font-medium bg-white/50 dark:bg-slate-900/50 p-4 rounded-2xl backdrop-blur-sm shadow-sm ring-1 ring-white/50 dark:ring-white/10">
+                            Nơi lắng nghe, chia sẻ và đồng hành cùng học sinh Việt Nam trên hành trình trưởng thành. An toàn, Thân thiện và Hoàn toàn miễn phí.
+                        </p>
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <Link to="/app">
                                 <motion.button
-                                    whileHover={{ scale: 1.05 }}
+                                    whileHover={{ scale: 1.05, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+                                    className="px-8 py-4 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-600 text-white rounded-full font-bold text-lg shadow-xl shadow-purple-500/30 flex items-center gap-2 group transition-all"
                                 >
                                     Bắt đầu ngay
-                                    <ArrowRight size={20} />
+                                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                                 </motion.button>
                             </Link>
                             <Link to="#features">
                                 <motion.button
-                                    whileHover={{ scale: 1.05 }}
+                                    whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.9)" }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="px-8 py-4 bg-white dark:bg-gray-800 border-2 border-pink-300 dark:border-pink-700 text-pink-600 dark:text-pink-400 rounded-xl font-semibold text-lg hover:bg-pink-50 dark:hover:bg-pink-900/20 transition-all"
+                                    className="px-8 py-4 bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-white rounded-full font-bold text-lg shadow-lg backdrop-blur-md border border-white/50 dark:border-white/10 hover:text-pink-600 dark:hover:text-pink-400 transition-all"
                                 >
                                     Tìm hiểu thêm
                                 </motion.button>
                             </Link>
                         </div>
                     </motion.div>
-
                 </div>
+
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1, y: [0, 10, 0] }}
+                    transition={{ delay: 1, duration: 2, repeat: Infinity }}
+                    className="absolute bottom-8 left-1/2 -translate-x-1/2 cursor-pointer z-10"
+                    onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                    <ChevronDown size={32} className="text-slate-500 dark:text-slate-400" />
+                </motion.div>
             </section>
 
 
@@ -450,6 +476,6 @@ export default function LandingPage() {
                     </div>
                 </div>
             </footer>
-        </div>
+        </div >
     );
 }
