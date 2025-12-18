@@ -71,12 +71,12 @@
   --bg: #fffbfc;
   --bg-gradient-start: #fff5f7;
   --bg-gradient-end: #ffe4ec;
-  --text: #4a1942;
-  --text-secondary: #6b3a5c;
+  --text: #1a0a18;
+  --text-secondary: #3d1a35;
   --surface: rgba(255, 255, 255, 0.92);
   --surface-elevated: #ffffff;
   --surface-border: rgba(236, 72, 153, 0.15);
-  --muted: #9d7a8a;
+  --muted: #4a2a42;
 
   /* Glassmorphism - Trong suốt nhẹ nhàng */
   --glass-bg: rgba(255, 255, 255, 0.80);
@@ -193,6 +193,7 @@ body {
   min-height: 100vh;
   color: var(--text);
   font-family: var(--font-sans);
+  font-weight: 500; /* BOLD cho dễ đọc */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.65;
@@ -246,7 +247,8 @@ h4 {
 
 p {
   line-height: 1.7;
-  color: var(--text-secondary);
+  color: var(--text);
+  font-weight: 500;
 }
 
 /* ===== LINKS & BUTTONS ===== */
