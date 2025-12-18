@@ -185,18 +185,18 @@ const EMOTION_GROUPS = [
     },
 ];
 
-// ===== LỜI HAY Ý ĐẸP TỪ DANH NHÂN =====
+// ===== LỜI HAY Ý ĐẸP TỪ BÁC HỒ =====
 const WISE_QUOTES = [
-    { author: 'Thích Nhất Hạnh', quote: 'Hạnh phúc không nằm ở đích đến mà nằm trên hành trình.' },
-    { author: 'Albert Einstein', quote: 'Trí tưởng tượng quan trọng hơn kiến thức.' },
-    { author: 'Đức Đạt Lai Lạt Ma', quote: 'Hãy tử tế bất cứ khi nào có thể. Luôn luôn có thể.' },
-    { author: 'Mahatma Gandhi', quote: 'Hãy là sự thay đổi mà bạn muốn thấy ở thế giới.' },
-    { author: 'Hồ Chí Minh', quote: 'Không có việc gì khó, chỉ sợ lòng không bền.' },
-    { author: 'Nelson Mandela', quote: 'Giáo dục là vũ khí mạnh nhất để thay đổi thế giới.' },
-    { author: 'Khổng Tử', quote: 'Hành trình vạn dặm bắt đầu từ một bước chân.' },
-    { author: 'Helen Keller', quote: 'Điều duy nhất tồi tệ hơn mù là có thị lực mà không có tầm nhìn.' },
-    { author: 'Walt Disney', quote: 'Mọi giấc mơ đều có thể thành hiện thực nếu bạn có can đảm theo đuổi.' },
-    { author: 'Steve Jobs', quote: 'Hãy đói khát. Hãy dại khờ.' },
+    { author: 'Hồ Chí Minh', quote: 'Không có việc gì khó, chỉ sợ lòng không bền. Đào núi và lấp biển, quyết chí ắt làm nên.' },
+    { author: 'Hồ Chí Minh', quote: 'Vì lợi ích mười năm thì phải trồng cây, vì lợi ích trăm năm thì phải trồng người.' },
+    { author: 'Hồ Chí Minh', quote: 'Học hỏi là một việc phải tiếp tục suốt đời.' },
+    { author: 'Hồ Chí Minh', quote: 'Tuổi nhỏ làm việc nhỏ, tùy theo sức của mình.' },
+    { author: 'Hồ Chí Minh', quote: 'Trẻ em như búp trên cành; Biết ăn ngủ, biết học hành là ngoan.' },
+    { author: 'Hồ Chí Minh', quote: 'Có tài mà không có đức là người vô dụng, có đức mà không có tài thì làm việc gì cũng khó.' },
+    { author: 'Hồ Chí Minh', quote: 'Điều gì phải thì cố làm cho kỳ được, dù là một việc nhỏ. Điều gì trái thì hết sức tránh, dù là một việc bé.' },
+    { author: 'Hồ Chí Minh', quote: 'Non sông Việt Nam có trở nên tươi đẹp hay không, dân tộc Việt Nam có bước tới đài vinh quang để sánh vai với các cường quốc năm châu được hay không, chính là nhờ một phần lớn ở công học tập của các em.' },
+    { author: 'Hồ Chí Minh', quote: 'Siêng năng thì việc gì cũng làm được.' },
+    { author: 'Hồ Chí Minh', quote: 'Đoàn kết, đoàn kết, đại đoàn kết. Thành công, thành công, đại thành công.' },
 ];
 
 // ===== HOẠT ĐỘNG TỰ CHĂM SÓC =====
@@ -324,15 +324,15 @@ export default function Wellness() {
                     {[
                         { id: 'breathing', label: 'Thở thư giãn', icon: Wind },
                         { id: 'quotes', label: 'Động viên', icon: Heart },
-                        { id: 'wise', label: 'Lời hay ý đẹp', icon: BookOpen },
+                        { id: 'wise', label: 'Lời Bác dạy', icon: BookOpen },
                         { id: 'selfcare', label: 'Tự chăm sóc', icon: Coffee },
                     ].map(tab => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`px-4 py-2 rounded-xl font-medium transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === tab.id
-                                    ? 'bg-gradient-to-r from-[--brand] to-[--brand-light] text-white shadow-lg'
-                                    : 'bg-[--surface] text-[--text-secondary] hover:bg-[--surface-border]'
+                                ? 'bg-gradient-to-r from-[--brand] to-[--brand-light] text-white shadow-lg'
+                                : 'bg-[--surface] text-[--text-secondary] hover:bg-[--surface-border]'
                                 }`}
                         >
                             <tab.icon className="w-4 h-4" />
@@ -438,7 +438,7 @@ export default function Wellness() {
 
                     {activeTab === 'wise' && (
                         <motion.div key="wise" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-4">
-                            <h2 className="font-semibold text-lg">Lời hay ý đẹp từ danh nhân 📖</h2>
+                            <h2 className="font-semibold text-lg">Lời Bác dạy 📖</h2>
                             <div className="grid gap-3">
                                 {WISE_QUOTES.map((item, idx) => (
                                     <motion.div
@@ -471,8 +471,8 @@ export default function Wellness() {
                                             key={activity.id}
                                             onClick={() => toggleActivity(activity.id)}
                                             className={`p-4 rounded-2xl transition-all shadow-lg text-left ${isCompleted
-                                                    ? 'bg-green-500 text-white'
-                                                    : `bg-gradient-to-br ${activity.color} text-white hover:scale-105`
+                                                ? 'bg-green-500 text-white'
+                                                : `bg-gradient-to-br ${activity.color} text-white hover:scale-105`
                                                 }`}
                                             whileTap={{ scale: 0.95 }}
                                         >
