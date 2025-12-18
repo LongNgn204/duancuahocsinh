@@ -361,7 +361,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <h3 className="font-semibold">Mẹo hôm nay</h3>
-                <p className="text-sm text-[--text-secondary] font-semibold uppercase tracking-wide">Wellbeing tip</p>
+
               </div>
             </div>
             <p className="text-[--text-secondary] leading-relaxed">{todayTip}</p>
