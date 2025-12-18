@@ -260,6 +260,12 @@ export function useAI() {
     if (!trimmed) return;
     if (!currentThread) return;
 
+    // Prevent sending while already loading (prevents freeze from concurrent requests)
+    if (loading) {
+      console.log('[useAI] Already loading, ignoring new message');
+      return;
+    }
+
     // SOS multi-level pre-check
     const sosLevel = detectSOSLevel(trimmed);
     const sosAction = getSuggestedAction(sosLevel);
