@@ -8,18 +8,46 @@ import { Heart, Sparkles, Plus, Trash2, Calendar, Lightbulb, X, Share2 } from 'l
 import { isLoggedIn, rewardXP } from '../../utils/api';
 
 const DAILY_SUGGESTIONS = [
+    // Người thân & bạn bè
     "Hôm nay bạn biết ơn ai nhất?",
+    "Ai đã giúp đỡ bạn hôm nay?",
+    "Bạn có muốn cảm ơn thầy cô về điều gì?",
+    "Bố mẹ đã làm gì khiến bạn vui?",
+    "Một người bạn đã khiến bạn cười là ai?",
+    "Ai luôn ủng hộ bạn mỗi khi khó khăn?",
+
+    // Thành tựu & tự hào
+    "Bạn tự hào về điều gì ở bản thân?",
+    "Một khó khăn bạn đã vượt qua trong tuần này?",
+    "Bạn đã hoàn thành việc gì khiến bạn vui?",
+    "Điều gì bạn làm tốt hơn so với trước đây?",
+    "Bạn đã dũng cảm làm điều gì gần đây?",
+
+    // Niềm vui đơn giản
     "Một điều nhỏ bé nào đã làm bạn cười hôm nay?",
     "Món ăn ngon nhất bạn đã ăn hôm nay là gì?",
-    "Bạn tự hào về điều gì ở bản thân?",
     "Một khoảnh khắc bình yên bạn có được là khi nào?",
-    "Ai đã giúp đỡ bạn hôm nay?",
-    "Bạn học được bài học gì thú vị?",
+    "Thời tiết hôm nay có gì đẹp?",
     "Một bài hát hay bạn đã nghe?",
-    "Thời tiết hôm nay thế nào?",
+    "Bạn đã nhìn thấy điều gì đẹp hôm nay?",
+    "Giấc ngủ tối qua có ngon không?",
+
+    // Học tập & phát triển
+    "Bạn học được bài học gì thú vị?",
+    "Một điều mới bạn biết được hôm nay?",
+    "Sách/video nào đã cho bạn ý tưởng hay?",
+    "Môn học nào bạn thấy thú vị gần đây?",
+
+    // Tự yêu thương
     "Một lời khen bạn nhận được (hoặc tự khen mình)?",
-    "Một khó khăn bạn đã vượt qua?",
-    "Bạn mong chờ điều gì vào ngày mai?"
+    "Bạn đã chăm sóc bản thân thế nào hôm nay?",
+    "Điều gì khiến bạn cảm thấy an toàn?",
+    "Bạn thích điều gì nhất ở mình?",
+
+    // Tương lai & hy vọng
+    "Bạn mong chờ điều gì vào ngày mai?",
+    "Một mục tiêu nhỏ bạn muốn đạt được tuần này?",
+    "Điều gì khiến bạn lạc quan về tương lai?"
 ];
 
 // Key storage

@@ -45,6 +45,137 @@ const STORIES = [
         ],
         moral: '💧 Mỗi người đều có giá trị, dù đôi khi bạn không nhận ra điều đó!',
     },
+    // ===== TRUYỆN MỚI =====
+    {
+        id: 4,
+        title: 'Con sên chậm rãi',
+        content: [
+            'Con sên nhỏ luôn bị các bạn trong rừng trêu vì đi quá chậm.',
+            '"Tại sao mình không nhanh như thỏ hay sóc?" - sên tự hỏi buồn bã.',
+            'Một ngày mưa bão, tất cả bạn bè chạy vội về nhà nhưng đều bị lạc đường.',
+            'Riêng sên, với tốc độ chậm rãi, quan sát được từng ngã rẽ và về đến nhà an toàn.',
+            'Sên còn quay lại giúp đỡ các bạn tìm đường về.',
+            'Từ đó, mọi người hiểu rằng chậm mà chắc không có gì là xấu.',
+        ],
+        moral: '🐌 Mỗi người có tốc độ riêng. Chậm mà chắc vẫn đến đích!',
+    },
+    {
+        id: 5,
+        title: 'Bạn mới của Thỏ',
+        content: [
+            'Thỏ Trắng vừa chuyển đến khu rừng mới, không quen ai cả.',
+            'Thỏ rất muốn làm quen nhưng sợ bị từ chối.',
+            'Một ngày, Thỏ thấy Sóc đang cố với quả hạch trên cao.',
+            '"Mình giúp bạn nhé!" - Thỏ dũng cảm lên tiếng.',
+            'Thỏ nhảy lên lấy quả hạch xuống cho Sóc.',
+            '"Cảm ơn bạn! Mình là Sóc, bạn tên gì?" - từ đó họ trở thành đôi bạn thân.',
+        ],
+        moral: '🐰 Đôi khi chỉ cần một bước nhỏ để có được tình bạn đẹp!',
+    },
+    {
+        id: 6,
+        title: 'Đom đóm lạc đường',
+        content: [
+            'Đom đóm nhỏ bị lạc khỏi đàn trong một đêm mưa.',
+            'Trời tối đen, đom đóm sợ hãi không biết phải làm gì.',
+            '"Mình có ánh sáng mà!" - đom đóm chợt nhớ.',
+            'Đom đóm bay cao lên, chiếu sáng để nhìn xung quanh.',
+            'Không chỉ tìm được đường về, đom đóm còn giúp cả kiến và sâu thoát khỏi vũng nước.',
+            'Đàn đom đóm nhìn thấy ánh sáng và bay đến đón bạn về.',
+        ],
+        moral: '✨ Khi gặp khó khăn, hãy nhớ rằng bạn có những khả năng đặc biệt!',
+    },
+    {
+        id: 7,
+        title: 'Cô bé và bông hoa',
+        content: [
+            'Cô bé Linh luôn so sánh mình với các bạn trong lớp.',
+            '"Bạn A học giỏi hơn mình, bạn B đẹp hơn mình..." - Linh thường nghĩ vậy.',
+            'Bà ngoại tặng Linh một chậu hoa: "Hãy chăm sóc nó và xem điều gì xảy ra."',
+            'Linh tưới nước hàng ngày. Bông hoa nở, không giống bất kỳ hoa nào khác.',
+            '"Bông hoa này đặc biệt vì nó là duy nhất" - bà ngoại nói.',
+            '"Cháu cũng vậy. Đừng so sánh mình với ai, vì cháu là duy nhất."',
+        ],
+        moral: '🌺 Đừng so sánh mình với người khác. Bạn là phiên bản duy nhất!',
+    },
+    {
+        id: 8,
+        title: 'Sói con đi học',
+        content: [
+            'Sói con rất sợ đi học vì hay bị sai khi trả lời câu hỏi.',
+            '"Các bạn sẽ cười mình mất" - Sói lo lắng.',
+            'Cô giáo Cú nhận ra và nói riêng với Sói sau giờ học.',
+            '"Con biết không, cô cũng từng sai rất nhiều khi còn nhỏ."',
+            '"Sai là cách chúng ta học. Mỗi lần sai là một lần tiến bộ."',
+            'Hôm sau, Sói mạnh dạn giơ tay phát biểu dù chưa chắc chắn.',
+        ],
+        moral: '📚 Sai không có nghĩa là thất bại. Đó là cách chúng ta học!',
+    },
+    {
+        id: 9,
+        title: 'Cây tre uốn cong',
+        content: [
+            'Trong rừng có cây sồi to khỏe và cây tre mảnh mai.',
+            'Cây sồi thường chê: "Nhìn mày yếu ớt thế, gió nhẹ cũng đổ."',
+            'Một trận bão lớn ập đến. Cây sồi đứng thẳng chống lại gió.',
+            'Cây tre thì uốn cong theo chiều gió, nghiêng qua nghiêng lại.',
+            'Bão tan, cây sồi bị gãy cành, còn cây tre vẫn nguyên vẹn.',
+            'Cây tre hiểu: mềm dẻo đôi khi mạnh hơn cứng rắn.',
+        ],
+        moral: '🎋 Linh hoạt thích nghi đôi khi tốt hơn là cứng nhắc!',
+    },
+    {
+        id: 10,
+        title: 'Hai người bạn',
+        content: [
+            'Mèo và Chó là đôi bạn thân từ nhỏ.',
+            'Một ngày, Chó vô tình giẫm phải đuôi Mèo. Mèo giận và không nói chuyện.',
+            'Mấy ngày sau, cả hai đều buồn nhưng không ai chịu nói trước.',
+            'Chó quyết định viết một tấm thiệp: "Mình xin lỗi. Mình nhớ bạn."',
+            'Mèo đọc xong, chạy ngay sang nhà Chó: "Mình cũng nhớ bạn!"',
+            'Họ ôm nhau và hứa sẽ nói chuyện thẳng thắn mỗi khi có hiểu lầm.',
+        ],
+        moral: '💕 Một lời xin lỗi chân thành có thể hàn gắn mọi hiểu lầm!',
+    },
+    {
+        id: 11,
+        title: 'Ngôi sao nhỏ',
+        content: [
+            'Trên bầu trời, có một ngôi sao nhỏ luôn tự ti vì không sáng bằng các sao khác.',
+            '"Mình nhỏ quá, không ai nhìn thấy mình đâu" - sao nhỏ buồn bã.',
+            'Một đêm, một cậu bé lạc trong sa mạc nhìn lên trời.',
+            'Cậu bé không thấy những ngôi sao lớn vì mây che, nhưng thấy sao nhỏ.',
+            'Cậu đi theo hướng sao nhỏ và tìm được đường về nhà.',
+            'Sao nhỏ hiểu: dù nhỏ bé, mình vẫn có thể giúp đỡ người khác.',
+        ],
+        moral: '⭐ Bạn không cần phải to lớn để tỏa sáng và giúp đỡ người khác!',
+    },
+    {
+        id: 12,
+        title: 'Con cá vượt thác',
+        content: [
+            'Có một con cá nhỏ sống ở dưới chân thác nước.',
+            'Cá nghe kể rằng phía trên thác có một hồ nước tuyệt đẹp.',
+            'Nhiều lần cá cố nhảy lên nhưng đều rơi xuống.',
+            'Bạn bè bảo: "Thôi đừng cố, không thể được đâu."',
+            'Nhưng cá vẫn kiên trì. Mỗi lần nhảy, cá học được cách nhảy cao hơn.',
+            'Cuối cùng, sau hàng trăm lần thử, cá vượt qua và ngắm nhìn hồ nước xinh đẹp.',
+        ],
+        moral: '🐟 Đừng bao giờ bỏ cuộc. Mỗi lần thử là một bước gần hơn đến thành công!',
+    },
+    {
+        id: 13,
+        title: 'Mưa và nắng',
+        content: [
+            'Cô bé Hoa không thích những ngày mưa vì không được ra ngoài chơi.',
+            '"Sao trời cứ mưa hoài vậy?" - Hoa than thở.',
+            'Ông ngoại dắt Hoa ra vườn sau cơn mưa.',
+            'Hoa thấy cây cối xanh tươi, hoa nở rực rỡ, cầu vồng xuất hiện.',
+            '"Con thấy không, mưa giúp vạn vật tươi đẹp hơn" - ông nói.',
+            '"Cảm xúc buồn cũng vậy. Đôi khi cần buồn để sau đó vui hơn."',
+        ],
+        moral: '🌈 Mọi cảm xúc đều có ý nghĩa. Sau mưa trời lại sáng!',
+    },
 ];
 
 export default function Stories() {
@@ -128,8 +259,8 @@ export default function Stories() {
                                     key={key}
                                     onClick={() => setReadingSpeed(key)}
                                     className={`px-3 py-1.5 rounded-lg text-sm transition-all ${readingSpeed === key
-                                            ? 'bg-[--brand] text-white'
-                                            : 'bg-[--surface-border] text-[--text]'
+                                        ? 'bg-[--brand] text-white'
+                                        : 'bg-[--surface-border] text-[--text]'
                                         }`}
                                 >
                                     {value.label}

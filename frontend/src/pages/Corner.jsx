@@ -19,6 +19,18 @@ const DEFAULT_ACTIVITIES = [
   { id: 'stories', label: 'Kể chuyện', icon: BookOpen, color: 'from-amber-400 to-orange-400', path: '/stories' },
 ];
 
+// Templates nhắc nhở phổ biến cho học sinh
+const REMINDER_TEMPLATES = [
+  { activity: '💧 Uống nước', time: '09:00', description: 'Mỗi 2 giờ uống 1 cốc' },
+  { activity: '👀 Nghỉ mắt 20-20-20', time: '10:00', description: 'Nhìn xa 20m trong 20 giây' },
+  { activity: '🧘 Thở sâu 5 lần', time: '11:00', description: 'Giảm stress giữa giờ' },
+  { activity: '🍎 Ăn trưa đúng giờ', time: '12:00', description: 'Không bỏ bữa nhé' },
+  { activity: '📚 Ôn bài 15 phút', time: '18:00', description: 'Ôn lại bài học trong ngày' },
+  { activity: '🙏 Viết Lọ Biết Ơn', time: '20:00', description: 'Przed khi đi ngủ' },
+  { activity: '😴 Chuẩn bị đi ngủ', time: '21:30', description: 'Ngủ đủ 8 tiếng' },
+  { activity: '📵 Bỏ điện thoại', time: '22:00', description: 'Đọc sách thay vì lướt' },
+];
+
 export default function Corner() {
   const [activities, setActivities] = useState(DEFAULT_ACTIVITIES);
   const [reminders, setReminders] = useState([]);
@@ -353,6 +365,28 @@ export default function Corner() {
                 </div>
 
                 <div className="space-y-4">
+                  {/* Quick Templates */}
+                  <div>
+                    <label className="block text-sm font-medium text-[--text] mb-2">
+                      Chọn nhanh
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {REMINDER_TEMPLATES.slice(0, 4).map((template, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setNewReminder({
+                            ...newReminder,
+                            activity: template.activity,
+                            time: template.time
+                          })}
+                          className="px-3 py-1.5 text-xs rounded-lg bg-[--surface-border] hover:bg-[--brand]/20 hover:text-[--brand] transition-colors"
+                        >
+                          {template.activity}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-[--text] mb-2">
                       Hoạt động
