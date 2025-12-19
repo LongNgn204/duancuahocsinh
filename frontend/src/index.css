@@ -71,12 +71,12 @@
   --bg: #fffbfc;
   --bg-gradient-start: #fff5f7;
   --bg-gradient-end: #ffe4ec;
-  --text: #1a0a18;
-  --text-secondary: #3d1a35;
+  --text: #4a1942;
+  --text-secondary: #6b3a5c;
   --surface: rgba(255, 255, 255, 0.92);
   --surface-elevated: #ffffff;
   --surface-border: rgba(236, 72, 153, 0.15);
-  --muted: #4a2a42;
+  --muted: #9d7a8a;
 
   /* Glassmorphism - Trong suốt nhẹ nhàng */
   --glass-bg: rgba(255, 255, 255, 0.80);
@@ -192,8 +192,11 @@ body {
   min-height: 100vh;
   color: var(--text);
   font-family: var(--font-sans);
+<<<<<<< HEAD
   font-weight: 500;
   /* BOLD cho dễ đọc */
+=======
+>>>>>>> parent of 7244319 (a)
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.65;
@@ -247,8 +250,7 @@ h4 {
 
 p {
   line-height: 1.7;
-  color: var(--text);
-  font-weight: 500;
+  color: var(--text-secondary);
 }
 
 /* ===== LINKS & BUTTONS ===== */

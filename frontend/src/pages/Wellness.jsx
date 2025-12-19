@@ -332,7 +332,7 @@ export default function Wellness() {
                             onClick={() => setActiveTab(tab.id)}
                             className={`px-4 py-2 rounded-xl font-medium transition-all whitespace-nowrap flex items-center gap-2 ${activeTab === tab.id
                                 ? 'bg-gradient-to-r from-[--brand] to-[--brand-light] text-white shadow-lg'
-                                : 'bg-[--surface] text-gray-800 hover:bg-[--surface-border]'
+                                : 'bg-[--surface] text-[--text-secondary] hover:bg-[--surface-border]'
                                 }`}
                         >
                             <tab.icon className="w-4 h-4" />
