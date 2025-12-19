@@ -57,6 +57,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                     onClose();
                 }
             } else {
+                console.log('[AuthModal] Login attempt:', { username: username.trim(), passwordLength: password.length });
                 const result = await login(username.trim(), password);
                 if (result.success) {
                     setRequireSetPassword(false);
