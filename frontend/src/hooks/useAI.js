@@ -53,7 +53,7 @@ function mergeThreads(localThreads, serverThreads) {
 }
 
 export function useAI() {
-  const endpoint = import.meta.env.VITE_API_URL ?? import.meta.env.VITE_AI_PROXY_URL ?? null;
+  const endpoint = import.meta.env.VITE_API_URL ?? import.meta.env.VITE_AI_PROXY_URL ?? 'https://ban-dong-hanh-worker.stu725114073.workers.dev';
 
   const [threads, setThreads] = useState([]); // [{id,title,createdAt,updatedAt,messages:[{role,content,ts,feedback?}]}]
   const [currentId, setCurrentId] = useState(null);
@@ -284,11 +284,23 @@ export function useAI() {
     setLoading(true);
 
     try {
-      const url = endpoint || '/__dev_echo__';
-      if (url === '/__dev_echo__') {
-        const bot = { role: 'assistant', content: `DEV_ECHO: ${trimmed}`, ts: nowISO() };
+      // Kiểm tra endpoint có được set không
+      if (!endpoint) {
+        console.warn('[useAI] No API endpoint configured. Please set VITE_API_URL or VITE_AI_PROXY_URL');
+        const bot = { role: 'assistant', content: 'Xin lỗi, hệ thống chưa được cấu hình đúng. Vui lòng liên hệ quản trị viên.', ts: nowISO() };
         setThreads((prev) => prev.map((t) => (t.id === currentId ? { ...t, messages: [...t.messages, bot], updatedAt: nowISO() } : t)));
         return;
+      }
+
+      // Đảm bảo endpoint có path /api/chat
+      let apiUrl = endpoint.trim();
+      // Loại bỏ trailing slash
+      if (apiUrl.endsWith('/')) {
+        apiUrl = apiUrl.slice(0, -1);
+      }
+      // Nếu endpoint chưa có /api/chat, thêm vào
+      if (!apiUrl.includes('/api/chat')) {
+        apiUrl = `${apiUrl}/api/chat`;
       }
 
       // Tăng số lượng messages gửi lên (từ 5 lên 10)
@@ -316,7 +328,7 @@ export function useAI() {
       const userId = currentUser?.id || null;
       const userName = currentUser?.display_name || currentUser?.username || 'Bạn';
 
-      const stream = await streamFromEndpoint(`${url}?stream=true`, {
+      const stream = await streamFromEndpoint(`${apiUrl}?stream=true`, {
         message: trimmed,
         history: historyCap,
         images,

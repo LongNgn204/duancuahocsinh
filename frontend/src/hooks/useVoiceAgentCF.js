@@ -64,7 +64,7 @@ export function useVoiceAgentCF({ onSOS } = {}) {
     const abortControllerRef = useRef(null);
 
     // API endpoint
-    const endpoint = import.meta.env.VITE_API_URL ?? import.meta.env.VITE_AI_PROXY_URL ?? null;
+    const endpoint = import.meta.env.VITE_API_URL ?? import.meta.env.VITE_AI_PROXY_URL ?? 'https://ban-dong-hanh-worker.stu725114073.workers.dev';
 
     // ========================================================================
     // CHECK BROWSER SUPPORT
@@ -210,7 +210,15 @@ export function useVoiceAgentCF({ onSOS } = {}) {
         abortControllerRef.current = new AbortController();
 
         try {
-            const res = await fetch(`${endpoint}?stream=true`, {
+            // Đảm bảo endpoint có path /api/chat
+            let apiUrl = endpoint.trim();
+            if (apiUrl.endsWith('/')) {
+                apiUrl = apiUrl.slice(0, -1);
+            }
+            if (!apiUrl.includes('/api/chat')) {
+                apiUrl = `${apiUrl}/api/chat`;
+            }
+            const res = await fetch(`${apiUrl}?stream=true`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
