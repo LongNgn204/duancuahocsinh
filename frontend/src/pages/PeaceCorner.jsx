@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { useSound } from '../contexts/SoundContext';
 import { Wind, Play, Pause, RotateCcw, Volume2, VolumeX, ArrowLeft, Heart, Sparkles, Music, Music4 } from 'lucide-react';
 

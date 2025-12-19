@@ -2,19 +2,22 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 
 const SOUND_URLS = {
-    click: 'https://assets.mixkit.co/sfx/preview/mixkit-modern-click-box-check-1120.mp3',
-    hover: 'https://assets.mixkit.co/sfx/preview/mixkit-simple-game-countdown-921.mp3', // Just a short blip
-    success: 'https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3',
-    pop: 'https://assets.mixkit.co/sfx/preview/mixkit-positive-interface-beep-221.mp3',
-    switch: 'https://assets.mixkit.co/sfx/preview/mixkit-on-off-light-switch-tap-2585.mp3',
-    error: 'https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3',
-    notification: 'https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3',
+    // UI Sounds (Short, clean sounds)
+    click: 'https://actions.google.com/sounds/v1/cartoon/pop.ogg',
+    hover: 'https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg',
+    success: 'https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg',
+    pop: 'https://actions.google.com/sounds/v1/cartoon/pop.ogg',
+    switch: 'https://actions.google.com/sounds/v1/tools/switch_click.ogg',
+    error: 'https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg',
+    notification: 'https://actions.google.com/sounds/v1/cartoon/cartoon_cowbell.ogg',
+
     // Interactions
-    drop: 'https://assets.mixkit.co/sfx/preview/mixkit-quick-jump-arcade-game-239.mp3', // Fun drop sound
-    pageFlip: 'https://assets.mixkit.co/sfx/preview/mixkit-paper-slide-1530.mp3',
-    win: 'https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3',
-    lose: 'https://assets.mixkit.co/sfx/preview/mixkit-retro-arcade-game-over-470.mp3',
-    // Ambient
+    drop: 'https://actions.google.com/sounds/v1/water/air_woosh_underwater.ogg',
+    pageFlip: 'https://actions.google.com/sounds/v1/foley/paper_shuffle.ogg',
+    win: 'https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg',
+    lose: 'https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg',
+
+    // Ambient (Loopable preferred)
     nature: 'https://actions.google.com/sounds/v1/nature/forest_wind.ogg',
     rain: 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg',
 };
