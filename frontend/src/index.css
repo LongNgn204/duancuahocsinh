@@ -192,11 +192,6 @@ body {
   min-height: 100vh;
   color: var(--text);
   font-family: var(--font-sans);
-<<<<<<< HEAD
-  font-weight: 500;
-  /* BOLD cho dễ đọc */
-=======
->>>>>>> parent of 7244319 (a)
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.65;
