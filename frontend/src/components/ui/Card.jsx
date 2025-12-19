@@ -65,7 +65,12 @@ import { useSound } from '../../contexts/SoundContext';
 // ... (imports remain)
 
 export default function Card({
-  // ... (props remain)
+  as: Comp = 'div',
+  variant = 'default',
+  size = 'md',
+  className,
+  children,
+  hover = true,
   ...props
 }) {
   const { playSound } = useSound();
