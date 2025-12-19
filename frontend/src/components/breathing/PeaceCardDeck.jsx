@@ -4,22 +4,7 @@ import { Sparkles, Heart, Coffee, Star, X, Repeat } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 
-const CARDS = [
-    // Thẻ Bình Yên (Calm)
-    { type: 'peace', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300', icon: Coffee, title: 'Thẻ Bình Yên', content: 'Hít một hơi thật sâu... và thở ra mọi lo lắng.', action: 'Thực hiện 3 lần ngay bây giờ nhé.' },
-    { type: 'peace', color: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300', icon: Coffee, title: 'Thẻ Bình Yên', content: 'Bình yên không ở đâu xa, nó ở ngay trong hơi thở của bạn.', action: 'Nhắm mắt lại trong 10 giây.' },
-    { type: 'peace', color: 'bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-300', icon: Coffee, title: 'Thẻ Bình Yên', content: 'Hãy nhìn ra cửa sổ và tìm một màu xanh lá cây.', action: 'Thả lỏng đôi vai của bạn.' },
-
-    // Thẻ Việc Làm Nhỏ (Action)
-    { type: 'action', color: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-300', icon: Sparkles, title: 'Việc Làm Nhỏ', content: 'Hôm nay chúng ta cùng thử bài tập quan sát nha.', action: 'Tìm 5 vật màu đỏ xung quanh bạn.' },
-    { type: 'action', color: 'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-300', icon: Sparkles, title: 'Việc Làm Nhỏ', content: 'Uống một cốc nước ấm.', action: 'Cảm nhận dòng nước đi vào cơ thể.' },
-    { type: 'action', color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-300', icon: Sparkles, title: 'Việc Làm Nhỏ', content: 'Sắp xếp lại góc học tập.', action: 'Chỉ cần gọn gàng một chút thôi.' },
-
-    // Thẻ Nhắn Nhủ (Affirmation)
-    { type: 'message', color: 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-300', icon: Heart, title: 'Nhắn Nhủ', content: 'Hôm nay bạn đã làm tốt lắm, yêu bản thân hơn nha.', action: 'Tự ôm lấy mình một cái nào!' },
-    { type: 'message', color: 'bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-300', icon: Heart, title: 'Nhắn Nhủ', content: 'Bạn là phiên bản độc nhất vô nhị.', action: 'Hãy mỉm cười với chính mình trong gương.' },
-    { type: 'message', color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300', icon: Heart, title: 'Nhắn Nhủ', content: 'Không sao cả nếu hôm nay bạn thấy mệt.', action: 'Nghỉ ngơi là một phần của cố gắng.' },
-];
+import { PEACE_CARDS as CARDS } from '../../data/peaceCards';
 
 export default function PeaceCardDeck() {
     const [drawnCard, setDrawnCard] = useState(null);

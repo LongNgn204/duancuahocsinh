@@ -37,6 +37,7 @@ const Corner = lazy(() => import('./pages/Corner'));
 const Games = lazy(() => import('./pages/Games'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Wellness = lazy(() => import('./pages/Wellness'));
+const KnowledgeHub = lazy(() => import('./pages/KnowledgeHub'));
 const Stories = lazy(() => import('./pages/Stories'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
@@ -160,6 +161,7 @@ function AppRoutes() {
           <Route path="/games/bee-flying" element={<AppLayout><RequireAuth featureName="Game Ong Tập Bay"><BeeFlying /></RequireAuth></AppLayout>} />
           <Route path="/corner" element={<AppLayout><RequireAuth featureName="Góc riêng tư"><Corner /></RequireAuth></AppLayout>} />
           <Route path="/wellness" element={<AppLayout><RequireAuth featureName="Wellness"><Wellness /></RequireAuth></AppLayout>} />
+          <Route path="/knowledge-hub" element={<AppLayout><RequireAuth featureName="Góc kiến thức"><KnowledgeHub /></RequireAuth></AppLayout>} />
           <Route path="/stories" element={<AppLayout><RequireAuth featureName="Câu chuyện"><Stories /></RequireAuth></AppLayout>} />
           <Route path="/settings" element={<AppLayout><RequireAuth featureName="Cài đặt"><Settings /></RequireAuth></AppLayout>} />
 

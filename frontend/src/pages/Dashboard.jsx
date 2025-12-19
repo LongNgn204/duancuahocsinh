@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import {
     MessageCircle, Heart, Star, Gamepad2, BookOpen,
-    Clock, Settings, TrendingUp, Award, Sparkles, Zap, Feather
+    Clock, Settings, TrendingUp, Award, Sparkles, Zap, Feather, Brain
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import { useAuth } from '../hooks/useAuth';
@@ -66,6 +66,15 @@ const quickActions = [
         gradient: 'from-cyan-400 to-sky-500',
         bg: 'bg-cyan-50 text-cyan-600',
         delay: 0.5
+    },
+    {
+        icon: Brain,
+        title: 'Góc Kiến Thức',
+        description: 'Hiểu để thương mình',
+        path: '/knowledge-hub',
+        gradient: 'from-fuchsia-400 to-pink-500',
+        bg: 'bg-fuchsia-50 text-fuchsia-600',
+        delay: 0.6
     },
 ];
 
