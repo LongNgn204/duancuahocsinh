@@ -104,7 +104,6 @@
 }
 
 
-
 /* ===== BASE STYLES ===== */
 html,
 body,
@@ -193,7 +192,8 @@ body {
   min-height: 100vh;
   color: var(--text);
   font-family: var(--font-sans);
-  font-weight: 500; /* BOLD cho dễ đọc */
+  font-weight: 500;
+  /* BOLD cho dễ đọc */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.65;

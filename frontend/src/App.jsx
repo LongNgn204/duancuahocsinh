@@ -1,12 +1,11 @@
 // src/App.jsx
-// Chú thích: App layout v3.0 với Landing Page, modern components, lazy routes
+// Chú thích: App layout v3.1 với Landing Page, modern components, lazy routes, mobile bottom nav
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import AppHeader from './components/layout/AppHeader';
 import Sidebar from './components/layout/Sidebar';
 import FocusModeToggle from './components/layout/FocusModeToggle';
-// MobileNav removed - now using Sidebar on mobile
-// import MobileNav from './components/layout/MobileNav';
+import MobileBottomNav from './components/layout/MobileBottomNav';
 import PrivacyNotice from './components/modals/PrivacyNotice';
 import OnboardingModal from './components/modals/OnboardingModal';
 import UpdateToast from './components/ui/UpdateToast';
@@ -83,6 +82,9 @@ function AppLayout({ children }) {
 
       {/* Floating AI Chat Button */}
       {!focusMode && <FloatingChatButton />}
+
+      {/* Mobile Bottom Navigation */}
+      {!focusMode && <MobileBottomNav />}
 
       {/* Tour Guide Help Button - Disabled */}
       {/* {!focusMode && <TourTriggerButton />} */}

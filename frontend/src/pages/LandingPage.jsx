@@ -1,5 +1,5 @@
 // src/pages/LandingPage.jsx
-// Chú thích: Landing Page - Design mới với hero full-width background
+// Chú thích: Landing Page v2.0 - Enhanced với animated effects, floating elements
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -11,6 +11,9 @@ import {
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import GlowOrbs from '../components/ui/GlowOrbs';
+import AnimatedCounter from '../components/ui/AnimatedCounter';
+import ParticleField from '../components/ui/ParticleField';
+import FloatingElements from '../components/ui/FloatingElements';
 
 // Features data - Theo yêu cầu khách hàng
 const features = [
@@ -162,6 +165,12 @@ export default function LandingPage() {
                     <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white dark:from-slate-950 to-transparent"></div>
                 </div>
 
+                {/* Particle Effect Background */}
+                <ParticleField className="z-[1] opacity-60" />
+
+                {/* Floating Decorative Elements */}
+                <FloatingElements className="z-[2] hidden md:block" />
+
                 <div className="relative z-10 max-w-5xl mx-auto text-center py-20">
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
@@ -224,6 +233,36 @@ export default function LandingPage() {
                 >
                     <ChevronDown size={32} className="text-slate-500 dark:text-slate-400" />
                 </motion.div>
+            </section>
+
+            {/* ===== STATS SECTION ===== */}
+            <section className="py-12 px-4 bg-gradient-to-b from-white dark:from-slate-950 to-pink-50/30 dark:to-gray-900/50 relative z-10">
+                <div className="max-w-5xl mx-auto">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        {stats.map((stat, idx) => (
+                            <motion.div
+                                key={stat.label}
+                                initial={{ opacity: 0, y: 30 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.1, duration: 0.5 }}
+                                viewport={{ once: true }}
+                                className="text-center"
+                            >
+                                <Card className="p-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300 group">
+                                    <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                        <stat.icon className="w-7 h-7 text-white" />
+                                    </div>
+                                    <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                                        <AnimatedCounter value={stat.value} duration={2 + idx * 0.3} />
+                                    </div>
+                                    <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                                        {stat.label}
+                                    </div>
+                                </Card>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
             </section>
 
 
