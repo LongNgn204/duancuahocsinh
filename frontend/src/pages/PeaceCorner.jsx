@@ -1,9 +1,72 @@
+// src/pages/PeaceCorner.jsx
+// Chú thích: Góc An Yên - Bài tập thở và Bộ thẻ an yên
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useSound } from '../contexts/SoundContext';
-import { Wind, Play, Pause, RotateCcw, Volume2, VolumeX, ArrowLeft, Heart, Sparkles, Music, Music4 } from 'lucide-react';
+import Card from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import { Wind, Play, Pause, RotateCcw, Volume2, VolumeX, ArrowLeft, Sparkles, Music, Music4 } from 'lucide-react';
+import EncouragementMessages from '../components/breathing/EncouragementMessages';
+import PeaceCardDeck from '../components/breathing/PeaceCardDeck';
 
-// ... (BREATHING_MODES definition remains same)
+// Breathing Modes Configuration
+const BREATHING_MODES = {
+    blueBubble: {
+        id: 'blueBubble',
+        label: 'Bong bóng xanh (30s)',
+        color: 'from-blue-400 to-cyan-300',
+        duration: 30,
+        inhaleTime: 4000,
+        holdTime: 2000,
+        exhaleTime: 4000,
+        instruction: {
+            inhale: 'Hít vào... thầm đếm 1-2-3-4',
+            hold: 'Giữ lại... 1-2',
+            exhale: 'Thở ra... nhẹ nhàng 1-2-3-4',
+        }
+    },
+    relax: {
+        id: 'relax',
+        label: 'Thư giãn sâu (4-7-8)',
+        color: 'from-purple-400 to-indigo-300',
+        duration: 60,
+        inhaleTime: 4000,
+        holdTime: 7000,
+        exhaleTime: 8000,
+        instruction: {
+            inhale: 'Hít vào bằng mũi...',
+            hold: 'Giữ hơi...',
+            exhale: 'Thở ra bằng miệng...',
+        }
+    },
+    balance: {
+        id: 'balance',
+        label: 'Cân bằng (4-4-4-4)',
+        color: 'from-green-400 to-emerald-300',
+        duration: 60,
+        inhaleTime: 4000,
+        holdTime: 4000,
+        exhaleTime: 4000,
+        holdEmptyTime: 4000,
+        instruction: {
+            inhale: 'Hít vào...',
+            hold: 'Giữ...',
+            exhale: 'Thở ra...',
+            holdEmpty: 'Giữ...'
+        }
+    }
+};
+
+// Animation variants for bubble
+const bubbleVariants = {
+    idle: { scale: 1, opacity: 0.8 },
+    inhale: { scale: 1.5, opacity: 1 },
+    hold: { scale: 1.5, opacity: 1 },
+    exhale: { scale: 1, opacity: 0.8 },
+    holdEmpty: { scale: 1, opacity: 0.8 },
+    finished: { scale: 0, opacity: 0 }
+};
 
 export default function PeaceCorner() {
     const navigate = useNavigate();
@@ -18,7 +81,7 @@ export default function PeaceCorner() {
     const [timeLeft, setTimeLeft] = useState(BREATHING_MODES.blueBubble.duration);
     const [isRunning, setIsRunning] = useState(false);
     const [showEncouragement, setShowEncouragement] = useState(false);
-    const [isMuted, setIsMuted] = useState(false); // Default ON voice
+    const [isMuted, setIsMuted] = useState(false);
 
     const timerRef = useRef(null);
     const phaseTimeoutRef = useRef(null);
@@ -28,14 +91,15 @@ export default function PeaceCorner() {
 
     // BGM Logic
     useEffect(() => {
-        // Auto play nature sounds when entering Peace Corner if enabled
-        playBgm('nature');
+        if (bgmEnabled) {
+            playBgm('nature');
+        }
         return () => {
             stopBgm();
         };
-    }, [playBgm, stopBgm]);
+    }, [playBgm, stopBgm, bgmEnabled]);
 
-    // Cleanup
+    // Cleanup on unmount
     useEffect(() => {
         return () => {
             clearInterval(timerRef.current);
@@ -43,40 +107,138 @@ export default function PeaceCorner() {
             if (synthRef.current) synthRef.current.cancel();
             stopBgm();
         };
-    }, []);
+    }, [stopBgm]);
 
-    // ... (Rest of logic: Timer, Voice Helper, Breathing Logic, Handlers)
-    // NOTE: Need to copy existing logic carefully.
-    // For safety, I will only replace the top imports and the returned JSX Controls part to include Music Toggle.
-    // Or better, I will use ReplaceFileContent carefully on specific blocks.
+    // Timer logic
+    useEffect(() => {
+        if (isRunning && timeLeft > 0) {
+            timerRef.current = setInterval(() => {
+                setTimeLeft((prev) => {
+                    if (prev <= 1) {
+                        finishSession();
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        }
+        return () => clearInterval(timerRef.current);
+    }, [isRunning, timeLeft]);
 
-    // ...
-    // (Since I cannot see full file content in this replace block, I will strictly follow "ReplacementChunks" strategy or careful single block replacement)
-    // Let's use multiple replaces to avoid re-writing the whole large file logic which is risky.
+    // Breathing Cycle Logic
+    useEffect(() => {
+        if (!isRunning || phase === 'finished') return;
+
+        const runCycle = () => {
+            setPhase('inhale');
+            speak(currentMode.instruction.inhale);
+
+            phaseTimeoutRef.current = setTimeout(() => {
+                if (!isRunning) return;
+
+                setPhase('hold');
+                speak(currentMode.instruction.hold);
+
+                phaseTimeoutRef.current = setTimeout(() => {
+                    if (!isRunning) return;
+
+                    setPhase('exhale');
+                    speak(currentMode.instruction.exhale);
+
+                    phaseTimeoutRef.current = setTimeout(() => {
+                        if (!isRunning) return;
+
+                        if (currentMode.holdEmptyTime) {
+                            setPhase('holdEmpty');
+                            phaseTimeoutRef.current = setTimeout(() => {
+                                if (isRunning) runCycle();
+                            }, currentMode.holdEmptyTime);
+                        } else {
+                            if (isRunning) runCycle();
+                        }
+                    }, currentMode.exhaleTime);
+                }, currentMode.holdTime);
+            }, currentMode.inhaleTime);
+        };
+
+        if (phase === 'idle') {
+            runCycle();
+        }
+
+        return () => clearTimeout(phaseTimeoutRef.current);
+    }, [isRunning, currentMode]);
+
+    // TTS Helper
+    const speak = (text) => {
+        if (isMuted || !synthRef.current) return;
+        synthRef.current.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'vi-VN';
+        utterance.rate = 0.9;
+        synthRef.current.speak(utterance);
+    };
+
+    const startSession = () => {
+        setIsRunning(true);
+        setPhase('idle');
+    };
+
+    const pauseSession = () => {
+        setIsRunning(false);
+        clearTimeout(phaseTimeoutRef.current);
+        setPhase('idle');
+        if (synthRef.current) synthRef.current.cancel();
+    };
+
+    const resetSession = () => {
+        setIsRunning(false);
+        clearTimeout(phaseTimeoutRef.current);
+        setPhase('idle');
+        setTimeLeft(currentMode.duration);
+        setShowEncouragement(false);
+        if (synthRef.current) synthRef.current.cancel();
+    };
+
+    const finishSession = () => {
+        setIsRunning(false);
+        setPhase('finished');
+        clearTimeout(phaseTimeoutRef.current);
+        if (synthRef.current) synthRef.current.cancel();
+        setTimeout(() => setShowEncouragement(true), 1000);
+    };
+
+    const handleModeChange = (newMode) => {
+        setMode(newMode);
+        setIsRunning(false);
+        setPhase('idle');
+        setTimeLeft(BREATHING_MODES[newMode].duration);
+        setShowEncouragement(false);
+    };
+
     return (
         <div className="min-h-screen relative overflow-hidden bg-slate-50">
             {/* Ambient Background */}
             <div className={`absolute inset-0 bg-gradient-to-br ${currentMode.color} opacity-10 transition-colors duration-1000`} />
 
             {/* Header Controls */}
-            <div className="relative z-20 flex items-center justify-between p-4 md:p-6">
+            <div className="relative z-20 flex items-center justify-between p-4 md:p-6 flex-wrap gap-2">
                 <Button variant="ghost" onClick={() => navigate('/app')} icon={<ArrowLeft size={20} />}>
-                    Quay lại
+                    <span className="hidden sm:inline">Quay lại</span>
                 </Button>
 
                 {/* Tab Switcher */}
                 <div className="flex bg-white/50 p-1 rounded-xl backdrop-blur-sm shadow-sm">
                     <button
                         onClick={() => setActiveTab('breathing')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'breathing' ? 'bg-white text-[--brand] shadow-sm' : 'text-[--muted]'}`}
+                        className={`px-3 py-2 sm:px-4 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'breathing' ? 'bg-white text-[--brand] shadow-sm' : 'text-[--muted]'}`}
                     >
-                        <Wind size={16} /> Bài tập thở
+                        <Wind size={16} /> <span className="hidden sm:inline">Bài tập thở</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('cards')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'cards' ? 'bg-white text-[--brand] shadow-sm' : 'text-[--muted]'}`}
+                        className={`px-3 py-2 sm:px-4 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'cards' ? 'bg-white text-[--brand] shadow-sm' : 'text-[--muted]'}`}
                     >
-                        <Sparkles size={16} /> Bộ thẻ an yên
+                        <Sparkles size={16} /> <span className="hidden sm:inline">Bộ thẻ an yên</span>
                     </button>
                 </div>
 
@@ -175,23 +337,23 @@ export default function PeaceCorner() {
                                             key={phase}
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            className="text-2xl font-bold text-[--text-secondary] leading-relaxed"
+                                            className="text-xl md:text-2xl font-bold text-[--text-secondary] leading-relaxed"
                                         >
                                             {phase === 'idle' ? 'Sẵn sàng...' :
                                                 phase === 'finished' ? 'Hoàn thành!' :
-                                                    currentMode.instruction[phase]}
+                                                    currentMode.instruction[phase] || ''}
                                         </motion.p>
                                     </div>
                                 </div>
 
                                 {/* Controls */}
-                                <div className="flex gap-6 mt-4">
+                                <div className="flex gap-4 sm:gap-6 mt-4">
                                     {!isRunning ? (
                                         <Button
                                             onClick={startSession}
                                             variant="primary"
                                             size="lg"
-                                            className="shadow-xl shadow-blue-500/20 px-8 py-4 rounded-full text-lg"
+                                            className="shadow-xl shadow-blue-500/20 px-6 sm:px-8 py-4 rounded-full text-base sm:text-lg"
                                             icon={<Play size={24} fill="currentColor" />}
                                         >
                                             Bắt đầu
@@ -225,14 +387,14 @@ export default function PeaceCorner() {
                                 animate={{ opacity: 1, scale: 1 }}
                                 className="w-full max-w-lg"
                             >
-                                <Card className="text-center py-10 px-6 !bg-white/80 !backdrop-blur-xl border-white shadow-2xl">
+                                <Card className="text-center py-8 sm:py-10 px-4 sm:px-6 !bg-white/80 !backdrop-blur-xl border-white shadow-2xl">
                                     <div className="mb-6 inline-block p-4 rounded-full bg-green-100 text-green-500">
                                         <Sparkles size={40} />
                                     </div>
-                                    <h2 className="text-3xl font-bold text-[--text] mb-3">Thật tuyệt vời!</h2>
-                                    <p className="text-[--muted] mb-8 text-lg">Bạn đã dành thời gian thiền định hôm nay.</p>
+                                    <h2 className="text-2xl sm:text-3xl font-bold text-[--text] mb-3">Thật tuyệt vời!</h2>
+                                    <p className="text-[--muted] mb-8 text-base sm:text-lg">Bạn đã dành thời gian thiền định hôm nay.</p>
                                     <EncouragementMessages />
-                                    <div className="mt-10 flex justify-center gap-4">
+                                    <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
                                         <Button onClick={resetSession} variant="outline" icon={<RotateCcw size={18} />}>
                                             Tập tiếp
                                         </Button>
@@ -260,4 +422,3 @@ export default function PeaceCorner() {
         </div>
     );
 }
-
