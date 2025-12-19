@@ -5,14 +5,14 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import AppHeader from './components/layout/AppHeader';
 import Sidebar from './components/layout/Sidebar';
 import FocusModeToggle from './components/layout/FocusModeToggle';
-import MobileBottomNav from './components/layout/MobileBottomNav';
 import PrivacyNotice from './components/modals/PrivacyNotice';
 import OnboardingModal from './components/modals/OnboardingModal';
 import UpdateToast from './components/ui/UpdateToast';
 import { useFocusMode } from './hooks/useFocusMode';
 import GlowOrbs from './components/ui/GlowOrbs';
-import FloatingChatButton from './components/ui/FloatingChatButton';
+// FloatingChatButton removed
 import { AuthProvider, useAuth } from './hooks/useAuth';
+import { SoundProvider } from './contexts/SoundContext';
 import AuthModal from './components/auth/AuthModal';
 import TourGuide, { TourTriggerButton, useTourStatus } from './components/tour/TourGuide';
 import RequireAuth from './components/auth/RequireAuth';
@@ -23,7 +23,7 @@ import { registerServiceWorker } from './utils/notifications';
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Chat = lazy(() => import('./pages/Chat'));
-const BreathingBubble = lazy(() => import('./components/breathing/BreathingBubble'));
+const PeaceCorner = lazy(() => import('./pages/PeaceCorner'));
 const GratitudeJar = lazy(() => import('./components/gratitude/GratitudeJar'));
 const BeeGame = lazy(() => import('./components/games/BeeGame'));
 const BubblePop = lazy(() => import('./components/games/BubblePop'));
@@ -81,10 +81,8 @@ function AppLayout({ children }) {
       <FocusModeToggle />
 
       {/* Floating AI Chat Button */}
-      {!focusMode && <FloatingChatButton />}
-
-      {/* Mobile Bottom Navigation */}
-      {!focusMode && <MobileBottomNav />}
+      {/* Floating AI Chat Button removed */}
+      {!focusMode && null}
 
       {/* Tour Guide Help Button - Disabled */}
       {/* {!focusMode && <TourTriggerButton />} */}
@@ -149,7 +147,7 @@ function AppRoutes() {
           {/* App Pages - With layout, REQUIRE LOGIN */}
           <Route path="/app" element={<AppLayout><RequireAuth featureName="Dashboard"><Dashboard /></RequireAuth></AppLayout>} />
           <Route path="/chat" element={<AppLayout><RequireAuth featureName="Trò chuyện AI"><Chat /></RequireAuth></AppLayout>} />
-          <Route path="/breathing" element={<AppLayout><RequireAuth featureName="Góc an yên"><BreathingBubble /></RequireAuth></AppLayout>} />
+          <Route path="/breathing" element={<AppLayout><RequireAuth featureName="Góc an yên"><PeaceCorner /></RequireAuth></AppLayout>} />
           <Route path="/gratitude" element={<AppLayout><RequireAuth featureName="Lọ biết ơn"><GratitudeJar /></RequireAuth></AppLayout>} />
           <Route path="/games" element={<AppLayout><RequireAuth featureName="Games"><Games /></RequireAuth></AppLayout>} />
           <Route path="/games/reflex" element={<AppLayout><RequireAuth featureName="Game Reflex"><ReflexGame /></RequireAuth></AppLayout>} />
@@ -200,11 +198,13 @@ function AuthModalWrapper() {
 export default function App() {
   return (
     <AuthProvider>
-      <Router>
-        <AppRoutes />
-        <UpdateToast />
-        <AuthModalWrapper />
-      </Router>
+      <SoundProvider>
+        <Router>
+          <AppRoutes />
+          <UpdateToast />
+          <AuthModalWrapper />
+        </Router>
+      </SoundProvider>
     </AuthProvider>
   );
 }

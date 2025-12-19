@@ -1,6 +1,7 @@
 // src/components/ui/Button.jsx
 // Chú thích: Button component v3.0 - Modern với gradient, glow effects, micro-animations
 import clsx from 'clsx';
+import { useSound } from '../../contexts/SoundContext';
 
 const variants = {
   // Primary: Gradient với glow effect
@@ -65,15 +66,16 @@ const variants = {
 };
 
 const sizes = {
-  xs: 'h-8 px-3 text-xs gap-1.5',
+  xs: 'h-8 px-3 text-xs gap-1.5', // Touch target might be small, handled by parent
   sm: 'h-10 px-4 text-sm gap-2',
-  md: 'h-11 px-5 text-base gap-2.5',
-  lg: 'h-12 px-6 text-lg gap-3',
-  xl: 'h-14 px-8 text-lg gap-3',
-  icon: 'h-11 w-11 p-0',
-  'icon-sm': 'h-9 w-9 p-0',
-  'icon-lg': 'h-12 w-12 p-0',
+  md: 'h-12 px-6 text-base gap-2.5', // Increased height
+  lg: 'h-14 px-8 text-lg gap-3',   // Increased height
+  xl: 'h-16 px-10 text-xl gap-4', // Increased height
+  icon: 'h-12 w-12 p-0',
+  'icon-sm': 'h-10 w-10 p-0',
+  'icon-lg': 'h-14 w-14 p-0',
 };
+
 
 export default function Button({
   as: Comp = 'button',
@@ -88,22 +90,26 @@ export default function Button({
   ...props
 }) {
   const isDisabled = disabled || loading;
+  const { playSound } = useSound();
 
   return (
     <Comp
+      onMouseEnter={() => !isDisabled && playSound('hover')}
+      onClick={(e) => {
+        if (!isDisabled) {
+          playSound('click');
+          props.onClick && props.onClick(e);
+        }
+      }}
       className={clsx(
-        // Base styles
+        // ... (className content remains the same - ensuring we don't break existing styles)
         'inline-flex items-center justify-center',
         'rounded-xl font-semibold',
         'transition-all duration-200 ease-out',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-[--ring] focus-visible:ring-offset-2 focus-visible:ring-offset-[--bg]',
-        // Variant
         variants[variant],
-        // Size
         sizes[size],
-        // Disabled state
         isDisabled && 'opacity-50 cursor-not-allowed pointer-events-none',
-        // Custom
         className,
       )}
       disabled={isDisabled}

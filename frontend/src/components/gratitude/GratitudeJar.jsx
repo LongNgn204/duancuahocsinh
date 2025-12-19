@@ -1,56 +1,36 @@
 // src/components/gratitude/GratitudeJar.jsx
-// Chú thích: Lọ Biết Ơn v2.0 - Với gợi ý hàng ngày và Streak
+// Chú thích: Lọ Biết Ơn v2.0 - Premium Visuals & Animations
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Card from '../ui/Card';
 import Button from '../ui/Button';
-import { Heart, Sparkles, Plus, Trash2, Calendar, Lightbulb, X, Share2 } from 'lucide-react';
+import { Heart, Sparkles, Plus, Trash2, Calendar, Lightbulb, X, Edit3, Save } from 'lucide-react';
 import { isLoggedIn, rewardXP } from '../../utils/api';
+import Confetti from '../ui/Confetti';
+import { useSound } from '../../contexts/SoundContext';
 
 const DAILY_SUGGESTIONS = [
-    // Người thân & bạn bè
     "Hôm nay bạn biết ơn ai nhất?",
     "Ai đã giúp đỡ bạn hôm nay?",
-    "Bạn có muốn cảm ơn thầy cô về điều gì?",
-    "Bố mẹ đã làm gì khiến bạn vui?",
-    "Một người bạn đã khiến bạn cười là ai?",
-    "Ai luôn ủng hộ bạn mỗi khi khó khăn?",
-
-    // Thành tựu & tự hào
-    "Bạn tự hào về điều gì ở bản thân?",
-    "Một khó khăn bạn đã vượt qua trong tuần này?",
-    "Bạn đã hoàn thành việc gì khiến bạn vui?",
-    "Điều gì bạn làm tốt hơn so với trước đây?",
-    "Bạn đã dũng cảm làm điều gì gần đây?",
-
-    // Niềm vui đơn giản
     "Một điều nhỏ bé nào đã làm bạn cười hôm nay?",
-    "Món ăn ngon nhất bạn đã ăn hôm nay là gì?",
-    "Một khoảnh khắc bình yên bạn có được là khi nào?",
-    "Thời tiết hôm nay có gì đẹp?",
+    "Bữa ăn ngon nhất hôm nay là gì?",
+    "Một lời khen bạn nhận được?",
+    "Bạn tự hào về điều gì ở bản thân hôm nay?",
+    "Thời tiết hôm nay thế nào, có gì đẹp không?",
     "Một bài hát hay bạn đã nghe?",
-    "Bạn đã nhìn thấy điều gì đẹp hôm nay?",
-    "Giấc ngủ tối qua có ngon không?",
-
-    // Học tập & phát triển
-    "Bạn học được bài học gì thú vị?",
-    "Một điều mới bạn biết được hôm nay?",
-    "Sách/video nào đã cho bạn ý tưởng hay?",
-    "Môn học nào bạn thấy thú vị gần đây?",
-
-    // Tự yêu thương
-    "Một lời khen bạn nhận được (hoặc tự khen mình)?",
-    "Bạn đã chăm sóc bản thân thế nào hôm nay?",
+    "Một khó khăn bạn đã vượt qua?",
     "Điều gì khiến bạn cảm thấy an toàn?",
-    "Bạn thích điều gì nhất ở mình?",
-
-    // Tương lai & hy vọng
+    "Giấc ngủ tối qua của bạn thế nào?",
+    "Hôm nay bạn đã học được điều gì mới?",
+    "Một người bạn đã nhắn tin cho bạn?",
+    "Cảm giác khi uống một ly nước mát?",
+    "Một việc tử tế bạn đã làm?",
+    "Màu sắc yêu thích bạn nhìn thấy hôm nay?",
+    "Một cuốn sách hay video thú vị?",
     "Bạn mong chờ điều gì vào ngày mai?",
-    "Một mục tiêu nhỏ bạn muốn đạt được tuần này?",
-    "Điều gì khiến bạn lạc quan về tương lai?"
+    "Cảm giác của bạn ngay lúc này?",
+    "Một kỷ niệm đẹp chợt hiện về?",
 ];
 
-// Key storage
 const GRATITUDE_KEY = 'gratitude_entries_v1';
 const STREAK_KEY = 'gratitude_streak_v1';
 
@@ -60,29 +40,25 @@ export default function GratitudeJar() {
     const [streak, setStreak] = useState(0);
     const [suggestion, setSuggestion] = useState('');
     const [showSuggestion, setShowSuggestion] = useState(true);
+    const [isAdding, setIsAdding] = useState(false);
+    const [showConfetti, setShowConfetti] = useState(false);
+    const { playSound } = useSound();
 
-    // Load initial data
+    // Load Data
     useEffect(() => {
         try {
             const savedEntries = JSON.parse(localStorage.getItem(GRATITUDE_KEY) || '[]');
             setEntries(savedEntries);
-
             const savedStreak = JSON.parse(localStorage.getItem(STREAK_KEY) || '{ "count": 0, "lastDate": null }');
-
-            // Calculate streak logic here if needed (check lastDate vs today)
-            // Simple version: rely on stored count
             setStreak(savedStreak.count);
-
-            // Set initial suggestion based on day of month to rotate
-            const day = new Date().getDate();
-            setSuggestion(DAILY_SUGGESTIONS[day % DAILY_SUGGESTIONS.length]);
-
+            // Random suggestion
+            setSuggestion(DAILY_SUGGESTIONS[Math.floor(Math.random() * DAILY_SUGGESTIONS.length)]);
         } catch (e) {
-            console.error('Failed to load gratitude data', e);
+            console.error(e);
         }
     }, []);
 
-    // Save entries
+    // Save Data
     useEffect(() => {
         localStorage.setItem(GRATITUDE_KEY, JSON.stringify(entries));
     }, [entries]);
@@ -91,170 +67,199 @@ export default function GratitudeJar() {
         try {
             const today = new Date().toISOString().split('T')[0];
             const savedStreak = JSON.parse(localStorage.getItem(STREAK_KEY) || '{ "count": 0, "lastDate": null }');
-
             if (savedStreak.lastDate !== today) {
-                // Check if yesterday was lastDate to increment, else reset to 1? 
-                // For forgiveness, let's just increment if not today
-                // Real logic: if (lastDate === yesterday) count++ else count = 1
-
                 const newCount = savedStreak.count + 1;
                 const newStreak = { count: newCount, lastDate: today };
                 localStorage.setItem(STREAK_KEY, JSON.stringify(newStreak));
                 setStreak(newCount);
-
-                // Reward XP for daily logging
-                if (isLoggedIn()) {
-                    rewardXP('daily_gratitude');
-                }
+                if (isLoggedIn()) rewardXP('daily_gratitude');
             }
         } catch (_) { }
     };
 
     const addEntry = () => {
         if (!text.trim()) return;
+        setIsAdding(true);
+        playSound('click'); // Click sound start
 
-        const newEntry = {
-            id: Date.now(),
-            text: text.trim(),
-            date: new Date().toISOString(),
-            tags: [] // future use
-        };
+        setTimeout(() => {
+            const newEntry = {
+                id: Date.now(),
+                text: text.trim(),
+                date: new Date().toISOString(),
+                color: getRandomColor()
+            };
+            setEntries([newEntry, ...entries]);
+            setText('');
+            updateStreak();
+            setShowSuggestion(false);
+            setIsAdding(false);
 
-        setEntries([newEntry, ...entries]);
-        setText('');
-        updateStreak();
-        setShowSuggestion(false); // Hide suggestion after writing
+            // Success Multimedia Effects
+            playSound('drop');
+            setShowConfetti(true);
+            setTimeout(() => setShowConfetti(false), 3000);
+
+        }, 800); // Wait for animation
     };
 
     const deleteEntry = (id) => {
-        setEntries(entries.filter(e => e.id !== id));
+        if (window.confirm('Bạn muốn xóa điều biết ơn này?')) {
+            playSound('pop');
+            setEntries(entries.filter(e => e.id !== id));
+        }
     };
 
     const getRandomSuggestion = () => {
+        playSound('click');
         const random = DAILY_SUGGESTIONS[Math.floor(Math.random() * DAILY_SUGGESTIONS.length)];
         setSuggestion(random);
         setShowSuggestion(true);
     };
 
-    return (
-        <div className="max-w-3xl mx-auto space-y-6">
-            {/* Header & Streak */}
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold gradient-text flex items-center gap-2">
-                        <Heart className="fill-pink-400 text-pink-500" />
-                        Lọ Biết Ơn
-                    </h1>
-                    <p className="text-[--muted] text-sm">Lưu giữ những điều tích cực nhỏ bé mỗi ngày.</p>
-                </div>
+    const getRandomColor = () => {
+        const colors = ['bg-yellow-100', 'bg-pink-100', 'bg-blue-100', 'bg-green-100', 'bg-purple-100', 'bg-orange-100'];
+        return colors[Math.floor(Math.random() * colors.length)];
+    };
 
-                <Card size="sm" className="!py-2 !px-4 flex items-center gap-3 bg-gradient-to-r from-orange-100 to-amber-100 dark:from-orange-900/20 dark:to-amber-900/20 border-orange-200">
-                    <div className="text-2xl">🔥</div>
-                    <div>
-                        <div className="text-xs text-[--muted] font-medium uppercase">Streak</div>
-                        <div className="font-bold text-orange-600 dark:text-orange-400">{streak} ngày liên tiếp</div>
-                    </div>
-                </Card>
+    return (
+        <div className="min-h-screen py-6 px-4 md:px-8 max-w-6xl mx-auto space-y-12">
+            <Confetti active={showConfetti} />
+
+            {/* Header Section */}
+            <div className="text-center space-y-4">
+                <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="inline-block p-4 rounded-full bg-gradient-to-tr from-amber-300 to-orange-400 shadow-lg mb-2"
+                >
+                    <Heart size={40} className="text-white fill-white/20" />
+                </motion.div>
+                <h1 className="text-4xl md:text-5xl font-bold text-slate-800 tracking-tight">
+                    Lọ <span className="text-amber-500">Biết Ơn</span>
+                </h1>
+                <p className="text-lg text-slate-500 max-w-lg mx-auto">
+                    Mỗi ngày một niềm vui nhỏ, tích lũy thành hạnh phúc to.
+                </p>
+
+                {/* Streak Badge */}
+                <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md border border-amber-100 text-amber-600 font-bold"
+                >
+                    <span>🔥</span>
+                    <span>{streak} ngày liên tiếp</span>
+                </motion.div>
             </div>
 
-            {/* Input Area */}
-            <Card>
-                {/* Suggestion Bubble */}
-                <AnimatePresence>
-                    {showSuggestion && (
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="mb-4 overflow-hidden"
-                        >
-                            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl flex items-start gap-3 border border-blue-100 dark:border-blue-800">
-                                <Lightbulb size={20} className="text-blue-500 mt-1 shrink-0" />
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Gợi ý hôm nay:</p>
-                                    <p className="text-sm text-blue-600 dark:text-blue-300 italic">"{suggestion}"</p>
-                                </div>
-                                <button onClick={() => setShowSuggestion(false)} className="text-blue-400 hover:text-blue-600">
-                                    <X size={16} />
-                                </button>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+            <div className="grid md:grid-cols-2 gap-12 items-start">
 
-                <div className="relative">
-                    <textarea
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        placeholder="Hôm nay bạn biết ơn điều gì?"
-                        className="w-full p-4 rounded-xl bg-[--surface-2] border-transparent focus:border-[--brand] focus:ring-2 focus:ring-[--brand]/20 transition-all min-h-[120px] resize-none"
-                    />
-                    <div className="absolute bottom-3 right-3 flex gap-2">
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={getRandomSuggestion}
-                            title="Gợi ý khác"
-                            icon={<Sparkles size={16} />}
-                        />
-                    </div>
-                </div>
-
-                <div className="mt-4 flex justify-end">
-                    <Button
-                        onClick={addEntry}
-                        disabled={!text.trim()}
-                        icon={<Plus size={18} />}
-                        variant="primary"
-                    >
-                        Thêm vào lọ
-                    </Button>
-                </div>
-            </Card>
-
-            {/* Entries List */}
-            <div className="space-y-4">
-                <h3 className="font-bold text-[--text] flex items-center gap-2">
-                    <Calendar size={18} />
-                    Nhật ký của bạn
-                </h3>
-
-                {entries.length === 0 ? (
-                    <div className="text-center py-12 opacity-50">
-                        <div className="text-6xl mb-4">🏺</div>
-                        <p>Lọ của bạn đang trống.<br />Hãy viết điều biết ơn đầu tiên nhé!</p>
-                    </div>
-                ) : (
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        {entries.map((entry) => (
-                            <motion.div
-                                key={entry.id}
-                                layout
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="group relative"
-                            >
-                                <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-300 to-purple-300 rounded-2xl opacity-0 group-hover:opacity-50 transition blur-[2px]" />
-                                <Card className="h-full relative !bg-[#fff9f0] dark:!bg-gray-800 border-yellow-100 dark:border-gray-700">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className="text-xs font-semibold text-[--muted] bg-white/50 px-2 py-1 rounded-lg">
-                                            {new Date(entry.date).toLocaleDateString('vi-VN')}
-                                        </span>
-                                        <button
-                                            onClick={() => deleteEntry(entry.id)}
-                                            className="text-red-300 hover:text-red-500 transition-colors p-1"
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
+                {/* Left Column: Input & Writing */}
+                <div className="space-y-6">
+                    <div className="bg-white/80 backdrop-blur-xl rounded-[2rem] p-6 shadow-xl border border-white/50 relative overflow-hidden">
+                        {/* Suggestion */}
+                        <AnimatePresence>
+                            {showSuggestion && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="mb-6 bg-indigo-50 rounded-xl p-4 border border-indigo-100 flex gap-3 relative"
+                                >
+                                    <Lightbulb className="text-indigo-500 shrink-0" size={20} />
+                                    <div>
+                                        <p className="text-indigo-900 font-medium text-sm mb-1">Gợi ý cho bạn:</p>
+                                        <p className="text-indigo-700 italic">"{suggestion}"</p>
                                     </div>
-                                    <p className="text-[--text] whitespace-pre-wrap font-handwriting text-lg leading-relaxed">
-                                        {entry.text}
-                                    </p>
-                                </Card>
-                            </motion.div>
-                        ))}
+                                    <button onClick={() => setShowSuggestion(false)} className="absolute top-2 right-2 text-indigo-300 hover:text-indigo-500">
+                                        <X size={16} />
+                                    </button>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        <div className="relative">
+                            <textarea
+                                value={text}
+                                onChange={(e) => setText(e.target.value)}
+                                placeholder="Hôm nay mình biết ơn vì..."
+                                className="w-full bg-transparent text-xl font-handwriting leading-relaxed p-2 focus:outline-none min-h-[150px] resize-none placeholder:text-slate-300 text-slate-700"
+                            />
+
+                            {/* Toolbar */}
+                            <div className="flex justify-between items-center mt-4 pt-4 border-t border-slate-100">
+                                <Button size="sm" variant="ghost" onClick={getRandomSuggestion} icon={<Sparkles size={16} />}>
+                                    Gợi ý khác
+                                </Button>
+                                <Button
+                                    onClick={addEntry}
+                                    disabled={!text.trim() || isAdding}
+                                    variant="primary"
+                                    className="rounded-full px-6 shadow-lg shadow-amber-500/20 bg-gradient-to-r from-amber-400 to-orange-500 border-none"
+                                    icon={isAdding ? <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}><Sparkles size={18} /></motion.div> : <Plus size={18} />}
+                                >
+                                    {isAdding ? 'Đang bỏ vào lọ...' : 'Thả vào lọ'}
+                                </Button>
+                            </div>
+                        </div>
                     </div>
-                )}
+
+                    {/* Image/Decoration */}
+                    <div className="hidden md:block p-8 text-center opacity-60">
+                        <img src="https://em-content.zobj.net/source/microsoft-teams/337/pot-of-food_1f372.png" alt="Jar" className="w-64 mx-auto drop-shadow-2xl filter contrast-125" />
+                        <p className="mt-4 font-handwriting text-2xl text-slate-400 rotate-2">"Lọ của sự hạnh phúc"</p>
+                    </div>
+                </div>
+
+                {/* Right Column: Entries Stream (Masonry style) */}
+                <div className="relative min-h-[500px]">
+                    <h3 className="text-xl font-bold text-slate-700 mb-6 flex items-center gap-2">
+                        <Calendar className="text-amber-500" size={20} />
+                        Những điều đã lưu
+                    </h3>
+
+                    {entries.length === 0 ? (
+                        <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                            <div className="text-6xl mb-4 grayscale opacity-30">🏺</div>
+                            <p className="text-slate-400 font-medium">Lọ đang trống rỗng.<br />Hãy thêm điều biết ơn đầu tiên!</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <AnimatePresence>
+                                {entries.map((entry) => (
+                                    <motion.div
+                                        key={entry.id}
+                                        layout
+                                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.5 }}
+                                        whileHover={{ y: -5, rotate: 1 }}
+                                        onMouseEnter={() => playSound('hover')}
+                                        className={`p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative group ${entry.color || 'bg-white'}`}
+                                    >
+                                        <div className="flex justify-between items-start mb-3 opacity-60">
+                                            <span className="text-[10px] uppercase tracking-wider font-bold">
+                                                {new Date(entry.date).toLocaleDateString('vi-VN')}
+                                            </span>
+                                            <button
+                                                onClick={() => deleteEntry(entry.id)}
+                                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-white/50 rounded-full hover:bg-red-50 hover:text-red-500"
+                                            >
+                                                <Trash2 size={12} />
+                                            </button>
+                                        </div>
+                                        <p className="text-slate-800 font-handwriting text-lg leading-snug">
+                                            {entry.text}
+                                        </p>
+                                        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Heart size={14} className="text-red-400 fill-red-400" />
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

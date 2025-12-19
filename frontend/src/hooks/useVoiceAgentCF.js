@@ -75,7 +75,8 @@ export function useVoiceAgentCF({ onSOS } = {}) {
 
         if (!SpeechRecognition || !speechSynthesis) {
             setIsSupported(false);
-            setError('Trình duyệt không hỗ trợ Web Speech API. Vui lòng dùng Chrome.');
+            console.error('[VoiceAgent] Browser not supported');
+            setError('Trình duyệt của bạn không hỗ trợ hội thoại giọng nói. Vui lòng sử dụng Google Chrome, Edge hoặc Safari.');
         } else {
             synthRef.current = speechSynthesis;
         }
@@ -140,11 +141,11 @@ export function useVoiceAgentCF({ onSOS } = {}) {
         recognition.onerror = (event) => {
             console.error('[VoiceAgent] STT error:', event.error);
             if (event.error === 'no-speech') {
-                setError('Không nghe thấy giọng nói. Hãy thử lại.');
+                setError('Không nghe thấy gì. Bạn hãy nói to hơn nhé.');
             } else if (event.error === 'not-allowed') {
-                setError('Vui lòng cho phép truy cập microphone.');
+                setError('Vui lòng cho phép Micro để trò chuyện với mình nhé!');
             } else {
-                setError(`Lỗi nhận diện giọng nói: ${event.error}`);
+                setError(`Lỗi micrô: ${event.error}. Hãy thử tải lại trang.`);
             }
             setStatus('idle');
         };

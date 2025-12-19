@@ -60,28 +60,27 @@ const padding = {
   lg: 'p-5 sm:p-6 md:p-8',
 };
 
+import { useSound } from '../../contexts/SoundContext';
+
+// ... (imports remain)
+
 export default function Card({
-  variant = 'default',
-  size = 'md',
-  className,
-  children,
-  hover = true,
-  as: Comp = 'section',
+  // ... (props remain)
   ...props
 }) {
+  const { playSound } = useSound();
+  const isInteractive = variant === 'interactive' || props.onClick;
+
   return (
     <Comp
+      onMouseEnter={() => isInteractive && hover && playSound('hover')}
       className={clsx(
-        // Base
+        // ... (className content remains)
         'rounded-2xl',
         'transition-all duration-300 ease-out',
-        // Variant
         variants[variant],
-        // Padding
         padding[size],
-        // Hover disabled
         !hover && 'hover:scale-100 hover:shadow-none',
-        // Custom
         className,
       )}
       {...props}

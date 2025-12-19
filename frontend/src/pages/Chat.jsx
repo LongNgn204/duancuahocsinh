@@ -101,7 +101,7 @@ export default function Chat() {
   const scrollRef = useRef(null);
   const [inputText, setInputText] = useState('');
   const [showSidebar, setShowSidebar] = useState(false); // Mobile sidebar
-  const [autoRead, setAutoRead] = useState(false); // Tự động đọc tin nhắn mới
+  const [autoRead, setAutoRead] = useState(true); // Tự động đọc tin nhắn mới (Default: TRUE for voice mode)
 
   // --- UseAI Hook (Text & Sync) ---
   const {
@@ -146,17 +146,21 @@ export default function Chat() {
     }
   }, [messages, voiceStatus]);
 
-  // --- Auto Read New AI Messages ---
-  const lastMsgCount = useRef(messages.length);
+  // --- Auto Read New AI Messages (Fixed: Wait for generation to finish) ---
+  const lastReadMsgRef = useRef(null);
+
   useEffect(() => {
-    if (messages.length > lastMsgCount.current) {
+    // Chỉ đọc khi loading kết thúc (text đã đầy đủ) và có messages
+    if (!aiLoading && messages.length > 0) {
       const lastMsg = messages[messages.length - 1];
-      if (lastMsg.role === 'assistant' && autoRead) {
+
+      // Nếu là tin nhắn của AI, chưa đọc, và đang bật autoRead
+      if (lastMsg.role === 'assistant' && autoRead && lastMsg.ts !== lastReadMsgRef.current) {
         speak(lastMsg.content);
+        lastReadMsgRef.current = lastMsg.ts;
       }
-      lastMsgCount.current = messages.length;
     }
-  }, [messages, autoRead, speak]);
+  }, [aiLoading, messages, autoRead, speak]);
 
   const handleSend = () => {
     if (!inputText.trim()) return;
@@ -391,9 +395,9 @@ export default function Chat() {
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={isListening ? "Đang nghe giọng nói của bạn..." : "Nhập tin nhắn..."}
-                className="w-full bg-transparent border-none outline-none resize-none max-h-32 text-slate-800 placeholder:text-slate-400 py-1"
+                className="w-full bg-transparent border-none outline-none resize-none max-h-32 text-slate-800 placeholder:text-slate-400 py-1 text-base md:text-lg"
                 rows={1}
-                style={{ minHeight: '24px' }}
+                style={{ minHeight: '28px' }}
               />
             </div>
 
@@ -404,10 +408,10 @@ export default function Chat() {
               disabled={!inputText.trim() || aiLoading}
               className="p-3 bg-white text-indigo-600 rounded-full shadow-md hover:bg-indigo-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-indigo-100"
             >
-              <Send size={24} className={inputText.trim() ? "translate-x-0.5 ml-0.5" : ""} />
+              <Send size={28} className={inputText.trim() ? "translate-x-0.5 ml-0.5" : ""} />
             </motion.button>
           </div>
-          <p className="text-center text-[10px] text-slate-500 mt-2 font-medium">
+          <p className="text-center text-xs text-slate-500 mt-2 font-medium opacity-80">
             AI có thể mắc lỗi. Hãy kiểm chứng thông tin quan trọng.
           </p>
         </div>
