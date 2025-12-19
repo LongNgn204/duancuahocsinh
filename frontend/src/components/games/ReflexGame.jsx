@@ -524,7 +524,6 @@ export default function ReflexGame() {
                             className="w-full rounded-lg border-2 border-[--surface-border] bg-[#1a1a2e] touch-none"
                             onClick={handleSpacePress}
                             onTouchStart={(e) => {
-                                e.preventDefault();
                                 handleSpacePress();
                             }}
                         />
@@ -630,8 +629,8 @@ export default function ReflexGame() {
                             <button
                                 onClick={() => setPlaySound(!playSound)}
                                 className={`p-2 rounded-lg transition-colors ${playSound
-                                        ? 'bg-[--brand]/10 text-[--brand]'
-                                        : 'bg-[--surface-border] text-[--muted]'
+                                    ? 'bg-[--brand]/10 text-[--brand]'
+                                    : 'bg-[--surface-border] text-[--muted]'
                                     }`}
                                 title={playSound ? 'Tắt âm thanh' : 'Bật âm thanh'}
                             >

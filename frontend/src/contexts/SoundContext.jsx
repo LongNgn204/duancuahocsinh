@@ -25,7 +25,7 @@ const SOUND_URLS = {
 const SoundContext = createContext();
 
 export function SoundProvider({ children }) {
-    const [sfxEnabled, setSfxEnabled] = useState(true);
+    const [sfxEnabled, setSfxEnabled] = useState(false);
     const [bgmEnabled, setBgmEnabled] = useState(false); // Default off for BGM
     const [volume, setVolume] = useState(0.5);
 

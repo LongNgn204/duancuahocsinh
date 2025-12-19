@@ -51,14 +51,12 @@ export default function DoodleCanvas() {
     };
 
     const startDrawing = (e) => {
-        e.preventDefault();
         setIsDrawing(true);
         setLastPos(getPos(e));
     };
 
     const draw = (e) => {
         if (!isDrawing) return;
-        e.preventDefault();
 
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
