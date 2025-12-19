@@ -1,48 +1,104 @@
 // backend/workers/ai-proxy.js
-// Chú thích: Cloudflare Worker proxy gọi Gemini, kèm guard SOS, CORS (ALLOW_ORIGIN),
-// native streaming (proxy SSE), advanced System Instructions (Mentor tâm lý),
-// context summarization cơ bản, SOS 3 mức (green/yellow/red), Vision (ảnh inline_data), MODEL qua env.
+// Chú thích: Cloudflare Worker proxy sử dụng Workers AI, kèm guard SOS, CORS (ALLOW_ORIGIN),
+// native streaming (SSE), advanced System Instructions (Mentor tâm lý),
+// context summarization cơ bản, SOS 3 mức (green/yellow/red), MODEL qua env.
 
-const SYSTEM_INSTRUCTIONS = `Bạn là "Bạn Đồng Hành" - một mentor tâm lý ấm áp, tôn trọng, không phán xét.
+const SYSTEM_INSTRUCTIONS = `# BẠN ĐỒNG HÀNH - AI Mentor Tâm Lý Học Đường
 
-PHONG CÁCH
-- Giọng văn thấu cảm, nói ngắn gọn, dùng từ gần gũi học sinh, tránh khuôn mẫu "Tôi là AI".
-- Luôn xác thực cảm xúc trước khi gợi ý, kết thúc bằng câu hỏi mở phù hợp.
+## DANH TÍNH
+Bạn là "Bạn Đồng Hành" - một NGƯỜI BẠN đáng tin cậy, lắng nghe và đồng hành cùng học sinh. 
+⚠️ Bạn KHÔNG thay thế được bố mẹ, thầy cô hay chuyên gia tâm lý - bạn là người bạn bổ sung, hỗ trợ khi các bạn cần chia sẻ.
+❌ KHÔNG nói "Tôi là AI" hay "Là trí tuệ nhân tạo".
 
-AN TOÀN
-- Tránh bịa đặt. Nếu thiếu thông tin, nói rõ và hướng học sinh tới người lớn/nguồn tin cậy.
-- Red flags cần lưu ý: tự hại, bạo lực/lạm dụng, trầm cảm kéo dài.
+## NGUYÊN TẮC GIAO TIẾP
 
-SÁT NGỮ CẢNH
-- Ghi nhớ bối cảnh gần đây để trả lời mạch lạc.
-- Đừng lặp lại dài dòng; tổng hợp ngắn gọn các ý đã có.
+### 1. Giọng điệu
+- Thân thiện, gần gũi như một người bạn lớn
+- Có thể dùng từ ngữ học sinh nhưng CẨN THẬN, chỉ dùng từ phổ biến không gây hiểu lầm
+- Câu ngắn gọn, dễ hiểu
+- Dùng emoji vừa phải để thân thiện (1-2 emoji/tin nhắn)
 
-SUY LUẬN (NỘI BỘ)
-- Hãy tự phân tích theo chu trình: Nghe -> Nhận diện cảm xúc -> Tìm nguyên nhân gốc rễ -> Gợi ý an toàn.
-- Không tiết lộ chuỗi suy luận chi tiết. Chỉ đưa ra kết luận/đề xuất ngắn gọn.
+### 2. Kỹ thuật thấu cảm (LUÔN áp dụng)
+1. **Mirror cảm xúc**: "Nghe như bạn đang thấy [cảm xúc] lắm..."
+2. **Validate**: "Cảm giác đó hoàn toàn bình thường nha"
+3. **Normalize**: "Nhiều bạn cũng từng trải qua chuyện tương tự"
+4. **Hỏi mở**: Kết thúc bằng câu hỏi để bạn ấy suy ngẫm
+
+### 3. Độ dài phản hồi
+- Tin nhắn thường: 2-4 câu (40-80 từ)
+- Chia sẻ sâu: 4-6 câu (80-120 từ)
+- TRÁNH wall-of-text
+
+## XỬ LÝ TÌNH HUỐNG
+
+### Stress học tập
+- Hỏi cụ thể: "Môn nào đang khiến bạn stress nhất?"
+- Gợi ý: Chia nhỏ bài, nghỉ ngắn, kỹ thuật Pomodoro
+- KHUYẾN KHÍCH: Nói chuyện với thầy cô nếu cần hỗ trợ học tập
+
+### Mâu thuẫn bạn bè
+- Hỏi chi tiết: "Chuyện xảy ra như thế nào?"
+- Giúp nhìn nhiều góc: "Bạn nghĩ bên kia có thể đang nghĩ gì?"
+- TRÁNH: Phán xét ai đúng/sai
+
+### Áp lực gia đình
+- Thấu hiểu: "Mình hiểu, đôi khi bố mẹ kỳ vọng nhiều lắm"
+- KHUYẾN KHÍCH: "Bạn đã thử chia sẻ với bố mẹ chưa? Bố mẹ thường muốn hiểu con hơn"
+- TRÁNH: Chỉ trích phụ huynh
+
+### Cảm giác cô đơn
+- Validate: "Cảm giác không ai hiểu mình khó chịu lắm"
+- Hỏi: "Bạn có ai tin tưởng để tâm sự không? Thầy cô, bố mẹ, hay bạn thân?"
+
+## AN TOÀN (RẤT QUAN TRỌNG)
+
+### 🔴 RED FLAGS - Phản hồi ngay
+Nếu phát hiện: tự hại, muốn chết, bạo lực, lạm dụng
+→ "Mình rất lo cho bạn. Điều này cần được hỗ trợ chuyên nghiệp ngay. Hãy gọi: 111 (24/7) hoặc 1800 599 920. Hoặc nói với bố mẹ, thầy cô ngay nhé."
+
+### 🟡 CHÚ Ý
+Nếu: buồn kéo dài > 2 tuần, mất ngủ liên tục, không muốn làm gì
+→ "Mình nghĩ bạn nên nói chuyện với thầy cô tư vấn hoặc bố mẹ nhé. Họ có thể giúp bạn nhiều hơn mình."
+
+### ⛔ KHÔNG BAO GIỜ
+- Chẩn đoán bệnh tâm lý
+- Khuyên dùng thuốc
+- Hứa giữ bí mật những điều nguy hiểm
+- Giả vờ hiểu khi không hiểu
+- Thay thế vai trò bố mẹ/thầy cô
+
+## VÍ DỤ RESPONSE
+
+User: "Tao chán học quá, không muốn đi học nữa"
+Good: "Nghe mệt thật đó 😮‍💨 Chuyện gì đang xảy ra ở trường vậy bạn?"
+Bad: "Việc học rất quan trọng cho tương lai. Hãy cố gắng lên!"
+
+User: "Mọi người ghét tao"  
+Good: "Nghe như bạn đang cảm thấy cô đơn lắm... 💙 Có chuyện gì xảy ra gần đây khiến bạn nghĩ vậy không?"
+Bad: "Không phải ai cũng ghét bạn đâu. Hãy suy nghĩ tích cực!"
+
+## LƯU Ý CUỐI
+- Không cần giải quyết ngay, đôi khi chỉ cần LẮNG NGHE
+- Nếu không biết → "Mình chưa rõ lắm, bạn kể thêm được không?"
+- Luôn nhớ: Khuyến khích các bạn nói chuyện với bố mẹ/thầy cô khi cần
 `;
 
 function getAllowedOrigin(request, env) {
   const reqOrigin = request.headers.get('Origin') || '';
   const allow = env.ALLOW_ORIGIN || '*';
 
-  // Nếu ALLOW_ORIGIN là *, cho phép tất cả
   if (allow === '*' || !reqOrigin) return allow === '*' ? '*' : reqOrigin || '*';
 
   const list = allow.split(',').map((s) => s.trim());
 
-  // Check exact match
   if (list.includes(reqOrigin)) return reqOrigin;
 
-  // Check wildcard patterns (*.domain.com)
   for (const pattern of list) {
     if (pattern.startsWith('*.')) {
-      const domain = pattern.slice(2); // Remove *.
-      // Support both https://subdomain.domain.com and https://something.subdomain.domain.com
+      const domain = pattern.slice(2);
       if (reqOrigin.endsWith('.' + domain) || reqOrigin.endsWith('//' + domain)) {
         return reqOrigin;
       }
-      // Also check if origin matches https://xxx.domain pattern
       const originHost = reqOrigin.replace(/^https?:\/\//, '');
       if (originHost.endsWith('.' + domain) || originHost === domain) {
         return reqOrigin;
@@ -50,14 +106,12 @@ function getAllowedOrigin(request, env) {
     }
   }
 
-  // Fallback: Cho phép các Cloudflare Pages preview URLs
   if (reqOrigin.includes('.pages.dev')) {
     return reqOrigin;
   }
 
   return 'null';
 }
-
 
 function corsHeaders(origin = '*') {
   return {
@@ -109,77 +163,26 @@ function summarizeHistory(history = []) {
   return text.length > 300 ? text.slice(0, 296) + '...' : text;
 }
 
-function parseDataUrlToInlinePart(dataUrl) {
-  try {
-    const m = String(dataUrl).match(/^data:(.+?);base64,(.*)$/);
-    if (!m) return null;
-    return { inline_data: { mime_type: m[1], data: m[2] } };
-  } catch (_) { return null; }
-}
-
-function formatHistory(history = [], message, images = []) {
+// Format messages cho Cloudflare Workers AI (Llama format)
+function formatMessagesForWorkersAI(history = [], message) {
   const recent = history.slice(-5).map((h) => `${h.role}: ${h.content}`).join('\n');
   const summary = summarizeHistory(history);
-  const userParts = [{ text: `${SYSTEM_INSTRUCTIONS}\n\n${summary ? summary + '\n\n' : ''}Ngữ cảnh gần đây:\n${recent}\n\nNgười học: ${message}` }];
-  // gắn tối đa 3 ảnh
-  images.slice(0, 3).forEach((d) => {
-    const p = parseDataUrlToInlinePart(d);
-    if (p) userParts.push(p);
-  });
-  return [{ role: 'user', parts: userParts }];
-}
 
-async function callGemini(apiKey, payload, model = 'gemini-2.5-flash-lite') {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-    body: JSON.stringify(payload),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data?.error?.message || 'gemini_error');
-  const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('\n') || data?.output_text || '';
-  return { text };
-}
+  const systemContent = `${SYSTEM_INSTRUCTIONS}\n\n${summary ? summary + '\n\n' : ''}Ngữ cảnh gần đây:\n${recent}`;
 
-async function* callGeminiStream(apiKey, payload, model = 'gemini-2.5-flash-lite') {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey, Accept: 'text/event-stream' },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok || !res.body) {
-    const msg = await res.text().catch(() => 'gemini_stream_error');
-    throw new Error(msg || 'gemini_stream_error');
-  }
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  while (true) {
-    const { value, done } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    let idx;
-    while ((idx = buffer.indexOf('\n\n')) !== -1) {
-      const raw = buffer.slice(0, idx).trim();
-      buffer = buffer.slice(idx + 2);
-      if (!raw) continue;
-      const lines = raw.split('\n');
-      let dataRaw = '';
-      for (const line of lines) if (line.startsWith('data:')) dataRaw = line.slice(5).trim();
-      if (!dataRaw || dataRaw === '[DONE]') continue;
-      try {
-        const j = JSON.parse(dataRaw);
-        const parts = j?.candidates?.[0]?.content?.parts || [];
-        for (const p of parts) if (typeof p.text === 'string' && p.text) yield p.text;
-      } catch (_) { }
-    }
-  }
+  return [
+    { role: 'system', content: systemContent },
+    { role: 'user', content: message }
+  ];
 }
 
 function sseHeaders(origin = '*', traceId) {
-  return { ...corsHeaders(origin), 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Trace-Id': traceId };
+  return {
+    ...corsHeaders(origin),
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache',
+    'X-Trace-Id': traceId
+  };
 }
 
 export default {
@@ -193,7 +196,7 @@ export default {
     let body;
     try { body = await request.json(); } catch (_) { return json({ error: 'invalid_json' }, 400, origin, traceId); }
 
-    const { message, history = [], images = [] } = body || {};
+    const { message, history = [] } = body || {};
     if (!message || typeof message !== 'string') return json({ error: 'missing_message' }, 400, origin, traceId);
 
     try { sanitizeInput(message); } catch (_) { return json({ error: 'invalid_input' }, 400, origin, traceId); }
@@ -201,55 +204,97 @@ export default {
     // SOS phân tầng
     const level = classifySOS(message);
     if (level === 'red') {
-      return json({ sos: true, sosLevel: 'red', message: 'Mình lo cho bạn. Hãy liên hệ người lớn đáng tin cậy hoặc gọi 111 (bảo vệ trẻ em) hoặc 024.7307.1111 (Trung tâm tham vấn). Bạn không đơn độc đâu.' }, 200, origin, traceId);
+      return json({
+        sos: true,
+        sosLevel: 'red',
+        message: 'Mình lo cho bạn. Hãy liên hệ người lớn đáng tin cậy hoặc gọi 111 (bảo vệ trẻ em) hoặc 024.7307.1111 (Trung tâm tham vấn). Bạn không đơn độc đâu.'
+      }, 200, origin, traceId);
     }
 
-    // Payload chung
-    const contents = formatHistory(history, message, images);
-    const payload = {
-      contents,
-      generationConfig: { temperature: 0.6, topP: 0.9 },
-    };
+    // Check if Workers AI binding exists
+    if (!env.AI) {
+      return json({
+        error: 'ai_not_configured',
+        note: 'Workers AI binding chưa được cấu hình. Vui lòng kiểm tra wrangler.toml'
+      }, 500, origin, traceId);
+    }
 
-    const model = env.MODEL || 'gemini-2.5-flash-lite';
+    const model = env.MODEL || '@cf/meta/llama-3.1-8b-instruct';
+    const messages = formatMessagesForWorkersAI(history, message);
 
     try {
-      const wantsStream = true;
-      if (!wantsStream) {
-        if (!env.GEMINI_API_KEY) return json({ text: `DEV_ECHO: ${message}` }, 200, origin, traceId);
-        const { text } = await callGemini(env.GEMINI_API_KEY, payload, model);
-        return json({ text }, 200, origin, traceId);
-      }
-
+      // Streaming response với Cloudflare Workers AI
       const stream = new ReadableStream({
         async start(controller) {
           const enc = new TextEncoder();
           const send = (line) => controller.enqueue(enc.encode(line));
+
+          // Send meta event
           send(`event: meta\n`);
-          send(`data: {\"trace_id\":\"${traceId}\",\"sosLevel\":\"${level}\"}\n\n`);
+          send(`data: {"trace_id":"${traceId}","sosLevel":"${level}"}\n\n`);
 
           try {
-            if (!env.GEMINI_API_KEY) {
-              const textOut = `DEV_ECHO: ${message}`;
-              for (let i = 0; i < textOut.length; i += 40) {
-                send(`data: ${JSON.stringify(textOut.slice(i, i + 40))}\n\n`);
-                await new Promise((r) => setTimeout(r, 10));
-              }
-            } else {
-              for await (const piece of callGeminiStream(env.GEMINI_API_KEY, payload, model)) {
-                send(`data: ${JSON.stringify(piece)}\n\n`);
+            // Gọi Workers AI với streaming
+            const aiStream = await env.AI.run(model, {
+              messages,
+              stream: true,
+              max_tokens: 1024,
+              temperature: 0.7,
+            });
+
+            // Đọc stream và forward tới client
+            const reader = aiStream.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+              const { value, done } = await reader.read();
+              if (done) break;
+
+              const text = decoder.decode(value, { stream: true });
+
+              // Parse SSE data từ Workers AI
+              const lines = text.split('\n');
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const dataStr = line.slice(6).trim();
+                  if (dataStr === '[DONE]') continue;
+
+                  try {
+                    const data = JSON.parse(dataStr);
+                    const content = data?.response || '';
+                    if (content) {
+                      send(`data: ${JSON.stringify({ type: 'delta', text: content })}\n\n`);
+                    }
+                  } catch (_) {
+                    // Nếu không parse được JSON, gửi raw text
+                    if (dataStr && dataStr !== '[DONE]') {
+                      send(`data: ${JSON.stringify({ type: 'delta', text: dataStr })}\n\n`);
+                    }
+                  }
+                }
               }
             }
-            send(`event: done\n`); send(`data: END\n\n`);
+
+            send(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
           } catch (err) {
-            const errPayload = { error: 'model_error', note: String(err?.message || err), trace_id: traceId };
-            send(`event: error\n`); send(`data: ${JSON.stringify(errPayload)}\n\n`);
-          } finally { controller.close(); }
+            console.error('[AI Proxy] Stream error:', err);
+            const errPayload = {
+              type: 'error',
+              error: 'model_error',
+              note: String(err?.message || err),
+              trace_id: traceId
+            };
+            send(`event: error\n`);
+            send(`data: ${JSON.stringify(errPayload)}\n\n`);
+          } finally {
+            controller.close();
+          }
         },
       });
 
       return new Response(stream, { status: 200, headers: sseHeaders(origin, traceId) });
     } catch (e) {
+      console.error('[AI Proxy] Error:', e);
       return json({ error: 'model_error', note: String(e?.message || e) }, 502, origin, traceId);
     }
   },
