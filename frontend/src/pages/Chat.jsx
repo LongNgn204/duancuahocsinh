@@ -101,7 +101,7 @@ export default function Chat() {
   const scrollRef = useRef(null);
   const [inputText, setInputText] = useState('');
   const [showSidebar, setShowSidebar] = useState(false); // Mobile sidebar
-  const [autoRead, setAutoRead] = useState(true); // Tự động đọc tin nhắn mới (Default: TRUE for voice mode)
+  const [autoRead, setAutoRead] = useState(false); // Tự động đọc tin nhắn mới (Default: FALSE - user phải bật)
 
   // --- UseAI Hook (Text & Sync) ---
   const {

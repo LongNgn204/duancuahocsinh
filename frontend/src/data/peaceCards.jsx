@@ -1,7 +1,7 @@
 // src/data/peaceCards.js
 // Bộ thẻ An Yên (Peace Cards) - 30+ thẻ
 
-import { Sparkles, Heart, Coffee, Leaf, Eye, Feather, Sun, Moon, Music } from 'lucide-react';
+import { Sparkles, Heart, Coffee, Leaf, Eye, Feather, Sun, Moon, Music, Star } from 'lucide-react';
 
 export const PEACE_CARDS = [
     // --- 1. Thẻ Bình Yên (PEACE) - Màu Xanh Dương/Tím ---

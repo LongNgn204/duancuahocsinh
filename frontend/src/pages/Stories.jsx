@@ -1,11 +1,13 @@
 // src/pages/Stories.jsx
 // Chú thích: Kể chuyện v2.0 - Immersive Reading Mode & Book Covers
+// v2.1: Chuyển sang Gemini TTS
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Play, Pause, SkipForward, ArrowLeft, Headphones, X, Settings2, Moon, Sun, Type } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { useSound } from '../contexts/SoundContext';
+import { speakWithGemini, isGeminiTTSAvailable } from '../services/geminiTTS';
 
 import { STORIES } from '../data/stories';
 
@@ -20,13 +22,15 @@ export default function Stories() {
     const [theme, setTheme] = useState('light'); // 'light', 'sepia', 'dark'
 
     // Refs
-    const synthRef = useRef(window.speechSynthesis);
-    const utteranceRef = useRef(null);
+    const geminiAudioRef = useRef(null);
 
     // Cleanup
     useEffect(() => {
         return () => {
-            if (synthRef.current) synthRef.current.cancel();
+            if (geminiAudioRef.current?.stop) {
+                geminiAudioRef.current.stop();
+                geminiAudioRef.current = null;
+            }
         };
     }, []);
 
@@ -40,51 +44,76 @@ export default function Stories() {
                 setIsPlaying(false);
                 return;
             }
-
-            // Cancel previous speak if any (unless paused, but here we restart line for simplicity or resume)
-            // Simple approach: Speak current line. When end, next line.
-
-            if (synthRef.current.speaking) {
-                synthRef.current.resume();
-            } else {
-                playLine(text);
-            }
+            playLine(text);
         } else {
-            if (synthRef.current.speaking) synthRef.current.pause();
+            // Stop current audio
+            if (geminiAudioRef.current?.stop) {
+                geminiAudioRef.current.stop();
+                geminiAudioRef.current = null;
+            }
         }
     }, [isPlaying, currentLine, selectedStory]);
 
-    const playLine = (text) => {
+    const playLine = async (text) => {
         if (!text) return;
-        synthRef.current.cancel();
 
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = 'vi-VN';
-        u.rate = readingSpeed;
+        // Stop previous audio
+        if (geminiAudioRef.current?.stop) {
+            geminiAudioRef.current.stop();
+            geminiAudioRef.current = null;
+        }
 
-        u.onend = () => {
-            if (currentLine < (selectedStory?.content.length || 0) - 1) {
-                setCurrentLine(prev => prev + 1);
-                playSound('pageFlip');
-            } else {
-                setIsPlaying(false);
+        // Kiểm tra Gemini TTS
+        if (!isGeminiTTSAvailable()) {
+            console.warn('[Stories] Gemini TTS not available');
+            setIsPlaying(false);
+            return;
+        }
+
+        try {
+            console.log('[Stories] Playing line with Gemini TTS:', text.slice(0, 30) + '...');
+            const result = await speakWithGemini(text);
+            geminiAudioRef.current = result;
+
+            if (result.audio) {
+                result.audio.onended = () => {
+                    // Chuyển sang line tiếp theo khi đọc xong
+                    if (currentLine < (selectedStory?.content.length || 0) - 1) {
+                        setCurrentLine(prev => prev + 1);
+                        playSound('pageFlip');
+                    } else {
+                        setIsPlaying(false);
+                    }
+                    geminiAudioRef.current = null;
+                };
+                result.audio.onerror = () => {
+                    console.error('[Stories] Gemini audio error');
+                    setIsPlaying(false);
+                    geminiAudioRef.current = null;
+                };
             }
-        };
-
-        utteranceRef.current = u;
-        synthRef.current.speak(u);
+        } catch (err) {
+            console.error('[Stories] Gemini TTS error:', err.message);
+            setIsPlaying(false);
+        }
     };
 
     const handleCardClick = (story) => {
         setSelectedStory(story);
         setCurrentLine(0);
         setIsPlaying(false);
-        synthRef.current.cancel();
+        if (geminiAudioRef.current?.stop) {
+            geminiAudioRef.current.stop();
+            geminiAudioRef.current = null;
+        }
     };
 
     const closeReader = () => {
         setIsPlaying(false);
-        synthRef.current.cancel();
+        if (geminiAudioRef.current?.stop) {
+            geminiAudioRef.current.stop();
+            geminiAudioRef.current = null;
+        }
         setSelectedStory(null);
     };
 
@@ -195,7 +224,7 @@ export default function Stories() {
                                         {selectedStory.content.map((_, idx) => (
                                             <button
                                                 key={idx}
-                                                onClick={() => { setCurrentLine(idx); setIsPlaying(false); synthRef.current.cancel(); }}
+                                                onClick={() => { setCurrentLine(idx); setIsPlaying(false); if (geminiAudioRef.current?.stop) { geminiAudioRef.current.stop(); geminiAudioRef.current = null; } }}
                                                 className={`w-2 h-2 rounded-full transition-all ${idx === currentLine ? 'w-6 bg-[--brand]' : 'bg-current opacity-30'}`}
                                             />
                                         ))}
@@ -220,7 +249,7 @@ export default function Stories() {
                                     <div className="flex items-center gap-4">
                                         <button
                                             onClick={() => {
-                                                if (currentLine > 0) { setCurrentLine(p => p - 1); setIsPlaying(false); synthRef.current.cancel(); }
+                                                if (currentLine > 0) { setCurrentLine(p => p - 1); setIsPlaying(false); if (geminiAudioRef.current?.stop) { geminiAudioRef.current.stop(); geminiAudioRef.current = null; } }
                                             }}
                                             className="p-3 rounded-full hover:bg-black/5 disabled:opacity-30"
                                             disabled={currentLine === 0}
@@ -240,7 +269,7 @@ export default function Stories() {
                                                 if (currentLine < selectedStory.content.length - 1) {
                                                     setCurrentLine(p => p + 1);
                                                     setIsPlaying(false);
-                                                    synthRef.current.cancel();
+                                                    if (geminiAudioRef.current?.stop) { geminiAudioRef.current.stop(); geminiAudioRef.current = null; }
                                                     playSound('pageFlip');
                                                 }
                                             }}
