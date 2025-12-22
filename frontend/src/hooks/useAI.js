@@ -1,10 +1,11 @@
 // src/hooks/useAI.js
 // Chú thích: Chat store + AI hook: hỗ trợ đa hội thoại (threads), timestamps,
-// lưu/persist localStorage, tiền kiểm SOS multi-level, streaming SSE, TTS gọi ở UI.
-// v5.0: Thêm sync với server để user xem lại lịch sử chat trên các thiết bị
+// lưu/persist localStorage, tiền kiểm SOS multi-level, Gemini streaming, TTS gọi ở UI.
+// v6.0: Chuyển sang Gemini API frontend - không qua backend proxy
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { detectSOSLevel, sosMessage, getSuggestedAction } from '../utils/sosDetector';
 import { getCurrentUser, isLoggedIn, getChatThreads, syncChatThreadsToServer } from '../utils/api';
+import { streamChat, isGeminiConfigured } from '../services/gemini';
 
 const THREADS_KEY = 'chat_threads_v1';
 const SYNC_DEBOUNCE_MS = 5000; // Sync sau 5 giây không có thay đổi
@@ -53,7 +54,7 @@ function mergeThreads(localThreads, serverThreads) {
 }
 
 export function useAI() {
-  const endpoint = import.meta.env.VITE_API_URL ?? import.meta.env.VITE_AI_PROXY_URL ?? null;
+  // Gemini được gọi trực tiếp từ frontend, không cần endpoint
 
   const [threads, setThreads] = useState([]); // [{id,title,createdAt,updatedAt,messages:[{role,content,ts,feedback?}]}]
   const [currentId, setCurrentId] = useState(null);
@@ -189,71 +190,8 @@ export function useAI() {
     }));
   };
 
-  const streamFromEndpoint = async (url, payload) => {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
-      body: JSON.stringify(payload),
-    });
-
-    const traceId = res.headers.get('X-Trace-Id') || undefined;
-    // Store traceId as message_id for feedback
-
-    if (!res.body || typeof res.body.getReader !== 'function') {
-      const data = await res.json();
-      return { type: 'json', data, traceId };
-    }
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    return {
-      type: 'stream',
-      traceId,
-      async read(onChunk) {
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-          let idx;
-          while ((idx = buffer.indexOf('\n\n')) !== -1) {
-            const raw = buffer.slice(0, idx);
-            buffer = buffer.slice(idx + 2);
-            const line = raw.trim();
-            if (!line) continue;
-            const parts = line.split('\n');
-            let event = 'message';
-            let dataRaw = '';
-            for (const p of parts) {
-              if (p.startsWith('event:')) event = p.slice(6).trim();
-              if (p.startsWith('data:')) dataRaw = p.slice(5).trim();
-            }
-            // Parse standardized format: {"type":"delta","text":"..."} or {"type":"done"}
-            let parsedData = dataRaw;
-            try {
-              const jsonData = JSON.parse(dataRaw);
-              if (jsonData.type === 'delta' && jsonData.text) {
-                parsedData = jsonData.text;
-              } else if (jsonData.type === 'done') {
-                event = 'done';
-                parsedData = '';
-              } else if (jsonData.type === 'error') {
-                event = 'error';
-                parsedData = JSON.stringify(jsonData);
-              } else if (typeof jsonData === 'string') {
-                parsedData = jsonData;
-              }
-            } catch (_) {
-              // Keep original dataRaw if not valid JSON
-            }
-            onChunk({ event, data: parsedData });
-
-          }
-        }
-      },
-    };
-  };
+  // Gemini được gọi trực tiếp qua streamChat() từ services/gemini.js
+  // Không cần streamFromEndpoint nữa
 
   const sendMessage = async (text, images = []) => {
     const trimmed = text?.trim();
@@ -284,13 +222,6 @@ export function useAI() {
     setLoading(true);
 
     try {
-      const url = endpoint || '/__dev_echo__';
-      if (url === '/__dev_echo__') {
-        const bot = { role: 'assistant', content: `DEV_ECHO: ${trimmed}`, ts: nowISO() };
-        setThreads((prev) => prev.map((t) => (t.id === currentId ? { ...t, messages: [...t.messages, bot], updatedAt: nowISO() } : t)));
-        return;
-      }
-
       // Tăng số lượng messages gửi lên (từ 5 lên 10)
       const historyCap = messages.slice(-10);
 
@@ -305,53 +236,26 @@ export function useAI() {
           .join(' ');
 
         if (userOldMessages.length > 0) {
-          // Tạo summary đơn giản (client-side)
           const words = userOldMessages.split(/\s+/).slice(0, 100);
           memorySummary = `Tóm tắt trước đó: ${words.join(' ')}${userOldMessages.length > words.join(' ').length ? '...' : ''}`;
         }
       }
 
-      // Lấy userId cho persistent memory
+      // Lấy thông tin user
       const currentUser = getCurrentUser();
-      const userId = currentUser?.id || null;
       const userName = currentUser?.display_name || currentUser?.username || 'Bạn';
 
-      const stream = await streamFromEndpoint(`${url}?stream=true`, {
-        message: trimmed,
-        history: historyCap,
-        images,
-        memorySummary,
-        userId,  // Gửi userId để backend có thể load/save memory
-        userName // Gửi tên người dùng để AI xưng hô
-      });
-
-      if (stream.type === 'json') {
-        const data = stream.data;
-        if (data?.sos) {
-          setSos(data.message || 'Tín hiệu SOS');
-        } else {
-          const bot = {
-            role: 'assistant',
-            content: data?.text || data?.reply || '...',
-            ts: nowISO(),
-            messageId: stream.traceId || stream.messageId, // Store traceId as messageId for feedback
-            traceId: stream.traceId
-          };
-          setThreads((prev) => prev.map((t) => (t.id === currentId ? { ...t, messages: [...t.messages, bot], updatedAt: nowISO() } : t)));
-        }
-        return;
-      }
-
-      // Streaming - với buffer để gom text, tránh spam render
+      // Streaming response với Gemini - buffer để gom text, tránh spam render
       let assistantIndex = -1;
-      let textBuffer = '';  // Buffer để gom text
-      let updateScheduled = false;  // Flag để debounce
+      let textBuffer = '';
+      let updateScheduled = false;
+      const messageId = 'msg_' + Math.random().toString(36).slice(2);
 
       // Function để flush buffer vào state
       const flushBuffer = () => {
         if (!textBuffer) return;
         const currentBuffer = textBuffer;
-        textBuffer = '';  // Reset buffer
+        textBuffer = '';
 
         if (assistantIndex === -1) {
           setThreads((prev) => prev.map((t) => {
@@ -363,8 +267,7 @@ export function useAI() {
                 role: 'assistant',
                 content: currentBuffer,
                 ts: nowISO(),
-                messageId: stream.traceId,
-                traceId: stream.traceId
+                messageId
               }],
               updatedAt: nowISO()
             };
@@ -375,9 +278,7 @@ export function useAI() {
             const copy = t.messages.slice();
             copy[assistantIndex] = {
               ...copy[assistantIndex],
-              content: (copy[assistantIndex].content || '') + currentBuffer,
-              messageId: copy[assistantIndex].messageId || stream.traceId,
-              traceId: copy[assistantIndex].traceId || stream.traceId
+              content: (copy[assistantIndex].content || '') + currentBuffer
             };
             return { ...t, messages: copy, updatedAt: nowISO() };
           }));
@@ -389,57 +290,31 @@ export function useAI() {
       const scheduleUpdate = () => {
         if (!updateScheduled) {
           updateScheduled = true;
-          // Debounce 50ms để gom nhiều chunks lại
           setTimeout(flushBuffer, 50);
         }
       };
 
-      await stream.read(({ event, data }) => {
-        if (event === 'error') {
-          // Flush buffer trước khi xử lý error
-          flushBuffer();
-          let msg = 'Lỗi không xác định';
-          try { const j = JSON.parse(data); msg = j?.note || msg; } catch (_) { }
-          const bot = { role: 'assistant', content: `Lỗi: ${msg}`, ts: nowISO() };
-          setThreads((prev) => prev.map((t) => (t.id === currentId ? { ...t, messages: [...t.messages, bot], updatedAt: nowISO() } : t)));
-          return;
-        }
-        if (event === 'done') {
-          // Flush buffer khi done
-          flushBuffer();
-          return;
-        }
-        // Đảm bảo chunk luôn là string, không phải object
-        let chunk = '';
-        if (typeof data === 'string') {
-          try {
-            const parsed = JSON.parse(data);
-            // Nếu parsed là object, lấy text/content/message
-            if (typeof parsed === 'object' && parsed !== null) {
-              chunk = parsed.text || parsed.content || parsed.message || parsed.response || '';
-            } else {
-              chunk = String(parsed);
-            }
-          } catch (_) {
-            chunk = data;
+      // Gọi Gemini streamChat trực tiếp
+      await streamChat(
+        trimmed,
+        historyCap,
+        (chunk) => {
+          if (chunk) {
+            textBuffer += chunk;
+            scheduleUpdate();
           }
-        } else if (typeof data === 'object' && data !== null) {
-          chunk = data.text || data.content || data.message || data.response || '';
-        } else {
-          chunk = String(data || '');
-        }
-
-        // Thêm vào buffer thay vì update ngay
-        if (chunk) {
-          textBuffer += chunk;
-          scheduleUpdate();
-        }
-      });
+        },
+        { userName, memorySummary }
+      );
 
       // Final flush sau khi stream kết thúc
       flushBuffer();
-    } catch (_e) {
-      const bot = { role: 'assistant', content: 'Xin lỗi, hiện tại mình đang gặp sự cố kết nối. Bạn thử lại sau nhé.', ts: nowISO() };
+    } catch (err) {
+      console.error('[useAI] Gemini error:', err);
+      const errorMsg = isGeminiConfigured()
+        ? 'Xin lỗi, hiện tại mình đang gặp sự cố kết nối. Bạn thử lại sau nhé.'
+        : 'Chưa cấu hình Gemini API key. Vui lòng thêm VITE_GEMINI_API_KEY vào file .env';
+      const bot = { role: 'assistant', content: errorMsg, ts: nowISO() };
       setThreads((prev) => prev.map((t) => (t.id === currentId ? { ...t, messages: [...t.messages, bot], updatedAt: nowISO() } : t)));
     } finally {
       setLoading(false);

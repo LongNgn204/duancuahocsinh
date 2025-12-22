@@ -5,8 +5,10 @@
 // LLM: gọi backend Workers AI qua SSE streaming
 // SOS: Phát hiện từ khóa tiêu cực và hiện cảnh báo
 
+// v6.0: Chuyển sang Gemini API frontend với Streaming
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { detectSOSLevel, sosMessage, getSuggestedAction } from '../utils/sosDetector';
+import { streamChat, isGeminiConfigured } from '../services/gemini';
 
 /**
  * Loại bỏ emoji và icon khỏi text trước khi TTS đọc
@@ -63,8 +65,8 @@ export function useVoiceAgentCF({ onSOS } = {}) {
     const utteranceRef = useRef(null);
     const abortControllerRef = useRef(null);
 
-    // API endpoint
-    const endpoint = import.meta.env.VITE_API_URL ?? import.meta.env.VITE_AI_PROXY_URL ?? null;
+    // Endpoint không còn cần thiết vì dùng Gemini SDK
+    // const endpoint = import.meta.env.VITE_API_URL ?? import.meta.env.VITE_AI_PROXY_URL ?? null;
 
     // ========================================================================
     // CHECK BROWSER SUPPORT
@@ -169,15 +171,9 @@ export function useVoiceAgentCF({ onSOS } = {}) {
     }, []);
 
     // ========================================================================
-    // LLM CALL (SSE Streaming)
+    // LLM CALL (Gemini Streaming)
     // ========================================================================
     const sendToLLM = useCallback(async (text) => {
-        if (!endpoint) {
-            setError('Chưa cấu hình API endpoint');
-            setStatus('idle');
-            return;
-        }
-
         // ====== SOS DETECTION - QUAN TRỌNG ======
         const sosLevel = detectSOSLevel(text);
         const sosAction = getSuggestedAction(sosLevel);
@@ -204,107 +200,38 @@ export function useVoiceAgentCF({ onSOS } = {}) {
         setStatus('thinking');
         setResponse('');
 
-        // Abort previous request if any
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-        }
-        abortControllerRef.current = new AbortController();
-
         try {
-            const res = await fetch(`${endpoint}?stream=true`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'text/event-stream',
-                },
-                body: JSON.stringify({
-                    message: text,
-                    history: [],  // Voice chat thường không cần history dài
-                }),
-                signal: abortControllerRef.current.signal,
-            });
-
-            if (!res.ok) {
-                throw new Error(`HTTP ${res.status}`);
-            }
-
-            // Parse SSE stream
-            const reader = res.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
             let fullResponse = '';
 
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-
-                // Parse SSE events
-                let idx;
-                while ((idx = buffer.indexOf('\n\n')) !== -1) {
-                    const raw = buffer.slice(0, idx);
-                    buffer = buffer.slice(idx + 2);
-
-                    if (!raw.trim()) continue;
-
-                    const lines = raw.split('\n');
-                    for (const line of lines) {
-                        if (line.startsWith('data:')) {
-                            const dataStr = line.slice(5).trim();
-                            try {
-                                const data = JSON.parse(dataStr);
-                                if (data.type === 'delta' && data.text) {
-                                    fullResponse += data.text;
-                                    setResponse(fullResponse);
-                                } else if (data.type === 'done') {
-                                    // Stream complete
-                                    console.log('[VoiceAgent] LLM stream done');
-                                }
-                            } catch (e) {
-                                // Non-JSON data, try to use as text
-                                if (dataStr && dataStr !== '[DONE]') {
-                                    try {
-                                        const text = JSON.parse(dataStr);
-                                        if (typeof text === 'string') {
-                                            fullResponse += text;
-                                            setResponse(fullResponse);
-                                        }
-                                    } catch (_) { }
-                                }
-                            }
-                        }
-                    }
+            // Gọi Gemini Streaming từ service
+            // Voice mode: không cần history dài, chỉ request-response hiện tại
+            await streamChat(
+                text,
+                [], // Empty history for single turn voice interaction (or pass context if needed)
+                (chunk) => {
+                    fullResponse += chunk;
+                    setResponse(fullResponse);
                 }
-            }
+            );
 
-            // Extract reply from JSON if needed
-            let replyText = fullResponse;
-            try {
-                const jsonMatch = fullResponse.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    const parsed = JSON.parse(jsonMatch[0]);
-                    replyText = parsed.reply || fullResponse;
-                }
-            } catch (_) { }
-
-            // Speak the response
-            if (replyText) {
-                speak(replyText);
+            // Respond
+            if (fullResponse) {
+                speak(fullResponse);
             } else {
                 setStatus('idle');
             }
 
         } catch (err) {
-            if (err.name === 'AbortError') {
-                console.log('[VoiceAgent] Request aborted');
-            } else {
-                console.error('[VoiceAgent] LLM error:', err);
-                setError(`Lỗi kết nối: ${err.message}`);
-            }
+            console.error('[VoiceAgent] Gemini error:', err);
+            const errorMsg = isGeminiConfigured()
+                ? 'Xin lỗi, mình đang gặp chút trục trặc. Bạn nói lại được không?'
+                : 'Chưa cấu hình API Key. Vui lòng kiểm tra cài đặt.';
+
+            setError(errorMsg);
+            speak(errorMsg);
             setStatus('idle');
         }
-    }, [endpoint]);
+    }, []);
 
     // ========================================================================
     // SPEECH SYNTHESIS (TTS)

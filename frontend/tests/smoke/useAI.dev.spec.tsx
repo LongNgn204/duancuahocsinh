@@ -28,7 +28,7 @@ describe('useAI dev echo', () => {
     });
     const items = screen.getAllByRole('listitem');
     expect(items[0].textContent).toBe('hello');
-    expect(items[1].textContent?.startsWith('DEV_ECHO:')).toBe(true);
+    expect(items[1].textContent?.startsWith('[DEV MODE]')).toBe(true);
   });
 });
 
