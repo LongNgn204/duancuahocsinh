@@ -9,12 +9,12 @@
 </p>
 
 <p align="center">
-  <a href="https://duancuahocsinh.pages.dev"><img src="https://img.shields.io/badge/🌐_Demo-Live-4CAF50?style=for-the-badge" alt="Live Demo"/></a>
+  <a href="https://bandonghanh.pages.dev"><img src="https://img.shields.io/badge/🌐_Demo-Live-4CAF50?style=for-the-badge" alt="Live Demo"/></a>
   <a href="#"><img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react" alt="React 19"/></a>
   <a href="#"><img src="https://img.shields.io/badge/Vite-6-646CFF?style=for-the-badge&logo=vite" alt="Vite 6"/></a>
   <a href="#"><img src="https://img.shields.io/badge/Tailwind-4-06B6D4?style=for-the-badge&logo=tailwindcss" alt="Tailwind CSS 4"/></a>
   <a href="#"><img src="https://img.shields.io/badge/Cloudflare-Workers_+_Pages-F38020?style=for-the-badge&logo=cloudflare" alt="Cloudflare"/></a>
-  <a href="#"><img src="https://img.shields.io/badge/Google-Gemini_AI-8E75B2?style=for-the-badge&logo=google" alt="Gemini AI"/></a>
+  <a href="#"><img src="https://img.shields.io/badge/Google-Gemini_2.0-8E75B2?style=for-the-badge&logo=google" alt="Gemini AI"/></a>
 </p>
 
 <p align="center">
@@ -22,7 +22,7 @@
   <a href="#-tính-năng-chính">Tính năng</a> •
   <a href="#-công-nghệ">Công nghệ</a> •
   <a href="#-cài-đặt">Cài đặt</a> •
-  <a href="#-hướng-dẫn">Hướng dẫn</a> •
+  <a href="#-kiến-trúc-hệ-thống">Kiến trúc</a> •
   <a href="#-đóng-góp">Đóng góp</a>
 </p>
 
@@ -41,7 +41,7 @@
 | 💚 **Chăm sóc sức khỏe tinh thần** | Bài tập thư giãn, thiền định và kỹ thuật thở |
 | 🧠 **Phát triển tư duy tích cực** | Ghi nhận biết ơn, động viên hàng ngày |
 | 🎮 **Giảm căng thẳng** | Trò chơi giáo dục vui nhộn, giúp thư giãn |
-| 🤖 **Hỗ trợ 24/7** | Chatbot AI đồng hành, lắng nghe và tư vấn |
+| 🤖 **Hỗ trợ 24/7** | Chatbot AI đồng hành với giọng nói tự nhiên (Gemini TTS) |
 | 🆘 **Bảo vệ an toàn** | Hệ thống SOS phát hiện dấu hiệu tiêu cực |
 
 ---
@@ -61,11 +61,11 @@
 <details>
 <summary><strong>🤖 Trợ lý AI (Chat Assistant)</strong></summary>
 
-- **Chat văn bản** với AI hỗ trợ tâm lý (Gemini/Llama)
-- **Chat giọng nói** (Speech-to-Text & Text-to-Speech)
+- **Chat văn bản** với AI hỗ trợ tâm lý (Google Gemini 2.0 Flash)
+- **Chat giọng nói** với Gemini TTS - giọng đọc AI tự nhiên
+- **Speech-to-Text** nhận diện giọng nói tiếng Việt
 - **Phát hiện SOS** tự động khi nhập từ khóa tiêu cực
 - **Đồng bộ đám mây** lưu trữ lịch sử hội thoại
-- **Multi-provider AI** hỗ trợ Gemini, OpenAI, DeepSeek, Grok
 
 </details>
 
@@ -75,7 +75,7 @@
 - **Bài tập thở** đa chế độ: Blue Bubble, Box Breathing, Calm Wave
 - **Bong bóng thở** với animation mượt mà
 - **Bộ thẻ An Yên** - thẻ động viên và bài tập nhỏ
-- **Giọng nói hướng dẫn** (TTS) tiếng Việt
+- **Giọng nói hướng dẫn** tiếng Việt
 - **Nhạc nền** thiên nhiên thư giãn
 
 </details>
@@ -85,8 +85,8 @@
 
 - **Thư viện truyện** với bài học cuộc sống
 - **Chế độ đọc immersive** toàn màn hình
-- **TTS đọc truyện** với giọng tiếng Việt
-- **Tốc độ đọc** tùy chỉnh
+- **Gemini TTS đọc truyện** - giọng đọc AI tự nhiên
+- **Theme** Light / Sepia / Dark
 
 </details>
 
@@ -142,58 +142,67 @@
 
 </details>
 
-<details>
-<summary><strong>⚙️ Cài Đặt & Quản trị</strong></summary>
+---
 
-- **Đăng nhập/Đăng ký** tài khoản
-- **Đồng bộ dữ liệu** giữa các thiết bị
-- **Dark/Light mode** chế độ tối/sáng
-- **Xuất/Xóa dữ liệu** tuân thủ GDPR
-- **Admin Dashboard** quản lý và thống kê
+## 🏗️ Kiến trúc hệ thống
 
-</details>
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                            USER BROWSER                                  │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 │
+          ┌──────────────────────┼──────────────────────┐
+          │                      │                      │
+          ▼                      ▼                      ▼
+┌─────────────────┐   ┌─────────────────┐   ┌─────────────────┐
+│   Gemini API    │   │   Frontend      │   │   Backend API   │
+│  (Chat + TTS)   │   │  React + Vite   │   │ Cloudflare      │
+│                 │   │                 │   │ Workers         │
+│ • gemini-2.0    │   │ • UI/UX         │   │                 │
+│   -flash        │◄──│ • State mgmt    │──►│ • Auth          │
+│ • gemini-2.5    │   │ • STT (Web API) │   │ • Data sync     │
+│   -flash-tts    │   │                 │   │ • User storage  │
+└─────────────────┘   └─────────────────┘   └────────┬────────┘
+                                                     │
+                                                     ▼
+                                            ┌─────────────────┐
+                                            │  Cloudflare D1  │
+                                            │   (SQLite)      │
+                                            │                 │
+                                            │ • Users         │
+                                            │ • Chat threads  │
+                                            │ • Gratitude     │
+                                            └─────────────────┘
+```
+
+### Luồng xử lý AI
+
+| Bước | Mô tả |
+|------|-------|
+| 1️⃣ | User nhập text hoặc nói (STT) |
+| 2️⃣ | Frontend gọi **Gemini API** trực tiếp (`gemini-2.0-flash`) |
+| 3️⃣ | Nhận response streaming |
+| 4️⃣ | TTS: Gọi **Gemini TTS** (`gemini-2.5-flash-preview-tts`) |
+| 5️⃣ | Phát audio từ Gemini |
+
+> **Lưu ý:** Backend chỉ lưu trữ lịch sử chat, không xử lý AI.
 
 ---
 
-## �️ Công nghệ
+## 🛠️ Công nghệ
 
 ### Tech Stack
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        FRONTEND                                 │
-├─────────────────────────────────────────────────────────────────┤
-│  React 19  │  Vite 6  │  Tailwind CSS 4  │  Framer Motion      │
-│  React Router 7  │  Zustand  │  Lucide Icons                   │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                         BACKEND                                 │
-├─────────────────────────────────────────────────────────────────┤
-│  Cloudflare Workers  │  Cloudflare D1 (SQLite)  │  Workers AI  │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      AI PROVIDERS                               │
-├─────────────────────────────────────────────────────────────────┤
-│  Google Gemini  │  Cloudflare Llama  │  OpenAI  │  DeepSeek    │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Chi tiết công nghệ
 
 | Layer | Công nghệ |
 |-------|-----------|
 | **Frontend** | React 19, Vite 6, Tailwind CSS 4, Framer Motion, Zustand |
 | **Routing** | React Router 7 |
-| **Icons** | Lucide React |
+| **AI Chat** | Google Gemini 2.0 Flash (direct API call từ frontend) |
+| **AI TTS** | Google Gemini 2.5 Flash Preview TTS |
+| **STT** | Web Speech API (browser native) |
 | **Backend** | Cloudflare Workers |
 | **Database** | Cloudflare D1 (SQLite) |
-| **AI Chat** | Google Gemini, Cloudflare Workers AI (Llama 3.1), OpenAI, DeepSeek |
 | **Hosting** | Cloudflare Pages + Workers |
-| **Testing** | Vitest, Playwright |
 
 ---
 
@@ -208,49 +217,38 @@ duancuahocsinh/
 │   │   │   ├── games/           # Game components
 │   │   │   ├── chat/            # Chat & Voice components
 │   │   │   ├── breathing/       # Breathing exercises
-│   │   │   ├── gratitude/       # Gratitude Jar
-│   │   │   ├── sos/             # SOS Detection
-│   │   │   ├── auth/            # Authentication
-│   │   │   └── layout/          # Navbar, Sidebar, Layout
+│   │   │   └── sos/             # SOS Detection
 │   │   ├── pages/               # Page components
-│   │   │   ├── Dashboard.jsx
-│   │   │   ├── Chat.jsx
-│   │   │   ├── PeaceCorner.jsx
-│   │   │   ├── Games.jsx
-│   │   │   ├── Stories.jsx
-│   │   │   ├── Wellness.jsx
-│   │   │   ├── KnowledgeHub.jsx
-│   │   │   ├── Corner.jsx
-│   │   │   ├── Settings.jsx
-│   │   │   ├── AdminDashboard.jsx
-│   │   │   └── LandingPage.jsx
-│   │   ├── contexts/            # React Contexts
+│   │   ├── services/            # API Services
+│   │   │   ├── gemini.js        # Gemini Chat API
+│   │   │   └── geminiTTS.js     # Gemini TTS API
 │   │   ├── hooks/               # Custom Hooks
-│   │   └── utils/               # Utilities
+│   │   │   ├── useAI.js         # Chat AI hook
+│   │   │   └── useVoiceAgentCF.js # Voice Agent hook
+│   │   └── contexts/            # React Contexts
 │   └── public/                  # Static assets
 │
 ├── backend/                     # Cloudflare Workers
 │   ├── workers/
 │   │   ├── router.js            # Main entry point
-│   │   ├── ai-proxy.js          # AI chat handler
 │   │   ├── auth.js              # Authentication
 │   │   └── data-api.js          # User data sync
 │   ├── schema.sql               # D1 database schema
 │   └── wrangler.toml            # Cloudflare config
 │
-├── docs/                        # Documentation
 └── README.md
 ```
 
 ---
 
-## � Cài đặt
+## 🚀 Cài đặt
 
 ### Yêu cầu
 
 - **Node.js** 18+ 
 - **npm** hoặc **pnpm**
 - **Wrangler CLI** (cho backend)
+- **Google Gemini API Key**
 
 ### 1. Clone dự án
 
@@ -264,12 +262,44 @@ cd duancuahocsinh
 ```bash
 cd frontend
 npm install
+```
+
+### 3. Cấu hình API Key
+
+Tạo file `frontend/.env`:
+
+```env
+VITE_API_URL=https://your-worker.workers.dev
+VITE_GEMINI_API_KEY=your-gemini-api-key
+VITE_GEMINI_MODEL=gemini-3-pro
+```
+
+#### 📋 Danh sách Model Gemini chính thức
+
+| Model | Mô tả | Khuyên dùng |
+|-------|-------|-------------|
+| `gemini-3-pro` | Model mới nhất, thông minh nhất | ✅ **Chat (Mặc định)** |
+| `gemini-2.5-pro` | Chất lượng cao, ổn định | |
+| `gemini-2.0-flash` | Nhanh, cân bằng tốc độ và chất lượng | |
+| `gemini-2.0-flash-lite` | Nhẹ hơn, phù hợp thiết bị yếu | |
+#### 🔊 Model TTS (Text-to-Speech)
+
+| Model | Mô tả |
+|-------|-------|
+| `gemini-2.5-flash-preview-tts` | ✅ **TTS (Mặc định)** - Giọng đọc AI tự nhiên |
+| `gemini-2.5-pro-preview-tts` | Chất lượng studio cao |
+
+> **Lấy API Key:** [Google AI Studio](https://aistudio.google.com/apikey)
+
+### 4. Chạy Development
+
+```bash
 npm run dev
 ```
 
 🌐 Mở trình duyệt: `http://localhost:5173`
 
-### 3. Cài đặt Backend
+### 5. Cài đặt Backend (Optional)
 
 ```bash
 cd backend
@@ -285,8 +315,6 @@ wrangler d1 execute ban-dong-hanh-db --file=./schema.sql
 npm run dev
 ```
 
-⚙️ API chạy tại: `http://localhost:8787`
-
 ---
 
 ## 📝 Scripts
@@ -299,9 +327,6 @@ npm run dev
 | `npm run build` | Build production |
 | `npm run preview` | Preview build |
 | `npm run deploy` | Deploy Cloudflare Pages |
-| `npm run lint` | ESLint check |
-| `npm run test` | Unit tests (Vitest) |
-| `npm run e2e` | E2E tests (Playwright) |
 
 ### Backend
 
@@ -309,32 +334,10 @@ npm run dev
 |------|-------|
 | `npm run dev` | Local dev với Wrangler |
 | `npm run deploy` | Deploy Workers |
-| `npm run tail` | Xem logs realtime |
 
 ---
 
-## � Cấu hình
-
-### Frontend (`frontend/.env`)
-
-```env
-VITE_API_URL=https://your-worker.workers.dev
-VITE_GEMINI_API_KEY=your-gemini-api-key
-```
-
-### Backend (`backend/wrangler.toml`)
-
-```toml
-[vars]
-ALLOW_ORIGIN = "https://your-domain.pages.dev"
-MODEL = "@cf/meta/llama-3.1-8b-instruct"
-JWT_SECRET = "your-secret-key"
-ADMIN_PASSWORD = "your-admin-password"
-```
-
----
-
-## �🔒 Bảo mật & Quyền riêng tư
+## 🔒 Bảo mật & Quyền riêng tư
 
 | Tính năng | Mô tả |
 |-----------|-------|
@@ -343,23 +346,6 @@ ADMIN_PASSWORD = "your-admin-password"
 | ✅ **SOS Detection** | Bảo vệ người dùng khi cần thiết |
 | ✅ **HTTPS Only** | Mọi kết nối được mã hóa |
 | ✅ **AI không chẩn đoán** | Chỉ hỗ trợ, không thay thế chuyên gia |
-
----
-
-## 📱 Hướng dẫn sử dụng
-
-### Cho học sinh
-
-1. 🌐 Truy cập [duancuahocsinh.pages.dev](https://duancuahocsinh.pages.dev)
-2. 📝 Đăng ký tài khoản (hoặc dùng không cần đăng nhập)
-3. 🎯 Khám phá các tính năng từ Dashboard
-4. 🔔 Bật Push Notifications để nhận nhắc nhở
-
-### Cho giáo viên/phụ huynh
-
-- 👀 Theo dõi và giới thiệu ứng dụng cho học sinh
-- 📊 Sử dụng Admin Dashboard để xem thống kê
-- 📞 Liên hệ hỗ trợ khi cần tư vấn
 
 ---
 
@@ -386,7 +372,6 @@ git push origin feature/ten-tinh-nang
 - 📝 **ESLint & Prettier** - Tuân thủ linting rules
 - 💬 **Comments tiếng Việt** - Giải thích code bằng tiếng Việt
 - 🏷️ **PascalCase** cho components
-- 📁 **kebab-case** cho file names
 - ✅ **Conventional Commits** - feat, fix, docs, style, refactor...
 
 ---
@@ -397,7 +382,7 @@ git push origin feature/ten-tinh-nang
 |------|-----------|
 | 📧 **Email** | stu725114073@hnue.edu.vn |
 | 📱 **Hotline** | 0896636181 (24/7) |
-| 🌐 **Website** | [duancuahocsinh.pages.dev](https://duancuahocsinh.pages.dev) |
+| 🌐 **Website** | [bandonghanh.pages.dev](https://bandonghanh.pages.dev) |
 | 🐛 **Issues** | [GitHub Issues](https://github.com/LongNgn204/duancuahocsinh/issues) |
 
 ---

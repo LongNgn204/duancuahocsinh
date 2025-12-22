@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { detectSOSLevel, sosMessage, getSuggestedAction } from '../utils/sosDetector';
 import { getCurrentUser, isLoggedIn, getChatThreads, syncChatThreadsToServer } from '../utils/api';
-import { streamChat, isGeminiConfigured } from '../services/gemini';
+import { streamChat, isGeminiConfigured, filterProfanity } from '../services/gemini';
 
 const THREADS_KEY = 'chat_threads_v1';
 const SYNC_DEBOUNCE_MS = 5000; // Sync sau 5 giây không có thay đổi
@@ -216,8 +216,9 @@ export function useAI() {
       }
     }
 
-    // Push user message
-    const userMsg = { role: 'user', content: trimmed, ts: nowISO() };
+    // Push user message - filter profanity trước khi lưu
+    const filteredInput = filterProfanity(trimmed);
+    const userMsg = { role: 'user', content: filteredInput, ts: nowISO() };
     setThreads((prev) => prev.map((t) => (t.id === currentId ? { ...t, messages: [...t.messages, userMsg], updatedAt: nowISO(), title: t.messages.length === 0 ? (trimmed.slice(0, 30) + (trimmed.length > 30 ? '…' : '')) : t.title } : t)));
     setLoading(true);
 
@@ -251,10 +252,11 @@ export function useAI() {
       let updateScheduled = false;
       const messageId = 'msg_' + Math.random().toString(36).slice(2);
 
-      // Function để flush buffer vào state
+      // Function để flush buffer vào state - filter profanity cho output
       const flushBuffer = () => {
         if (!textBuffer) return;
-        const currentBuffer = textBuffer;
+        // Filter profanity trước khi hiển thị
+        const currentBuffer = filterProfanity(textBuffer);
         textBuffer = '';
 
         if (assistantIndex === -1) {
