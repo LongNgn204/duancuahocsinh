@@ -50,6 +50,7 @@ const CRITICAL_PATTERNS = [
   'thoát khỏi đau khổ', 'thoát khỏi mọi thứ',
   'không muốn sống nữa', 'k muốn sống nữa',
   'chấm dứt tất cả', 'kết thúc mọi thứ',
+  'không còn lý do sống',
 ];
 
 // Từ khóa HIGH - Nguy cơ cao, cần theo dõi sát
@@ -67,6 +68,7 @@ const HIGH_PATTERNS = [
   'không còn gì', 'mất hết rồi',
   'không có lối thoát', 'bế tắc hoàn toàn',
   'không thể tiếp tục', 'k thể tiếp tục',
+  'không còn hy vọng',
 
   // Bị bắt nạt/bạo lực
   'bị đánh', 'bị bắt nạt', 'bị bully',
