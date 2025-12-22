@@ -4,7 +4,7 @@ import { Sparkles, Heart, Coffee, Star, X, Repeat } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 
-import { PEACE_CARDS as CARDS } from '../../data/peaceCards';
+import { PEACE_CARDS as CARDS } from '../../data/peaceCards.jsx';
 
 export default function PeaceCardDeck() {
     const [drawnCard, setDrawnCard] = useState(null);

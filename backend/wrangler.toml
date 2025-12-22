@@ -4,7 +4,7 @@ compatibility_date = "2024-12-01"
 workers_dev = true
 preview_urls = true
 
-# Workers AI binding
+# Workers AI binding (chỉ dùng cho embeddings/RAG, chat chuyển sang frontend Gemini)
 [ai]
 binding = "AI"
 
@@ -19,7 +19,8 @@ database_id = "a6a814eb-b5fb-4626-9258-f519060d8c89"
 [vars]
 # CORS origin allow-list
 ALLOW_ORIGIN = "http://localhost:5173,https://duancuahocsinh.pages.dev,*.bandonghanh.pages.dev"
-# Workers AI model
+# Workers AI model (chỉ dùng cho embeddings, KHÔNG dùng cho chat - đã deprecated)
+# Chat sử dụng Gemini API frontend với model: gemini-2.5-flash-native-audio-dialog
 MODEL = "@cf/meta/llama-3.1-8b-instruct"
 # Token limit hàng tháng
 MONTHLY_TOKEN_LIMIT = "500000"

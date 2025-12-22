@@ -431,11 +431,15 @@ export default {
                     response = await syncChatThreads(request, env);
                     break;
 
-                // AI Chat - delegate to existing ai-proxy logic
+                // AI Chat - DEPRECATED: Frontend gọi Gemini trực tiếp
+                // Backend chỉ lưu trữ chat history, không gọi AI API nữa
                 case 'ai:chat':
-                    // Import dynamically to avoid circular dependency issues
-                    const aiProxy = await import('./ai-proxy.js');
-                    return aiProxy.default.fetch(request, env, ctx);
+                    response = json({
+                        error: 'deprecated',
+                        message: 'API chat đã chuyển sang frontend. Vui lòng sử dụng Gemini API trực tiếp từ frontend.',
+                        note: 'Backend chỉ hỗ trợ sync chat threads qua /api/data/chat/threads'
+                    }, 410); // 410 Gone
+                    break;
 
                 // Forum endpoints
                 case 'forum:posts:list':

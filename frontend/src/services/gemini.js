@@ -5,7 +5,7 @@
 import { GoogleGenAI } from "@google/genai";
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-flash-preview-05-20';
+const MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.0-flash';
 
 // System instructions cho AI mentor
 const SYSTEM_INSTRUCTIONS = `# BẠN ĐỒNG HÀNH - AI Mentor Tâm Lý Học Đường
@@ -137,7 +137,7 @@ function getChatSession(history = []) {
 
     // Tạo chat session mới với history
     const formattedHistory = formatHistory(history.slice(0, -1)); // Không bao gồm tin nhắn cuối
-    
+
     chat = ai.chats.create({
         model: MODEL,
         config: {
@@ -157,7 +157,7 @@ function getChatSession(history = []) {
  * @param {Object} options - Tùy chọn thêm {userName, memorySummary}
  * @returns {Promise<string>} - Full response text
  */
-export async function streamChat(message, history = [], onChunk = () => {}, options = {}) {
+export async function streamChat(message, history = [], onChunk = () => { }, options = {}) {
     if (!isGeminiConfigured()) {
         // Fallback mode - return echo
         const fallbackResponse = `[DEV MODE] ${message}`;
@@ -181,7 +181,7 @@ export async function streamChat(message, history = [], onChunk = () => {}, opti
 
         // Build full conversation for context
         const formattedHistory = formatHistory(history);
-        
+
         // Create content for generation
         const contents = [
             ...formattedHistory,
@@ -203,7 +203,7 @@ export async function streamChat(message, history = [], onChunk = () => {}, opti
         });
 
         let fullResponse = '';
-        
+
         for await (const chunk of response) {
             const text = chunk.text || '';
             if (text) {
