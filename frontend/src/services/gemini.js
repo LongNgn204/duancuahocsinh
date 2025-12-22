@@ -114,24 +114,22 @@ let chat = null;
 // ========================================================================
 // Chú thích: Danh sách từ tục/bậy tiếng Việt phổ biến (viết thường, không dấu và có dấu)
 const VIETNAMESE_PROFANITY = [
-    // Từ tục phổ biến
-    'đm', 'dm', 'đmm', 'dmm', 'đkm', 'dkm', 'đcm', 'dcm', 'đéo', 'deo', 'đệt', 'det',
-    'vl', 'vãi', 'vai', 'vcl', 'vkl', 'vcc', 'cc', 'cck', 'clgt',
-    'đĩ', 'di', 'điếm', 'diem', 'cave',
-    'ngu', 'đần', 'dan', 'khùng', 'khung', 'điên', 'dien', 'hâm', 'ham',
-    'chó', 'cho', 'lợn', 'lon', 'súc vật', 'suc vat', 'súc sinh', 'suc sinh',
-    'mẹ mày', 'me may', 'má mày', 'ma may', 'bố mày', 'bo may',
-    'cứt', 'cut', 'đái', 'dai', 'ỉa', 'ia',
-    'thằng ngu', 'thang ngu', 'con ngu', 'đồ ngu', 'do ngu',
+    // Viết tắt chửi thề - chỉ match khi đứng một mình
+    'đm', 'dm', 'đmm', 'dmm', 'đkm', 'dkm', 'đcm', 'dcm',
+    'vcl', 'vkl', 'vcc', 'clgt',
+
+    // Cụm từ chửi rõ ràng (match toàn bộ cụm)
+    'đéo mẹ', 'deo me', 'mẹ mày', 'me may', 'mẹ kiếp', 'me kiep',
+    'địt mẹ', 'dit me', 'đụ mẹ', 'du me',
+    'thằng ngu', 'con ngu', 'đồ ngu', 'thang ngu', 'do ngu',
+    'thằng chó', 'con chó', 'đồ chó', 'thang cho', 'do cho',
     'thằng điên', 'con điên', 'thằng khùng', 'con khùng',
-    'đồ chó', 'do cho', 'đồ khốn', 'do khon', 'khốn nạn', 'khon nan',
-    'mặt lồn', 'mat lon', 'mặt buồi', 'mat buoi',
-    'địt', 'dit', 'đụ', 'du', 'chịch', 'chich',
-    'lồn', 'lon', 'buồi', 'buoi', 'cặc', 'cac', 'cu', 'dái', 'dai',
-    'đéo mẹ', 'deo me', 'mẹ kiếp', 'me kiep', 'tiên sư', 'tien su',
-    'thằng chó', 'thang cho', 'con chó', 'đồ chết', 'do chet',
-    'nứng', 'nung', 'dâm', 'dam', 'sex',
-    'fuck', 'shit', 'bitch', 'asshole', 'dick', 'pussy', 'cock', 'whore',
+    'đồ khốn', 'khốn nạn', 'do khon', 'khon nan',
+    'súc vật', 'suc vat', 'súc sinh', 'suc sinh',
+    'mặt lồn', 'mặt buồi', 'mặt cặc',
+
+    // Tiếng Anh
+    'fuck', 'fucking', 'shit', 'bitch', 'asshole', 'dick', 'pussy', 'cock', 'whore',
 ];
 
 /**
@@ -148,8 +146,10 @@ export function filterProfanity(text) {
     const sortedProfanity = [...VIETNAMESE_PROFANITY].sort((a, b) => b.length - a.length);
 
     for (const word of sortedProfanity) {
-        // Tạo regex với word boundary và case-insensitive
-        const regex = new RegExp(escapeRegex(word), 'gi');
+        // Tạo regex với word boundary để chỉ match từ hoàn chỉnh
+        const escapedWord = escapeRegex(word);
+        // Sử dụng lookbehind/lookahead cho Unicode letters
+        const regex = new RegExp(`(?<![\\p{L}])${escapedWord}(?![\\p{L}])`, 'giu');
         filtered = filtered.replace(regex, (match) => '*'.repeat(match.length));
     }
 
