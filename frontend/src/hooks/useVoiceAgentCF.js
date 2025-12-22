@@ -63,8 +63,6 @@ export function useVoiceAgentCF(options = {}) {
 
     // Refs
     const recognitionRef = useRef(null);
-    const synthRef = useRef(null);
-    const utteranceRef = useRef(null);
     const abortControllerRef = useRef(null);
 
     // Endpoint không còn cần thiết vì dùng Gemini SDK
@@ -75,14 +73,11 @@ export function useVoiceAgentCF(options = {}) {
     // ========================================================================
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const speechSynthesis = window.speechSynthesis;
 
-        if (!SpeechRecognition || !speechSynthesis) {
+        if (!SpeechRecognition) {
             setIsSupported(false);
-            console.error('[VoiceAgent] Browser not supported');
-            setError('Trình duyệt của bạn không hỗ trợ hội thoại giọng nói. Vui lòng sử dụng Google Chrome, Edge hoặc Safari.');
-        } else {
-            synthRef.current = speechSynthesis;
+            console.error('[VoiceAgent] Browser not supported - SpeechRecognition required');
+            setError('Trình duyệt của bạn không hỗ trợ nhận diện giọng nói. Vui lòng sử dụng Google Chrome hoặc Edge.');
         }
     }, []);
 
@@ -199,27 +194,33 @@ export function useVoiceAgentCF(options = {}) {
         }
         // ====== END SOS DETECTION ======
 
+        console.log('[VoiceAgent] Sending to LLM:', text);
         setStatus('thinking');
         setResponse('');
 
         try {
             let fullResponse = '';
 
+            console.log('[VoiceAgent] Calling streamChat...');
             // Gọi Gemini Streaming từ service
-            // Voice mode: không cần history dài, chỉ request-response hiện tại
             await streamChat(
                 text,
-                [], // Empty history for single turn voice interaction (or pass context if needed)
+                [],
                 (chunk) => {
+                    // console.log('[VoiceAgent] Received chunk:', chunk);
                     fullResponse += chunk;
                     setResponse(fullResponse);
                 }
             );
 
+            console.log('[VoiceAgent] Gemini Response complete:', fullResponse.length, 'chars');
+
             // Respond
             if (fullResponse) {
+                console.log('[VoiceAgent] Speaking response...');
                 speak(fullResponse);
             } else {
+                console.warn('[VoiceAgent] Empty response from Gemini');
                 setStatus('idle');
             }
 
@@ -236,7 +237,7 @@ export function useVoiceAgentCF(options = {}) {
     }, []);
 
     // ========================================================================
-    // SPEECH SYNTHESIS (TTS) - Gemini TTS với fallback browser
+    // SPEECH SYNTHESIS (TTS) - Gemini TTS ONLY (không fallback browser)
     // ========================================================================
     const geminiAudioRef = useRef(null);
 
@@ -247,7 +248,6 @@ export function useVoiceAgentCF(options = {}) {
         }
 
         // Cancel any ongoing speech
-        if (synthRef.current) synthRef.current.cancel();
         if (geminiAudioRef.current?.stop) {
             geminiAudioRef.current.stop();
             geminiAudioRef.current = null;
@@ -263,82 +263,46 @@ export function useVoiceAgentCF(options = {}) {
             return;
         }
 
-        // Thử dùng Gemini TTS trước
-        if (isGeminiTTSAvailable()) {
-            try {
-                console.log('[VoiceAgent] Using Gemini TTS...');
-                const result = await speakWithGemini(cleanText);
-                geminiAudioRef.current = result;
-
-                // Listen for audio end
-                if (result.audio) {
-                    result.audio.onended = () => {
-                        console.log('[VoiceAgent] Gemini TTS ended');
-                        setStatus('idle');
-                        geminiAudioRef.current = null;
-                    };
-                    result.audio.onerror = () => {
-                        console.warn('[VoiceAgent] Gemini audio error, falling back to browser TTS');
-                        speakWithBrowser(cleanText);
-                    };
-                }
-                return;
-            } catch (err) {
-                console.warn('[VoiceAgent] Gemini TTS failed, falling back:', err.message);
-                // Fallback to browser TTS
-            }
-        }
-
-        // Fallback: Browser SpeechSynthesis
-        speakWithBrowser(cleanText);
-    }, []);
-
-    // Browser TTS fallback
-    const speakWithBrowser = useCallback((cleanText) => {
-        if (!synthRef.current) {
+        // Chỉ sử dụng Gemini TTS
+        if (!isGeminiTTSAvailable()) {
+            console.error('[VoiceAgent] Gemini TTS not configured');
+            setError('Chưa cấu hình Gemini API Key cho TTS');
             setStatus('idle');
             return;
         }
 
-        const utterance = new SpeechSynthesisUtterance(cleanText);
-        utterance.lang = 'vi-VN';
-        utterance.rate = 1.0;
-        utterance.pitch = 1.0;
+        try {
+            console.log('[VoiceAgent] Using Gemini TTS...');
+            const result = await speakWithGemini(cleanText);
+            geminiAudioRef.current = result;
 
-        // Tìm voice tiếng Việt nếu có
-        const voices = synthRef.current.getVoices();
-        const viVoice = voices.find(v => v.lang.startsWith('vi'));
-        if (viVoice) {
-            utterance.voice = viVoice;
+            // Listen for audio end
+            if (result.audio) {
+                result.audio.onended = () => {
+                    console.log('[VoiceAgent] Gemini TTS ended');
+                    setStatus('idle');
+                    geminiAudioRef.current = null;
+                };
+                result.audio.onerror = (e) => {
+                    console.error('[VoiceAgent] Gemini audio playback error:', e);
+                    setError('Không thể phát âm thanh Gemini TTS');
+                    setStatus('idle');
+                    geminiAudioRef.current = null;
+                };
+            }
+        } catch (err) {
+            console.error('[VoiceAgent] Gemini TTS failed:', err.message);
+            setError(`Lỗi Gemini TTS: ${err.message}`);
+            setStatus('idle');
         }
-
-        utterance.onend = () => {
-            console.log('[VoiceAgent] Browser TTS ended');
-            setStatus('idle');
-            utteranceRef.current = null;
-        };
-
-        utterance.onerror = (event) => {
-            console.error('[VoiceAgent] Browser TTS error:', event);
-            setStatus('idle');
-            utteranceRef.current = null;
-        };
-
-        utteranceRef.current = utterance;
-        synthRef.current.speak(utterance);
     }, []);
 
     const stopSpeaking = useCallback(() => {
-        // Stop Gemini audio
+        // Stop Gemini audio only
         if (geminiAudioRef.current?.stop) {
             geminiAudioRef.current.stop();
             geminiAudioRef.current = null;
         }
-        // Stop browser TTS
-        if (synthRef.current) {
-            synthRef.current.cancel();
-        }
-        utteranceRef.current = null;
         setStatus('idle');
     }, []);
 
@@ -358,11 +322,11 @@ export function useVoiceAgentCF(options = {}) {
             abortControllerRef.current = null;
         }
 
-        // Stop TTS
-        if (synthRef.current) {
-            synthRef.current.cancel();
+        // Stop Gemini TTS
+        if (geminiAudioRef.current?.stop) {
+            geminiAudioRef.current.stop();
+            geminiAudioRef.current = null;
         }
-        utteranceRef.current = null;
 
         setStatus('idle');
         setError(null);
