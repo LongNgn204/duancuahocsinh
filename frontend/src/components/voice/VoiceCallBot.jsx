@@ -1,10 +1,12 @@
 // src/components/voice/VoiceCallBot.jsx
 // Voice Call Bot component - UI for real-time voice chat with Gemini AI
+// Includes SOS detection for emergency support
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Phone, PhoneOff, Mic, MicOff, Volume2 } from 'lucide-react';
 import { useVoiceCall, formatDuration } from '../../hooks/useVoiceCall';
+import SOSOverlay from '../sos/SOSOverlay';
 
 /**
  * Voice wave animation component
@@ -60,6 +62,9 @@ function CallButton({ onClick, isActive, disabled, children, variant = 'start' }
  * VoiceCallBot - Main voice call component
  */
 export default function VoiceCallBot({ onClose }) {
+    const [showSOSOverlay, setShowSOSOverlay] = useState(false);
+    const [sosData, setSosData] = useState({ level: 'high', message: '' });
+
     const {
         status,
         error,
@@ -67,19 +72,28 @@ export default function VoiceCallBot({ onClose }) {
         transcript,
         isMuted,
         isSupported,
+        sosDetected,
         startCall,
         endCall,
-        toggleMute
-    } = useVoiceCall();
+        toggleMute,
+        clearSOS
+    } = useVoiceCall({
+        onSOS: (level, message) => {
+            console.log('[VoiceCallBot] SOS detected:', level);
+            setSosData({ level, message });
+            setShowSOSOverlay(true);
+        }
+    });
 
     const isCallActive = status === 'active' || status === 'speaking';
     const isConnecting = status === 'connecting';
+    const isListening = status === 'active' && !isMuted;
 
     // Status messages
     const statusMessage = {
         idle: 'Sẵn sàng gọi điện',
         connecting: 'Đang kết nối...',
-        active: 'Đang nghe bạn nói...',
+        active: isMuted ? 'Đã tắt mic - Nhấn để bật lại' : 'Đang nghe bạn nói...',
         speaking: 'AI đang trả lời...',
         error: error || 'Có lỗi xảy ra'
     };
@@ -114,8 +128,10 @@ export default function VoiceCallBot({ onClose }) {
                 >
                     {status === 'speaking' ? (
                         <Volume2 size={48} className="text-white animate-pulse" />
+                    ) : isMuted ? (
+                        <MicOff size={48} className="text-white/50" />
                     ) : (
-                        <Mic size={48} className="text-white" />
+                        <Mic size={48} className={`text-white ${isListening ? 'animate-pulse' : ''}`} />
                     )}
                 </motion.div>
             </div>
@@ -190,6 +206,17 @@ export default function VoiceCallBot({ onClose }) {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* SOS Overlay */}
+            <SOSOverlay
+                isOpen={showSOSOverlay}
+                onClose={() => {
+                    setShowSOSOverlay(false);
+                    clearSOS();
+                }}
+                riskLevel={sosData.level}
+                triggerText={sosData.message}
+            />
         </div>
     );
 }

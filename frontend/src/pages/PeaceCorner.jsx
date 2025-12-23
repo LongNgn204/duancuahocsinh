@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSound } from '../contexts/SoundContext';
+import { speak as geminiSpeak, stopSpeaking as geminiStop } from '../services/geminiTTS';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Wind, Play, Pause, RotateCcw, Volume2, VolumeX, ArrowLeft, Sparkles, Music, Music4 } from 'lucide-react';
@@ -81,11 +82,10 @@ export default function PeaceCorner() {
     const [timeLeft, setTimeLeft] = useState(BREATHING_MODES.blueBubble.duration);
     const [isRunning, setIsRunning] = useState(false);
     const [showEncouragement, setShowEncouragement] = useState(false);
-    const [isMuted, setIsMuted] = useState(false);
+    const [isMuted, setIsMuted] = useState(true); // TTS đã tắt mặc định
 
     const timerRef = useRef(null);
     const phaseTimeoutRef = useRef(null);
-    const synthRef = useRef(window.speechSynthesis);
 
     const currentMode = BREATHING_MODES[mode];
 
@@ -104,7 +104,7 @@ export default function PeaceCorner() {
         return () => {
             clearInterval(timerRef.current);
             clearTimeout(phaseTimeoutRef.current);
-            if (synthRef.current) synthRef.current.cancel();
+            geminiStop();
             stopBgm();
         };
     }, [stopBgm]);
@@ -168,14 +168,13 @@ export default function PeaceCorner() {
         return () => clearTimeout(phaseTimeoutRef.current);
     }, [isRunning, currentMode]);
 
-    // TTS Helper
+    // TTS Helper - using Gemini TTS with fallback
     const speak = (text) => {
-        if (isMuted || !synthRef.current) return;
-        synthRef.current.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'vi-VN';
-        utterance.rate = 0.9;
-        synthRef.current.speak(utterance);
+        if (isMuted) return;
+        // Use Gemini TTS with browser fallback
+        geminiSpeak(text, { fallbackToBrowser: true }).catch(err => {
+            console.error('[PeaceCorner] TTS error:', err);
+        });
     };
 
     const startSession = () => {
@@ -187,7 +186,7 @@ export default function PeaceCorner() {
         setIsRunning(false);
         clearTimeout(phaseTimeoutRef.current);
         setPhase('idle');
-        if (synthRef.current) synthRef.current.cancel();
+        geminiStop();
     };
 
     const resetSession = () => {
@@ -196,14 +195,14 @@ export default function PeaceCorner() {
         setPhase('idle');
         setTimeLeft(currentMode.duration);
         setShowEncouragement(false);
-        if (synthRef.current) synthRef.current.cancel();
+        geminiStop();
     };
 
     const finishSession = () => {
         setIsRunning(false);
         setPhase('finished');
         clearTimeout(phaseTimeoutRef.current);
-        if (synthRef.current) synthRef.current.cancel();
+        geminiStop();
         setTimeout(() => setShowEncouragement(true), 1000);
     };
 

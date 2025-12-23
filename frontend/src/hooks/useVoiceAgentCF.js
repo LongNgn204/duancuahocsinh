@@ -1,14 +1,15 @@
 // src/hooks/useVoiceAgentCF.js
 // Chú thích: Hook Voice Chat với Gemini AI
 // STT: SpeechRecognition (vi-VN) - chạy trên browser
-// TTS: SpeechSynthesis (browser native)
+// TTS: Gemini TTS (gemini-2.5-pro-preview-tts) với fallback browser
 // LLM: Gemini API frontend streaming
 // SOS: Phát hiện từ khóa tiêu cực và hiện cảnh báo
 
-// v8.0: Chuyển sang SpeechSynthesis (không phụ thuộc geminiTTS)
+// v9.0: Chuyển sang Gemini TTS với fallback browser SpeechSynthesis
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { detectSOSLevel, sosMessage, getSuggestedAction } from '../utils/sosDetector';
 import { streamChat, isGeminiConfigured } from '../services/gemini';
+import { speak as geminiSpeak, stopSpeaking as geminiStop } from '../services/geminiTTS';
 
 /**
  * Loại bỏ emoji và icon khỏi text trước khi TTS đọc
@@ -63,10 +64,7 @@ export function useVoiceAgentCF(options = {}) {
     // Refs
     const recognitionRef = useRef(null);
     const abortControllerRef = useRef(null);
-    const utteranceRef = useRef(null);
-
-    // SpeechSynthesis
-    const synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
+    const isSpeakingRef = useRef(false);
 
     // ========================================================================
     // CHECK BROWSER SUPPORT
@@ -236,54 +234,52 @@ export function useVoiceAgentCF(options = {}) {
     }, []);
 
     // ========================================================================
-    // SPEECH SYNTHESIS (TTS) - Browser SpeechSynthesis
+    // SPEECH SYNTHESIS (TTS) - Gemini TTS with browser fallback
     // ========================================================================
-    const speak = useCallback((text) => {
-        if (!text || !synth) {
+    const speak = useCallback(async (text) => {
+        if (!text) {
             setStatus('idle');
             return;
         }
 
-        // Cancel any ongoing speech
-        try { synth.cancel(); } catch (_) { }
-
         setStatus('speaking');
+        isSpeakingRef.current = true;
 
         // FILTER EMOJI TRƯỚC KHI ĐỌC
         const cleanText = stripEmoji(text);
         if (!cleanText) {
             console.log('[VoiceAgent] No text to speak after emoji filter');
             setStatus('idle');
+            isSpeakingRef.current = false;
             return;
         }
 
-        const utterance = new SpeechSynthesisUtterance(cleanText);
-        utterance.lang = 'vi-VN';
-        utterance.rate = 1.0;
-        utterance.pitch = 1.0;
-
-        utterance.onend = () => {
-            console.log('[VoiceAgent] TTS ended');
+        try {
+            await geminiSpeak(cleanText, {
+                fallbackToBrowser: true,
+                onEnd: () => {
+                    console.log('[VoiceAgent] TTS ended');
+                    setStatus('idle');
+                    isSpeakingRef.current = false;
+                },
+                onError: (e) => {
+                    console.error('[VoiceAgent] TTS error:', e);
+                    setStatus('idle');
+                    isSpeakingRef.current = false;
+                }
+            });
+        } catch (error) {
+            console.error('[VoiceAgent] TTS failed:', error);
             setStatus('idle');
-            utteranceRef.current = null;
-        };
-
-        utterance.onerror = (e) => {
-            console.error('[VoiceAgent] TTS error:', e);
-            setStatus('idle');
-            utteranceRef.current = null;
-        };
-
-        utteranceRef.current = utterance;
-        synth.speak(utterance);
-    }, [synth]);
+            isSpeakingRef.current = false;
+        }
+    }, []);
 
     const stopSpeaking = useCallback(() => {
-        // Stop browser TTS
-        try { synth?.cancel(); } catch (_) { }
-        utteranceRef.current = null;
+        geminiStop();
+        isSpeakingRef.current = false;
         setStatus('idle');
-    }, [synth]);
+    }, []);
 
     // ========================================================================
     // STOP ALL
@@ -301,13 +297,13 @@ export function useVoiceAgentCF(options = {}) {
             abortControllerRef.current = null;
         }
 
-        // Stop browser TTS
-        try { synth?.cancel(); } catch (_) { }
-        utteranceRef.current = null;
+        // Stop TTS (Gemini + browser)
+        geminiStop();
+        isSpeakingRef.current = false;
 
         setStatus('idle');
         setError(null);
-    }, [synth]);
+    }, []);
 
     // ========================================================================
     // CLEANUP

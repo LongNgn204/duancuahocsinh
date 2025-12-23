@@ -9,19 +9,26 @@ const MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-flash-native-audi
 // WebSocket URL for Gemini Live API
 const LIVE_API_URL = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${GEMINI_API_KEY}`;
 
-// System prompt for voice assistant
-const SYSTEM_INSTRUCTION = `Bạn là "Bạn Đồng Hành", một người bạn AI thân thiệt, ấm áp và thấu hiểu dành cho học sinh Việt Nam.
+// System prompt for voice assistant - Upgraded v2.0
+const SYSTEM_INSTRUCTION = `Bạn là "Bạn Đồng Hành", một người bạn AI thông minh dành cho học sinh Việt Nam. Bạn được cập nhật kiến thức mới nhất mỗi ngày.
 
-Nguyên tắc giao tiếp bằng giọng:
-- Nói ngắn gọn, tự nhiên như trò chuyện thật
-- Dùng ngôn ngữ gần gũi với học sinh
-- Lắng nghe và đồng cảm
-- Nếu phát hiện dấu hiệu khủng hoảng tinh thần, nhẹ nhàng khuyên tìm người lớn đáng tin
+CÁCH NÓI CHUYỆN:
+- Nói tự nhiên, thoải mái như đang nói chuyện với bạn bè
+- KHÔNG đọc emoji, icon hay ký hiệu đặc biệt
+- KHÔNG liệt kê kiểu 1, 2, 3 hay gạch đầu dòng
+- Nói rõ ràng, dễ hiểu, tránh từ ngữ phức tạp
+- Nhớ những gì người dùng đã chia sẻ và tham chiếu lại
+- Thể hiện sự quan tâm và đồng cảm
 
-Bạn có thể:
-- Lắng nghe tâm sự về học tập, bạn bè, gia đình
-- Đưa lời khuyên về quản lý stress, cảm xúc
-- Trò chuyện vui vẻ, động viên tinh thần`;
+BẠN CÓ THỂ GIÚP:
+- Học tập: hỏi bài, giải thích kiến thức, ôn thi
+- Tâm lý: lắng nghe tâm sự, chia sẻ, động viên
+- Cuộc sống: bạn bè, gia đình, định hướng tương lai
+- Giải trí: trò chuyện vui, kể chuyện
+
+LƯU Ý:
+- Nếu người dùng im lặng lâu, hỏi nhẹ nhàng họ có muốn chia sẻ thêm không
+- Nếu phát hiện dấu hiệu khủng hoảng, khuyên tìm người lớn đáng tin`;
 
 /**
  * Check if Gemini Live API is available
@@ -46,6 +53,7 @@ export function createLiveSession(callbacks = {}) {
     let ws = null;
     let isConnected = false;
     let setupComplete = false;
+    let keepaliveInterval = null;
 
     // Connect to Gemini Live API
     const connect = () => {
@@ -57,7 +65,7 @@ export function createLiveSession(callbacks = {}) {
                     console.log('[GeminiLive] WebSocket connected');
                     isConnected = true;
 
-                    // Send setup message
+                    // Send setup message with optimized settings
                     const setupMessage = {
                         setup: {
                             model: `models/${MODEL}`,
@@ -73,6 +81,12 @@ export function createLiveSession(callbacks = {}) {
                             },
                             systemInstruction: {
                                 parts: [{ text: SYSTEM_INSTRUCTION }]
+                            },
+                            // Enable automatic turn detection for faster response
+                            realtimeInputConfig: {
+                                automaticActivityDetection: {
+                                    disabled: false
+                                }
                             }
                         }
                     };
@@ -94,10 +108,13 @@ export function createLiveSession(callbacks = {}) {
                             data = JSON.parse(event.data);
                         }
 
-                        // Handle setup complete
                         if (data.setupComplete) {
                             console.log('[GeminiLive] Setup complete');
                             setupComplete = true;
+
+                            // Start keepalive to prevent connection timeout
+                            startKeepalive();
+
                             if (onOpen) onOpen();
                             resolve({ success: true });
                             return;
@@ -151,6 +168,7 @@ export function createLiveSession(callbacks = {}) {
                     console.log('[GeminiLive] WebSocket closed:', event.code, event.reason);
                     isConnected = false;
                     setupComplete = false;
+                    stopKeepalive();
                     if (onClose) onClose(event);
                 };
 
@@ -214,12 +232,48 @@ export function createLiveSession(callbacks = {}) {
 
     // Close connection
     const close = () => {
+        stopKeepalive();
         if (ws) {
             ws.close();
             ws = null;
         }
         isConnected = false;
         setupComplete = false;
+    };
+
+    // Start keepalive ping to prevent timeout
+    const startKeepalive = () => {
+        if (keepaliveInterval) return;
+
+        keepaliveInterval = setInterval(() => {
+            if (ws && ws.readyState === WebSocket.OPEN && setupComplete) {
+                // Send a minimal audio chunk to keep connection alive
+                // This is silent audio (all zeros)
+                const silentAudio = btoa(String.fromCharCode.apply(null, new Uint8Array(320))); // 10ms of silence at 16kHz
+                const message = {
+                    realtimeInput: {
+                        mediaChunks: [{
+                            mimeType: "audio/pcm;rate=16000",
+                            data: silentAudio
+                        }]
+                    }
+                };
+                try {
+                    ws.send(JSON.stringify(message));
+                    console.log('[GeminiLive] Keepalive sent');
+                } catch (err) {
+                    console.error('[GeminiLive] Keepalive error:', err);
+                }
+            }
+        }, 15000); // Every 15 seconds
+    };
+
+    // Stop keepalive
+    const stopKeepalive = () => {
+        if (keepaliveInterval) {
+            clearInterval(keepaliveInterval);
+            keepaliveInterval = null;
+        }
     };
 
     // Check if connected
@@ -253,8 +307,10 @@ export class AudioPlayer {
 
     init() {
         if (!this.audioContext) {
+            // Use interactive latency hint for lowest latency
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
-                sampleRate: 24000
+                sampleRate: 24000,
+                latencyHint: 'interactive' // Lowest latency for real-time audio
             });
             this.scheduledTime = this.audioContext.currentTime;
         }
@@ -284,9 +340,14 @@ export class AudioPlayer {
         }
     }
 
-    // Schedule buffer for playback immediately (gapless)
+    // Schedule buffer for playback immediately (gapless, low latency)
     scheduleBuffer(samples) {
         if (!this.audioContext) return;
+
+        // Resume context if suspended (needed for autoplay policy)
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume();
+        }
 
         // Create audio buffer
         const audioBuffer = this.audioContext.createBuffer(1, samples.length, 24000);
@@ -297,9 +358,12 @@ export class AudioPlayer {
         source.buffer = audioBuffer;
         source.connect(this.audioContext.destination);
 
-        // Calculate start time - ensure gapless playback
+        // Calculate start time - minimize latency
         const currentTime = this.audioContext.currentTime;
-        const startTime = Math.max(currentTime, this.scheduledTime);
+        // If this is the first chunk or no audio scheduled, start immediately
+        const startTime = this.playbackStarted
+            ? Math.max(currentTime, this.scheduledTime)
+            : currentTime + 0.01; // Start with tiny delay to ensure smooth
 
         // Update scheduled end time
         const duration = samples.length / 24000;
@@ -313,6 +377,7 @@ export class AudioPlayer {
         if (!this.playbackStarted) {
             this.playbackStarted = true;
             this.isPlaying = true;
+            console.log('[AudioPlayer] Playback started');
             if (this.onPlaybackStart) this.onPlaybackStart();
 
             // Start checking for playback end

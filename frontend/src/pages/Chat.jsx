@@ -8,6 +8,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Button from '../components/ui/Button';
 import ChatList from '../components/chat/ChatList';
+import SOSOverlay from '../components/sos/SOSOverlay';
 import {
   Send, Mic, MicOff, Volume2, VolumeX,
   Sparkles, Plus, Image as ImageIcon, X,
@@ -114,7 +115,9 @@ export default function Chat() {
     newChat,
     deleteChat,
     renameChat,
-    syncing // New prop
+    syncing, // New prop
+    sos, // SOS detection state
+    clearSOS // Clear SOS state
   } = useAI();
 
   // --- Voice Hook (STT & TTS) ---
@@ -417,6 +420,14 @@ export default function Chat() {
         </div>
 
       </div>
+
+      {/* SOS Overlay - Hiển thị khi phát hiện từ khóa nguy hiểm */}
+      <SOSOverlay
+        isOpen={!!sos}
+        onClose={clearSOS}
+        riskLevel={sos?.level || 'high'}
+        triggerText={sos?.message}
+      />
     </div>
   );
 }

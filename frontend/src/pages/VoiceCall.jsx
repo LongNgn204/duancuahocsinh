@@ -41,7 +41,12 @@ export default function VoiceCall() {
                     {/* Info */}
                     <div className="mt-8 text-center text-sm text-slate-500 space-y-2">
                         <p>🎙️ Trò chuyện bằng giọng nói với AI</p>
-                        <p>Sử dụng Gemini 2.5 Flash Native Audio</p>
+                        <p className="text-xs text-slate-400">Sử dụng Gemini 2.5 Flash Native Audio</p>
+                        <div className="mt-4 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                            <p className="text-amber-700 text-xs">
+                                💡 <strong>Mẹo:</strong> Sử dụng ở nơi yên tĩnh để AI nghe rõ hơn
+                            </p>
+                        </div>
                     </div>
                 </div>
             </main>

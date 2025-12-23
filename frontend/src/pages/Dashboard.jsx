@@ -1,14 +1,38 @@
 // src/pages/Dashboard.jsx
-// Chú thích: Trang chủ dashboard - Clean Minimal Design v3.0
-import { useEffect } from 'react';
+// Chú thích: Trang chủ dashboard - Modern Design v4.0
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     MessageCircle, Heart, Star, Gamepad2, BookOpen,
-    Clock, Brain, Zap
+    Clock, Brain, Zap, Quote, Calendar, Flame, MessageSquare,
+    Trophy, TrendingUp, CheckCircle2, Circle
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useSound } from '../contexts/SoundContext';
+
+// Châm ngôn cuộc sống
+const lifeQuotes = [
+    { text: "Không có việc gì khó, chỉ sợ lòng không bền. Đào núi và lấp biển, quyết chí ắt làm nên.", author: "Hồ Chí Minh" },
+    { text: "Học, học nữa, học mãi.", author: "Hồ Chí Minh" },
+    { text: "Vì lợi ích mười năm thì phải trồng cây, vì lợi ích trăm năm thì phải trồng người.", author: "Hồ Chí Minh" },
+    { text: "Một năm khởi đầu từ mùa xuân. Một đời khởi đầu từ tuổi trẻ. Tuổi trẻ là mùa xuân của xã hội.", author: "Hồ Chí Minh" },
+    { text: "Lao động là vinh quang, không lao động là nhục.", author: "Hồ Chí Minh" },
+    { text: "Gian nan rèn luyện mới thành công.", author: "Hồ Chí Minh" },
+    { text: "Đoàn kết, đoàn kết, đại đoàn kết. Thành công, thành công, đại thành công.", author: "Hồ Chí Minh" },
+    { text: "Muốn đi nhanh thì đi một mình, muốn đi xa thì đi cùng nhau.", author: "Tục ngữ Châu Phi" },
+    { text: "Thành công không phải đích đến, mà là hành trình.", author: "Zig Ziglar" },
+    { text: "Hôm nay khó khăn, ngày mai sẽ tồi tệ hơn, nhưng ngày kia sẽ tuyệt vời.", author: "Jack Ma" },
+];
+
+// Mapping emoji to mood key
+const moodMapping = [
+    { emoji: '😄', key: 'happy', label: 'Vui vẻ' },
+    { emoji: '🙂', key: 'content', label: 'Bình thường' },
+    { emoji: '😐', key: 'neutral', label: 'Trung lập' },
+    { emoji: '😞', key: 'sad', label: 'Buồn' },
+    { emoji: '😡', key: 'angry', label: 'Tức giận' }
+];
 
 // Quick access cards data
 const quickActions = [
@@ -17,63 +41,266 @@ const quickActions = [
         title: 'Chat với AI',
         description: 'Tâm sự & Lời khuyên',
         path: '/chat',
+        color: 'from-pink-500 to-rose-500',
+        bgColor: 'bg-pink-50'
     },
     {
         icon: Heart,
         title: 'Góc An Yên',
         description: 'Thở & Bình tâm',
         path: '/breathing',
+        color: 'from-red-500 to-pink-500',
+        bgColor: 'bg-red-50'
     },
     {
         icon: Star,
         title: 'Lọ Biết Ơn',
         description: 'Lưu giữ niềm vui',
         path: '/gratitude',
+        color: 'from-yellow-500 to-orange-500',
+        bgColor: 'bg-yellow-50'
     },
     {
         icon: BookOpen,
         title: 'Kể Chuyện',
         description: 'Bài học cuộc sống',
         path: '/stories',
+        color: 'from-blue-500 to-indigo-500',
+        bgColor: 'bg-blue-50'
     },
     {
         icon: Gamepad2,
         title: 'Giải Trí',
         description: 'Mini Games vui',
         path: '/games',
+        color: 'from-purple-500 to-violet-500',
+        bgColor: 'bg-purple-50'
     },
     {
         icon: Clock,
         title: 'Góc Nhỏ',
         description: 'Lịch trình & Nhắc nhở',
         path: '/corner',
+        color: 'from-teal-500 to-cyan-500',
+        bgColor: 'bg-teal-50'
     },
     {
         icon: Brain,
         title: 'Góc Kiến Thức',
         description: 'Hiểu để thương mình',
         path: '/knowledge-hub',
+        color: 'from-emerald-500 to-green-500',
+        bgColor: 'bg-emerald-50'
     },
 ];
 
-// Greeting based on time
+// Storage keys
+const LOGIN_HISTORY_KEY = 'bdh_login_history';
+const MOOD_HISTORY_KEY = 'bdh_mood_history';
+
+// Get today's date string (YYYY-MM-DD)
+function getTodayString() {
+    return new Date().toISOString().split('T')[0];
+}
+
+// Get start of week (Monday)
+function getWeekStart() {
+    const now = new Date();
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+    const monday = new Date(now.setDate(diff));
+    monday.setHours(0, 0, 0, 0);
+    return monday;
+}
+
+// Load login history from localStorage
+function loadLoginHistory() {
+    try {
+        const data = localStorage.getItem(LOGIN_HISTORY_KEY);
+        return data ? JSON.parse(data) : [];
+    } catch {
+        return [];
+    }
+}
+
+// Save login for today
+function recordTodayLogin() {
+    const today = getTodayString();
+    const history = loadLoginHistory();
+
+    // Check if already logged today
+    if (!history.includes(today)) {
+        history.push(today);
+        // Keep only last 90 days
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 90);
+        const cutoffStr = cutoff.toISOString().split('T')[0];
+        const filtered = history.filter(d => d >= cutoffStr);
+        localStorage.setItem(LOGIN_HISTORY_KEY, JSON.stringify(filtered));
+    }
+    return history;
+}
+
+// Calculate streak from login history
+function calculateStreak(history) {
+    if (!history || history.length === 0) return 0;
+
+    const sorted = [...history].sort().reverse(); // Most recent first
+    const today = getTodayString();
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+    // If most recent is not today or yesterday, streak is broken
+    if (sorted[0] !== today && sorted[0] !== yesterday) {
+        return 0;
+    }
+
+    let streak = 1;
+    for (let i = 1; i < sorted.length; i++) {
+        const prevDate = new Date(sorted[i - 1]);
+        const currDate = new Date(sorted[i]);
+        const diffDays = Math.round((prevDate - currDate) / 86400000);
+
+        if (diffDays === 1) {
+            streak++;
+        } else {
+            break;
+        }
+    }
+    return streak;
+}
+
+// Generate weekly progress data
+function generateWeeklyProgress(history) {
+    const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    const weekStart = getWeekStart();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const progress = [];
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(weekStart);
+        date.setDate(weekStart.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+        const dayOfWeek = date.getDay();
+
+        // Reorder to start from Monday
+        const dayName = dayNames[dayOfWeek];
+        const isToday = dateStr === today.toISOString().split('T')[0];
+        const isCompleted = history.includes(dateStr);
+        const isPast = date < today;
+
+        progress.push({
+            day: dayName,
+            date: dateStr,
+            completed: isCompleted,
+            current: isToday,
+            isPast: isPast && !isToday
+        });
+    }
+
+    return progress;
+}
+
+// Greeting based on time with emoji
 function getGreeting() {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Chào buổi sáng,';
-    if (hour < 18) return 'Chào buổi chiều,';
-    if (hour < 22) return 'Chào buổi tối,';
-    return 'Đêm đã muộn,';
+    if (hour < 12) return { text: 'Chào buổi sáng,', emoji: '🌅', wish: 'Chúc bạn buổi sáng tràn đầy năng lượng' };
+    if (hour < 18) return { text: 'Chào buổi chiều,', emoji: '☀️', wish: 'Chúc bạn buổi chiều vui vẻ' };
+    if (hour < 22) return { text: 'Chào buổi tối,', emoji: '🌙', wish: 'Chúc bạn buổi tối thư giãn' };
+    return { text: 'Đêm đã muộn,', emoji: '🌟', wish: 'Chúc bạn ngủ ngon' };
+}
+
+// Format date Vietnamese
+function getVietnameseDate() {
+    const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+    const now = new Date();
+    return `${days[now.getDay()]}, ${now.getDate()} tháng ${now.getMonth() + 1}`;
 }
 
 export default function Dashboard() {
     const { user } = useAuth();
     const { playSound } = useSound();
     const greeting = getGreeting();
+    const vietnameseDate = getVietnameseDate();
+
+    // State for mood
+    const [selectedMood, setSelectedMood] = useState(null);
+
+    // State for login history and weekly progress
+    const [loginHistory, setLoginHistory] = useState([]);
+    const [weeklyProgress, setWeeklyProgress] = useState([]);
+    const [streak, setStreak] = useState(0);
+
+    // State for daily quote
+    const [dailyQuote, setDailyQuote] = useState(() => {
+        // Get consistent quote for the day based on date
+        const today = new Date();
+        const dayIndex = (today.getDate() + today.getMonth()) % lifeQuotes.length;
+        return lifeQuotes[dayIndex];
+    });
 
     // Get display name - prioritize display_name (tên riêng) over username
     const displayName = user?.display_name || user?.username || 'Bạn';
 
+    // Calculate completed days this week
+    const completedDays = weeklyProgress.filter(d => d.completed).length;
+
+    // User stats with real streak
+    const userStats = {
+        streak: streak,
+        chatCount: user?.chat_count || 0,
+        xp: user?.xp || 100,
+        level: user?.level || 1
+    };
+
+    // Handle mood selection
+    const handleMoodSelect = (mood) => {
+        playSound('pop');
+        setSelectedMood(mood.key);
+
+        // Also save mood to localStorage
+        try {
+            const today = getTodayString();
+            const moodHistory = JSON.parse(localStorage.getItem(MOOD_HISTORY_KEY) || '{}');
+            moodHistory[today] = mood.key;
+            localStorage.setItem(MOOD_HISTORY_KEY, JSON.stringify(moodHistory));
+        } catch (e) {
+            console.warn('Failed to save mood:', e);
+        }
+    };
+
+    // Get new random quote
+    const getNewQuote = () => {
+        playSound('click');
+        const randomIndex = Math.floor(Math.random() * lifeQuotes.length);
+        setDailyQuote(lifeQuotes[randomIndex]);
+    };
+
+    // Record login and calculate progress on mount
     useEffect(() => {
+        // Record today's login
+        const history = recordTodayLogin();
+        setLoginHistory(history);
+
+        // Calculate streak
+        const currentStreak = calculateStreak(history);
+        setStreak(currentStreak);
+
+        // Generate weekly progress
+        const progress = generateWeeklyProgress(history);
+        setWeeklyProgress(progress);
+
+        // Load today's mood if any
+        try {
+            const today = getTodayString();
+            const moodHistory = JSON.parse(localStorage.getItem(MOOD_HISTORY_KEY) || '{}');
+            if (moodHistory[today]) {
+                setSelectedMood(moodHistory[today]);
+            }
+        } catch (e) {
+            console.warn('Failed to load mood:', e);
+        }
+
         const timer = setTimeout(() => {
             playSound('notification');
         }, 500);
@@ -81,49 +308,100 @@ export default function Dashboard() {
     }, [playSound]);
 
     return (
-        <div className="min-h-screen bg-white pb-10">
+        <div className="min-h-screen bg-gradient-to-b from-pink-50/50 to-white pb-10">
             {/* --- HERO SECTION --- */}
-            <div className="bg-white border-b border-slate-100 p-8 md:p-12">
-                <div className="max-w-4xl mx-auto">
+            <div className="bg-gradient-to-r from-pink-100/80 via-rose-50 to-pink-100/80 border-b border-pink-100 p-6 md:p-10">
+                <div className="max-w-5xl mx-auto">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4 }}
                     >
-                        <h1 className="text-3xl md:text-5xl font-bold text-slate-900 mb-3">
-                            {greeting} <span className="text-slate-700">{displayName}!</span> 👋
-                        </h1>
-                        <p className="text-slate-500 text-lg">
-                            Hôm nay là một ngày tuyệt vời để bắt đầu những điều nhỏ bé.
-                        </p>
-                    </motion.div>
+                        {/* Date Badge & Stats Row */}
+                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
+                            {/* Date Badge */}
+                            <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-pink-200 shadow-sm w-fit">
+                                <Calendar size={16} className="text-pink-500" />
+                                <span className="text-sm font-medium text-slate-700">{vietnameseDate}</span>
+                            </div>
 
-                    {/* Mood Tracker - Simple */}
-                    <div className="mt-8 flex items-center gap-2">
-                        <span className="text-sm text-slate-500 mr-2">Tâm trạng:</span>
-                        <div className="flex gap-3">
-                            {['😄', '🙂', '😐', '😞', '😡'].map((emoji, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => playSound('pop')}
-                                    className="text-2xl hover:scale-125 transition-transform cursor-pointer"
-                                >
-                                    {emoji}
-                                </button>
-                            ))}
+                            {/* Stats Cards */}
+                            <div className="flex items-center gap-4 md:gap-6">
+                                <div className="text-center">
+                                    <div className="flex items-center justify-center gap-1">
+                                        <Flame size={18} className="text-orange-500" />
+                                        <span className="text-2xl font-bold text-slate-800">{userStats.streak}</span>
+                                    </div>
+                                    <p className="text-xs text-slate-500">Ngày streak</p>
+                                </div>
+                                <div className="w-px h-8 bg-pink-200" />
+                                <div className="text-center">
+                                    <div className="flex items-center justify-center gap-1">
+                                        <MessageSquare size={18} className="text-blue-500" />
+                                        <span className="text-2xl font-bold text-slate-800">{userStats.chatCount}</span>
+                                    </div>
+                                    <p className="text-xs text-slate-500">Cuộc chat</p>
+                                </div>
+                                <div className="w-px h-8 bg-pink-200" />
+                                <div className="text-center">
+                                    <div className="flex items-center justify-center gap-1">
+                                        <Star size={18} className="text-yellow-500" />
+                                        <span className="text-2xl font-bold text-slate-800">{userStats.xp}</span>
+                                    </div>
+                                    <p className="text-xs text-slate-500">XP (Lv.{userStats.level})</p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+
+                        {/* Greeting */}
+                        <h1 className="text-3xl md:text-5xl font-bold text-pink-600 mb-2">
+                            {greeting.text} <span className="text-slate-800">{displayName}!</span> 👋
+                        </h1>
+                        <p className="text-slate-600 text-lg mb-1">
+                            {greeting.wish} {greeting.emoji}
+                        </p>
+                        <p className="text-slate-500">
+                            Hôm nay bạn cảm thấy thế nào? Hãy chọn tâm trạng của bạn bên dưới.
+                        </p>
+
+                        {/* Mood Tracker */}
+                        <div className="mt-6 flex items-center gap-3 flex-wrap">
+                            {moodMapping.map((mood, idx) => (
+                                <motion.button
+                                    key={idx}
+                                    onClick={() => handleMoodSelect(mood)}
+                                    className={`text-3xl p-2 rounded-full transition-all cursor-pointer ${selectedMood === mood.key
+                                        ? 'bg-white shadow-lg scale-110 ring-2 ring-pink-300'
+                                        : 'hover:bg-white/50 hover:scale-110'
+                                        }`}
+                                    whileTap={{ scale: 0.95 }}
+                                    title={mood.label}
+                                >
+                                    {mood.emoji}
+                                </motion.button>
+                            ))}
+                            {selectedMood && (
+                                <motion.span
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="text-sm text-pink-600 font-medium ml-2"
+                                >
+                                    Bạn đang cảm thấy {moodMapping.find(m => m.key === selectedMood)?.label.toLowerCase()}
+                                </motion.span>
+                            )}
+                        </div>
+                    </motion.div>
                 </div>
             </div>
 
             {/* --- QUICK ACTIONS GRID --- */}
-            <div className="max-w-4xl mx-auto px-4 md:px-8 py-8">
+            <div className="max-w-5xl mx-auto px-4 md:px-8 py-8">
                 <div className="flex items-center gap-3 mb-6">
-                    <Zap size={20} className="text-slate-700" />
+                    <Zap size={20} className="text-pink-600" />
                     <h2 className="text-xl font-bold text-slate-900">Khám Phá</h2>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                     {quickActions.map((act, index) => (
                         <motion.div
                             key={act.path}
@@ -132,20 +410,16 @@ export default function Dashboard() {
                             transition={{ delay: index * 0.05 }}
                         >
                             <Link to={act.path} onClick={() => playSound('click')}>
-                                <div className="bg-white border border-slate-200 rounded-2xl p-5 hover:border-slate-300 hover:shadow-md transition-all duration-200 group">
-                                    <div className="flex items-start gap-4">
-                                        <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 group-hover:bg-slate-200 transition-colors">
-                                            <act.icon size={24} />
-                                        </div>
-                                        <div className="flex-1">
-                                            <h3 className="font-bold text-slate-900 group-hover:text-slate-700">
-                                                {act.title}
-                                            </h3>
-                                            <p className="text-sm text-slate-500 mt-1">
-                                                {act.description}
-                                            </p>
-                                        </div>
+                                <div className={`${act.bgColor} border border-slate-100 rounded-2xl p-4 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 group`}>
+                                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${act.color} flex items-center justify-center text-white shadow-md mb-3`}>
+                                        <act.icon size={24} />
                                     </div>
+                                    <h3 className="font-bold text-slate-900 group-hover:text-slate-700 text-sm">
+                                        {act.title}
+                                    </h3>
+                                    <p className="text-xs text-slate-500 mt-1">
+                                        {act.description}
+                                    </p>
                                 </div>
                             </Link>
                         </motion.div>
@@ -153,21 +427,115 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* --- DAILY TIP --- */}
-            <div className="max-w-4xl mx-auto px-4 md:px-8">
+            {/* --- WEEKLY PROGRESS --- */}
+            <div className="max-w-5xl mx-auto px-4 md:px-8 mb-8">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                >
+                    <div className="flex items-center gap-3 mb-4">
+                        <TrendingUp size={20} className="text-emerald-600" />
+                        <h2 className="text-xl font-bold text-slate-900">Tiến độ tuần này</h2>
+                    </div>
+
+                    <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                        <div className="flex items-center justify-between gap-2">
+                            {weeklyProgress.map((day, idx) => (
+                                <div key={idx} className="flex-1 text-center">
+                                    <div className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-2 ${day.completed
+                                        ? 'bg-emerald-500 text-white'
+                                        : day.current
+                                            ? 'bg-pink-500 text-white ring-4 ring-pink-200'
+                                            : 'bg-slate-100 text-slate-400'
+                                        }`}>
+                                        {day.completed ? (
+                                            <CheckCircle2 size={20} />
+                                        ) : day.current ? (
+                                            <span className="text-xl">✨</span>
+                                        ) : day.isPast ? (
+                                            <span className="text-sm">✗</span>
+                                        ) : (
+                                            <Circle size={20} />
+                                        )}
+                                    </div>
+                                    <p className={`text-xs font-medium ${day.current ? 'text-pink-600' : day.completed ? 'text-emerald-600' : 'text-slate-500'
+                                        }`}>
+                                        {day.day}
+                                    </p>
+                                    {day.completed && (
+                                        <p className="text-xs text-emerald-600">✓</p>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="mt-6">
+                            <div className="flex justify-between text-sm text-slate-600 mb-2">
+                                <span>Hoàn thành tuần này</span>
+                                <span className="font-semibold text-emerald-600">{completedDays}/7 ngày</span>
+                            </div>
+                            <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                                <motion.div
+                                    className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${(completedDays / 7) * 100}%` }}
+                                    transition={{ duration: 1, delay: 0.5 }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+            </div>
+
+            {/* --- LIFE QUOTE --- */}
+            <div className="max-w-5xl mx-auto px-4 md:px-8">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
                 >
-                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
-                        <div className="flex items-start gap-4">
-                            <div className="text-2xl">💡</div>
-                            <div>
-                                <h3 className="font-bold text-slate-900 mb-2">Mẹo nhỏ hôm nay</h3>
-                                <p className="text-slate-600 leading-relaxed">
-                                    "Biết ơn không làm biến mất khó khăn, nhưng nó giúp bạn có thêm sức mạnh để vượt qua chúng. Hãy thử tìm 1 điều tích cực ngay bây giờ nhé!"
-                                </p>
+                    <div className="flex items-center gap-3 mb-4">
+                        <Quote size={20} className="text-amber-600" />
+                        <h2 className="text-xl font-bold text-slate-900">Châm ngôn cuộc sống</h2>
+                    </div>
+
+                    <div className="relative overflow-hidden bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 border border-amber-200 rounded-2xl p-6 shadow-sm">
+                        {/* Decorative Elements */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-200/30 to-orange-200/30 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+                        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-br from-yellow-200/30 to-amber-200/30 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
+
+                        <div className="relative">
+                            <div className="flex items-start gap-4">
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-lg flex-shrink-0">
+                                    <Quote size={28} />
+                                </div>
+                                <div className="flex-1">
+                                    <AnimatePresence mode="wait">
+                                        <motion.div
+                                            key={dailyQuote.text}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            <p className="text-lg md:text-xl font-medium text-slate-800 leading-relaxed italic mb-3">
+                                                "{dailyQuote.text}"
+                                            </p>
+                                            <p className="text-sm text-amber-700 font-semibold">
+                                                — {dailyQuote.author}
+                                            </p>
+                                        </motion.div>
+                                    </AnimatePresence>
+
+                                    <button
+                                        onClick={getNewQuote}
+                                        className="mt-4 inline-flex items-center gap-2 text-sm px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-white font-medium hover:shadow-md transition-all hover:scale-105"
+                                    >
+                                        ✨ Câu châm ngôn khác
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

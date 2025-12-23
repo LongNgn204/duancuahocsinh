@@ -204,16 +204,17 @@ export function useAI() {
       return;
     }
 
-    // SOS multi-level pre-check
+    // SOS multi-level pre-check - TRƯỚC KHI LƯU TIN NHẮN
     const sosLevel = detectSOSLevel(trimmed);
     const sosAction = getSuggestedAction(sosLevel);
 
     if (sosAction.showOverlay) {
+      console.log('[useAI] SOS detected:', sosLevel, '- Showing overlay');
       setSos({ level: sosLevel, message: sosMessage(sosLevel) });
-      // Nếu level critical, block hoàn toàn
-      if (sosAction.blockNormalResponse) {
-        return;
-      }
+
+      // BLOCK HOÀN TOÀN tin nhắn nguy hiểm - không cho gửi
+      // Cả critical và high đều bị chặn
+      return; // Không lưu tin nhắn, không gọi AI
     }
 
     // Push user message - filter profanity trước khi lưu
@@ -223,22 +224,23 @@ export function useAI() {
     setLoading(true);
 
     try {
-      // Tăng số lượng messages gửi lên (từ 5 lên 10)
-      const historyCap = messages.slice(-10);
+      // Tăng số lượng messages gửi lên 15 để AI nhớ context tốt hơn
+      const historyCap = messages.slice(-15);
 
-      // Tạo memory summary nếu có nhiều messages
+      // Tạo memory summary nếu có nhiều messages - giúp AI nhớ context xa hơn
       let memorySummary = '';
-      if (messages.length > 10) {
-        const oldMessages = messages.slice(0, -10);
+      if (messages.length > 15) {
+        const oldMessages = messages.slice(0, -15);
         const userOldMessages = oldMessages
           .filter(m => m.role === 'user')
           .map(m => m.content || '')
           .filter(Boolean)
-          .join(' ');
+          .join(' | ');
 
         if (userOldMessages.length > 0) {
-          const words = userOldMessages.split(/\s+/).slice(0, 100);
-          memorySummary = `Tóm tắt trước đó: ${words.join(' ')}${userOldMessages.length > words.join(' ').length ? '...' : ''}`;
+          // Tăng lên 150 từ để AI nhớ rõ hơn
+          const words = userOldMessages.split(/\s+/).slice(0, 150);
+          memorySummary = `Những điều người dùng đã chia sẻ trước đó: ${words.join(' ')}${userOldMessages.length > words.join(' ').length ? '...' : ''}`;
         }
       }
 

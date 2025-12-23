@@ -1,9 +1,10 @@
 // src/hooks/useVoiceCall.js
 // Hook for managing voice call with Gemini Live API
-// Handles microphone capture, audio playback, and connection management
+// Handles microphone capture, audio playback, connection management, and SOS detection
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { createLiveSession, AudioPlayer, isLiveAPIAvailable } from '../services/geminiLive';
+import { detectSOSLevel, sosMessage, getSuggestedAction } from '../utils/sosDetector';
 
 /**
  * Convert Float32Array to Int16Array for PCM encoding
@@ -32,15 +33,19 @@ function int16ToBase64(int16Array) {
 /**
  * Hook for voice call with Gemini Live API
  * @param {Object} options - Configuration options
+ * @param {Function} options.onSOS - Callback when SOS detected (level, message)
  * @returns {Object} Voice call state and controls
  */
 export function useVoiceCall(options = {}) {
+    const { onSOS } = options;
+
     // State
     const [status, setStatus] = useState('idle'); // idle | connecting | active | speaking | error
     const [error, setError] = useState(null);
     const [duration, setDuration] = useState(0);
     const [transcript, setTranscript] = useState('');
     const [isMuted, setIsMuted] = useState(false);
+    const [sosDetected, setSosDetected] = useState(null); // { level, message }
 
     // Refs
     const sessionRef = useRef(null);
@@ -129,6 +134,21 @@ export function useVoiceCall(options = {}) {
                 onTranscript: (text) => {
                     console.log('[VoiceCall] Transcript:', text);
                     setTranscript(prev => prev + ' ' + text);
+
+                    // SOS Detection - check transcript for crisis keywords
+                    const sosLevel = detectSOSLevel(text);
+                    const sosAction = getSuggestedAction(sosLevel);
+
+                    if (sosAction.showOverlay) {
+                        const msg = sosMessage(sosLevel);
+                        console.log('[VoiceCall] SOS detected:', sosLevel);
+                        setSosDetected({ level: sosLevel, message: msg });
+
+                        // Notify parent component
+                        if (onSOS) {
+                            onSOS(sosLevel, msg);
+                        }
+                    }
                 },
                 onError: (err) => {
                     console.error('[VoiceCall] Session error:', err);
@@ -176,12 +196,12 @@ export function useVoiceCall(options = {}) {
 
             const source = audioContextRef.current.createMediaStreamSource(stream);
 
-            // Buffer size for ~100ms of audio at 16kHz (1600 samples)
-            // We'll downsample from native rate
-            const bufferSize = Math.round(4096 * (nativeSampleRate / 16000));
-            const actualBufferSize = Math.pow(2, Math.ceil(Math.log2(bufferSize))); // Power of 2
+            // Use smaller buffer for lower latency (2048 samples)
+            // This provides ~42ms chunks at 48kHz, resampled to ~682 samples at 16kHz
+            // Smaller buffer = faster speech detection but more CPU usage
+            const actualBufferSize = 2048;
 
-            console.log('[VoiceCall] Using buffer size:', actualBufferSize);
+            console.log('[VoiceCall] Using buffer size:', actualBufferSize, '| Native rate:', nativeSampleRate);
 
             // Create script processor for audio capture
             const processor = audioContextRef.current.createScriptProcessor(actualBufferSize, 1, 1);
@@ -200,11 +220,25 @@ export function useVoiceCall(options = {}) {
             };
 
             processor.onaudioprocess = (e) => {
-                if (isMutedRef.current || !sessionRef.current?.isReady()) return;
+                // Skip if muted
+                if (isMutedRef.current) return;
+
+                // Check if session is ready
+                if (!sessionRef.current) {
+                    console.log('[VoiceCall] No session ref');
+                    return;
+                }
+                if (!sessionRef.current.isReady()) {
+                    // Log occasionally to avoid spam
+                    if (audioSentCountRef.current === 0) {
+                        console.log('[VoiceCall] Session not ready yet, waiting...');
+                    }
+                    return;
+                }
 
                 const inputData = e.inputBuffer.getChannelData(0);
 
-                // Downsample to 16kHz
+                // Downsample to 16kHz for Gemini API
                 const resampledData = downsample(inputData, nativeSampleRate, 16000);
                 const int16Data = float32ToInt16(resampledData);
                 const base64Data = int16ToBase64(int16Data);
@@ -212,10 +246,13 @@ export function useVoiceCall(options = {}) {
                 const sent = sessionRef.current.sendAudio(base64Data);
                 if (sent) {
                     audioSentCountRef.current++;
-                    if (audioSentCountRef.current % 20 === 1) {
+                    // Log every 10 chunks (about 1 second)
+                    if (audioSentCountRef.current % 10 === 1) {
                         console.log('[VoiceCall] Audio chunks sent:', audioSentCountRef.current,
                             '| samples:', resampledData.length);
                     }
+                } else {
+                    console.warn('[VoiceCall] Failed to send audio chunk');
                 }
             };
 
@@ -269,6 +306,11 @@ export function useVoiceCall(options = {}) {
         typeof navigator.mediaDevices.getUserMedia === 'function' &&
         isLiveAPIAvailable();
 
+    // Clear SOS state
+    const clearSOS = useCallback(() => {
+        setSosDetected(null);
+    }, []);
+
     return {
         // State
         status,
@@ -277,12 +319,14 @@ export function useVoiceCall(options = {}) {
         transcript,
         isMuted,
         isSupported,
+        sosDetected,
 
         // Controls
         startCall,
         endCall,
         toggleMute,
-        sendText
+        sendText,
+        clearSOS
     };
 }
 

@@ -1,7 +1,8 @@
 // src/hooks/useTTS.js
-// Chú thích: Hook Text-to-Speech (SpeechSynthesis) cho tiếng Việt, play/stop theo nội dung
+// Chú thích: Hook Text-to-Speech sử dụng Gemini TTS với fallback browser SpeechSynthesis
 // KHÔNG ĐỌC EMOJI - Lọc bỏ icon trước khi đọc
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { speak as geminiSpeak, stopSpeaking as geminiStop, isGeminiTTSAvailable } from '../services/geminiTTS';
 
 /**
  * Loại bỏ emoji và icon khỏi text trước khi TTS đọc
@@ -30,41 +31,56 @@ function stripEmoji(text) {
 }
 
 export function useTTS(defaultLang = 'vi-VN') {
-  const synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
-  const utterRef = useRef(null);
   const [speaking, setSpeaking] = useState(false);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
-      try { synth?.cancel(); } catch (_) { }
-      utterRef.current = null;
+      isMountedRef.current = false;
+      geminiStop();
     };
-  }, [synth]);
+  }, []);
 
-  const play = useCallback((text, { rate = 1, pitch = 1, lang = defaultLang } = {}) => {
-    if (!synth || !text) return;
+  const play = useCallback(async (text, { rate = 1, pitch = 1, lang = defaultLang } = {}) => {
+    if (!text) return;
 
     // FILTER EMOJI TRƯỚC KHI ĐỌC
     const cleanText = stripEmoji(text);
     if (!cleanText) return;
 
-    try { synth.cancel(); } catch (_) { }
-    const u = new SpeechSynthesisUtterance(cleanText);
-    u.lang = lang;
-    u.rate = rate;
-    u.pitch = pitch;
-    u.onend = () => setSpeaking(false);
-    u.onerror = () => setSpeaking(false);
-    utterRef.current = u;
+    // Stop any ongoing speech
+    geminiStop();
+
     setSpeaking(true);
-    synth.speak(u);
-  }, [synth, defaultLang]);
+
+    try {
+      await geminiSpeak(cleanText, {
+        fallbackToBrowser: true,
+        onEnd: () => {
+          if (isMountedRef.current) {
+            setSpeaking(false);
+          }
+        },
+        onError: (error) => {
+          console.error('[useTTS] Error:', error);
+          if (isMountedRef.current) {
+            setSpeaking(false);
+          }
+        }
+      });
+    } catch (error) {
+      console.error('[useTTS] Play error:', error);
+      if (isMountedRef.current) {
+        setSpeaking(false);
+      }
+    }
+  }, [defaultLang]);
 
   const stop = useCallback(() => {
-    try { synth?.cancel(); } catch (_) { }
+    geminiStop();
     setSpeaking(false);
-  }, [synth]);
+  }, []);
 
   return { play, stop, speaking };
 }
-
