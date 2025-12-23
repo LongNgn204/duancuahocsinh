@@ -77,6 +77,8 @@ function createAsteroid(id, canvasWidth, speed) {
 export default function SpacePilot() {
     const canvasRef = useRef(null);
     const animationFrameRef = useRef(null);
+    const nextAsteroidId = useRef(0);
+    const startTime = useRef(Date.now());
     const [difficulty, setDifficulty] = useState('medium');
     const [isPlaying, setIsPlaying] = useState(false);
     const [gameOver, setGameOver] = useState(false);
@@ -89,6 +91,12 @@ export default function SpacePilot() {
     const [leaderboard, setLeaderboard] = useState([]);
     const [loading, setLoading] = useState(false);
     const [showLeaderboard, setShowLeaderboard] = useState(false);
+
+    // Get current difficulty settings
+    const currentSettings = DIFFICULTY_SETTINGS[difficulty];
+    const SPAWN_RATE = currentSettings.spawnRate;
+    const SHIP_SPEED = currentSettings.shipSpeed;
+    const ASTEROID_SPEED = currentSettings.asteroidSpeed;
 
     // Keyboard controls
     useEffect(() => {
@@ -145,7 +153,7 @@ export default function SpacePilot() {
         const spawnInterval = setInterval(() => {
             const canvas = canvasRef.current;
             if (!canvas) return;
-            const newAsteroid = createAsteroid(nextAsteroidId.current++, canvas.width);
+            const newAsteroid = createAsteroid(nextAsteroidId.current++, canvas.width, ASTEROID_SPEED);
             setAsteroids(prev => [...prev, newAsteroid]);
         }, SPAWN_RATE);
 
@@ -383,8 +391,8 @@ export default function SpacePilot() {
                         <button
                             onClick={() => setSoundOn(!soundOn)}
                             className={`p-2 rounded-lg transition-colors ${soundOn
-                                    ? 'bg-[--brand]/10 text-[--brand]'
-                                    : 'bg-[--surface-border] text-[--muted]'
+                                ? 'bg-[--brand]/10 text-[--brand]'
+                                : 'bg-[--surface-border] text-[--muted]'
                                 }`}
                             title={soundOn ? 'Tắt âm thanh' : 'Bật âm thanh'}
                         >
