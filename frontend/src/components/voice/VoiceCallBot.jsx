@@ -70,6 +70,7 @@ export default function VoiceCallBot({ onClose }) {
         error,
         duration,
         transcript,
+        lastUserMessage,
         isMuted,
         isSupported,
         sosDetected,
@@ -85,15 +86,17 @@ export default function VoiceCallBot({ onClose }) {
         }
     });
 
-    const isCallActive = status === 'active' || status === 'speaking';
+    // v2.0: Thêm status 'listening' cho Web Speech API STT
+    const isCallActive = status === 'active' || status === 'speaking' || status === 'listening';
     const isConnecting = status === 'connecting';
-    const isListening = status === 'active' && !isMuted;
+    const isListening = (status === 'active' || status === 'listening') && !isMuted;
 
-    // Status messages
+    // Status messages - cập nhật cho STT flow mới
     const statusMessage = {
         idle: 'Sẵn sàng gọi điện',
         connecting: 'Đang kết nối...',
-        active: isMuted ? 'Đã tắt mic - Nhấn để bật lại' : 'Đang nghe bạn nói...',
+        active: isMuted ? 'Đã tắt mic - Nhấn để bật lại' : 'Nói gì đó đi...',
+        listening: 'Đang nghe bạn nói... 🎤',
         speaking: 'AI đang trả lời...',
         error: error || 'Có lỗi xảy ra'
     };
@@ -191,18 +194,27 @@ export default function VoiceCallBot({ onClose }) {
                 </p>
             )}
 
-            {/* Transcript preview */}
+            {/* Transcript preview - Hiển thị cả interim và tin nhắn cuối */}
             <AnimatePresence>
-                {transcript && (
+                {(transcript || lastUserMessage) && (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
                         className="mt-8 p-4 bg-slate-50 rounded-xl max-w-sm"
                     >
-                        <p className="text-sm text-slate-600 line-clamp-3">
-                            {transcript}
-                        </p>
+                        {/* Tin nhắn cuối của user */}
+                        {lastUserMessage && !transcript && (
+                            <p className="text-sm text-indigo-600 font-medium line-clamp-2">
+                                Bạn: {lastUserMessage}
+                            </p>
+                        )}
+                        {/* Đang nói (interim) */}
+                        {transcript && (
+                            <p className="text-sm text-slate-500 italic line-clamp-2">
+                                {transcript}...
+                            </p>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
