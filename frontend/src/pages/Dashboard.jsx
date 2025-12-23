@@ -70,8 +70,8 @@ export default function Dashboard() {
     const { playSound } = useSound();
     const greeting = getGreeting();
 
-    // Get display name - prioritize full name over username
-    const displayName = user?.name || user?.fullName || user?.username || 'Bạn';
+    // Get display name - prioritize display_name (tên riêng) over username
+    const displayName = user?.display_name || user?.username || 'Bạn';
 
     useEffect(() => {
         const timer = setTimeout(() => {
