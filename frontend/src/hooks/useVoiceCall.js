@@ -118,10 +118,7 @@ export function useVoiceCall(options = {}) {
             // Create session
             sessionRef.current = createLiveSession({
                 onAudioData: (base64Data, mimeType) => {
-                    // Only log occasionally to reduce console spam
-                    if (audioSentCountRef.current % 50 === 0) {
-                        console.log('[VoiceCall] Received audio chunk #', audioSentCountRef.current);
-                    }
+                    console.log('[VoiceCall] Received audio data:', base64Data.slice(0, 50) + '...');
                     if (audioPlayerRef.current) {
                         audioPlayerRef.current.enqueue(base64Data);
                     }

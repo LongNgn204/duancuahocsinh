@@ -236,19 +236,14 @@ export function createLiveSession(callbacks = {}) {
 
 /**
  * PCM Audio Player for 24kHz output from Gemini
- * Optimized with scheduled playback for gapless audio
  */
 export class AudioPlayer {
     constructor() {
         this.audioContext = null;
+        this.audioQueue = [];
         this.isPlaying = false;
         this.onPlaybackStart = null;
         this.onPlaybackEnd = null;
-        this.scheduledTime = 0; // Track scheduled audio end time
-        this.pendingBuffers = []; // Pending audio buffers
-        this.playbackStarted = false;
-        this.lastSourceNode = null;
-        this.checkEndInterval = null;
     }
 
     init() {
@@ -256,12 +251,11 @@ export class AudioPlayer {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
                 sampleRate: 24000
             });
-            this.scheduledTime = this.audioContext.currentTime;
         }
         return this.audioContext;
     }
 
-    // Add audio chunk to queue (base64 PCM) - schedule immediately for gapless playback
+    // Add audio chunk to queue (base64 PCM)
     enqueue(base64Data) {
         try {
             const binaryString = atob(base64Data);
@@ -277,83 +271,49 @@ export class AudioPlayer {
                 float32Array[i] = int16Array[i] / 32768.0;
             }
 
-            this.init();
-            this.scheduleBuffer(float32Array);
+            this.audioQueue.push(float32Array);
+
+            if (!this.isPlaying) {
+                this.playNext();
+            }
         } catch (err) {
             console.error('[AudioPlayer] Enqueue error:', err);
         }
     }
 
-    // Schedule buffer for playback immediately (gapless)
-    scheduleBuffer(samples) {
-        if (!this.audioContext) return;
+    async playNext() {
+        if (this.audioQueue.length === 0) {
+            this.isPlaying = false;
+            if (this.onPlaybackEnd) this.onPlaybackEnd();
+            return;
+        }
+
+        this.init();
+        this.isPlaying = true;
+        if (this.onPlaybackStart) this.onPlaybackStart();
+
+        const samples = this.audioQueue.shift();
 
         // Create audio buffer
         const audioBuffer = this.audioContext.createBuffer(1, samples.length, 24000);
         audioBuffer.getChannelData(0).set(samples);
 
-        // Create source node
+        // Create and play source
         const source = this.audioContext.createBufferSource();
         source.buffer = audioBuffer;
         source.connect(this.audioContext.destination);
 
-        // Calculate start time - ensure gapless playback
-        const currentTime = this.audioContext.currentTime;
-        const startTime = Math.max(currentTime, this.scheduledTime);
+        source.onended = () => {
+            this.playNext();
+        };
 
-        // Update scheduled end time
-        const duration = samples.length / 24000;
-        this.scheduledTime = startTime + duration;
-
-        // Start playback
-        source.start(startTime);
-        this.lastSourceNode = source;
-
-        // Handle playback state
-        if (!this.playbackStarted) {
-            this.playbackStarted = true;
-            this.isPlaying = true;
-            if (this.onPlaybackStart) this.onPlaybackStart();
-
-            // Start checking for playback end
-            this.startEndCheck();
-        }
-    }
-
-    // Check if all audio has finished playing
-    startEndCheck() {
-        if (this.checkEndInterval) return;
-
-        this.checkEndInterval = setInterval(() => {
-            if (!this.audioContext) {
-                this.clearEndCheck();
-                return;
-            }
-
-            // If current time has passed all scheduled audio
-            if (this.audioContext.currentTime > this.scheduledTime + 0.1) {
-                this.isPlaying = false;
-                this.playbackStarted = false;
-                if (this.onPlaybackEnd) this.onPlaybackEnd();
-                this.clearEndCheck();
-            }
-        }, 100);
-    }
-
-    clearEndCheck() {
-        if (this.checkEndInterval) {
-            clearInterval(this.checkEndInterval);
-            this.checkEndInterval = null;
-        }
+        source.start();
     }
 
     // Clear queue and stop playback
     stop() {
-        this.clearEndCheck();
-        this.pendingBuffers = [];
+        this.audioQueue = [];
         this.isPlaying = false;
-        this.playbackStarted = false;
-        this.scheduledTime = 0;
         if (this.audioContext && this.audioContext.state === 'running') {
             this.audioContext.suspend();
         }
