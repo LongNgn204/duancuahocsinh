@@ -1,119 +1,90 @@
 // src/pages/Stories.jsx
 // Chú thích: Kể chuyện v2.0 - Immersive Reading Mode & Book Covers
-// v2.1: Chuyển sang Gemini TTS
-import { useState, useEffect, useRef } from 'react';
+// v2.2: Content dạng string, đọc từng câu (tối ưu TTS)
+// v2.3: Sử dụng useTTS hook (SpeechSynthesis)
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Play, Pause, SkipForward, ArrowLeft, Headphones, X, Settings2, Moon, Sun, Type } from 'lucide-react';
-import Card from '../components/ui/Card';
+import { BookOpen, Play, Pause, SkipForward, ArrowLeft, Moon, Sun, Type } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { useSound } from '../contexts/SoundContext';
-import { speakWithGemini, isGeminiTTSAvailable } from '../services/geminiTTS';
+import { useTTS } from '../hooks/useTTS';
 
 import { STORIES } from '../data/stories';
 
 export default function Stories() {
     const [selectedStory, setSelectedStory] = useState(null);
     const { playSound } = useSound();
+    const { play: ttsPlay, stop: ttsStop, speaking } = useTTS('vi-VN');
 
     // Reader State
     const [currentLine, setCurrentLine] = useState(0);
-    const [readingSpeed, setReadingSpeed] = useState(1.0);
     const [isPlaying, setIsPlaying] = useState(false);
     const [theme, setTheme] = useState('light'); // 'light', 'sepia', 'dark'
 
-    // Refs
-    const geminiAudioRef = useRef(null);
+    // Split content into sentences for TTS reading
+    const getSentences = (content) => {
+        if (!content) return [];
+        if (Array.isArray(content)) return content; // Backward compatibility
+        // Split by period followed by space, keep the period
+        return content
+            .split(/(?<=\.)\s+/)
+            .filter(s => s.trim().length > 0);
+    };
 
-    // Cleanup
-    useEffect(() => {
-        return () => {
-            if (geminiAudioRef.current?.stop) {
-                geminiAudioRef.current.stop();
-                geminiAudioRef.current = null;
-            }
-        };
-    }, []);
+    // Memoized sentences for current story
+    const sentences = useMemo(() => {
+        return selectedStory ? getSentences(selectedStory.content) : [];
+    }, [selectedStory]);
 
-    // Play/Pause Logic
-    useEffect(() => {
-        if (!selectedStory) return;
+    // Get current sentence text
+    const currentSentence = sentences[currentLine] || '';
 
-        if (isPlaying) {
-            const text = selectedStory.content[currentLine];
-            if (!text) {
-                setIsPlaying(false);
-                return;
-            }
-            playLine(text);
+    // Auto advance to next sentence
+    const advanceToNext = useCallback(() => {
+        if (currentLine < sentences.length - 1) {
+            setCurrentLine(prev => prev + 1);
+            playSound('pageFlip');
         } else {
-            // Stop current audio
-            if (geminiAudioRef.current?.stop) {
-                geminiAudioRef.current.stop();
-                geminiAudioRef.current = null;
-            }
-        }
-    }, [isPlaying, currentLine, selectedStory]);
-
-    const playLine = async (text) => {
-        if (!text) return;
-
-        // Stop previous audio
-        if (geminiAudioRef.current?.stop) {
-            geminiAudioRef.current.stop();
-            geminiAudioRef.current = null;
-        }
-
-        // Kiểm tra Gemini TTS
-        if (!isGeminiTTSAvailable()) {
-            console.warn('[Stories] Gemini TTS not available');
             setIsPlaying(false);
+        }
+    }, [currentLine, sentences.length, playSound]);
+
+    // Play current sentence
+    useEffect(() => {
+        if (!isPlaying || !currentSentence) {
+            if (!isPlaying) ttsStop();
             return;
         }
 
-        try {
-            console.log('[Stories] Playing line with Gemini TTS:', text.slice(0, 30) + '...');
-            const result = await speakWithGemini(text);
-            geminiAudioRef.current = result;
+        ttsPlay(currentSentence, { rate: 1.0 });
+    }, [isPlaying, currentSentence, ttsPlay, ttsStop]);
 
-            if (result.audio) {
-                result.audio.onended = () => {
-                    // Chuyển sang line tiếp theo khi đọc xong
-                    if (currentLine < (selectedStory?.content.length || 0) - 1) {
-                        setCurrentLine(prev => prev + 1);
-                        playSound('pageFlip');
-                    } else {
-                        setIsPlaying(false);
-                    }
-                    geminiAudioRef.current = null;
-                };
-                result.audio.onerror = () => {
-                    console.error('[Stories] Gemini audio error');
-                    setIsPlaying(false);
-                    geminiAudioRef.current = null;
-                };
-            }
-        } catch (err) {
-            console.error('[Stories] Gemini TTS error:', err.message);
-            setIsPlaying(false);
+    // Watch for speech end to advance
+    useEffect(() => {
+        if (isPlaying && !speaking && currentSentence) {
+            // Small delay to ensure speech has ended
+            const timer = setTimeout(() => {
+                advanceToNext();
+            }, 300);
+            return () => clearTimeout(timer);
         }
-    };
+    }, [speaking, isPlaying, currentSentence, advanceToNext]);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => ttsStop();
+    }, [ttsStop]);
 
     const handleCardClick = (story) => {
         setSelectedStory(story);
         setCurrentLine(0);
         setIsPlaying(false);
-        if (geminiAudioRef.current?.stop) {
-            geminiAudioRef.current.stop();
-            geminiAudioRef.current = null;
-        }
+        ttsStop();
     };
 
     const closeReader = () => {
         setIsPlaying(false);
-        if (geminiAudioRef.current?.stop) {
-            geminiAudioRef.current.stop();
-            geminiAudioRef.current = null;
-        }
+        ttsStop();
         setSelectedStory(null);
     };
 
@@ -214,14 +185,14 @@ export default function Stories() {
                                                 exit={{ opacity: 0, y: -10 }}
                                                 className="font-medium"
                                             >
-                                                {selectedStory.content[currentLine]}
+                                                {currentSentence}
                                             </motion.p>
                                         </AnimatePresence>
                                     </div>
 
                                     {/* Navigation Dots */}
                                     <div className="flex justify-center gap-2 mt-8">
-                                        {selectedStory.content.map((_, idx) => (
+                                        {sentences.map((_, idx) => (
                                             <button
                                                 key={idx}
                                                 onClick={() => { setCurrentLine(idx); setIsPlaying(false); if (geminiAudioRef.current?.stop) { geminiAudioRef.current.stop(); geminiAudioRef.current = null; } }}
@@ -266,7 +237,7 @@ export default function Stories() {
 
                                         <button
                                             onClick={() => {
-                                                if (currentLine < selectedStory.content.length - 1) {
+                                                if (currentLine < sentences.length - 1) {
                                                     setCurrentLine(p => p + 1);
                                                     setIsPlaying(false);
                                                     if (geminiAudioRef.current?.stop) { geminiAudioRef.current.stop(); geminiAudioRef.current = null; }
@@ -274,7 +245,7 @@ export default function Stories() {
                                                 }
                                             }}
                                             className="p-3 rounded-full hover:bg-black/5 disabled:opacity-30"
-                                            disabled={currentLine === selectedStory.content.length - 1}
+                                            disabled={currentLine === sentences.length - 1}
                                         >
                                             <SkipForward size={24} />
                                         </button>

@@ -39,6 +39,7 @@ const Settings = lazy(() => import('./pages/Settings'));
 const Wellness = lazy(() => import('./pages/Wellness'));
 const KnowledgeHub = lazy(() => import('./pages/KnowledgeHub'));
 const Stories = lazy(() => import('./pages/Stories'));
+const VoiceCall = lazy(() => import('./pages/VoiceCall'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 // Loading fallback với animation
@@ -163,6 +164,7 @@ function AppRoutes() {
           <Route path="/wellness" element={<AppLayout><RequireAuth featureName="Wellness"><Wellness /></RequireAuth></AppLayout>} />
           <Route path="/knowledge-hub" element={<AppLayout><RequireAuth featureName="Góc kiến thức"><KnowledgeHub /></RequireAuth></AppLayout>} />
           <Route path="/stories" element={<AppLayout><RequireAuth featureName="Câu chuyện"><Stories /></RequireAuth></AppLayout>} />
+          <Route path="/voice-call" element={<AppLayout><RequireAuth featureName="Gọi điện AI"><VoiceCall /></RequireAuth></AppLayout>} />
           <Route path="/settings" element={<AppLayout><RequireAuth featureName="Cài đặt"><Settings /></RequireAuth></AppLayout>} />
 
 

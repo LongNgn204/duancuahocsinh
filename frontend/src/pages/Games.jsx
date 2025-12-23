@@ -10,17 +10,6 @@ import { useSound } from '../contexts/SoundContext';
 
 const games = [
     {
-        id: 'reflex',
-        name: 'Game Phản Xạ',
-        description: 'Thử thách tốc độ tay và mắt. Ai nhanh hơn?',
-        icon: Zap,
-        color: 'from-yellow-400 to-orange-500',
-        path: '/games/reflex',
-        badge: 'Nâng cấp',
-        difficulty: 'Dễ - Khó',
-        stats: 'Rank 1: 500ms'
-    },
-    {
         id: 'bee-flying',
         name: 'Ong Tập Bay',
         description: 'Luyện sự tập trung cao độ, đừng để ong lạc!',
@@ -80,16 +69,7 @@ const games = [
         badge: 'Sáng tạo',
         difficulty: 'Dễ',
     },
-    {
-        id: 'bee',
-        name: 'Ong Cổ Điển',
-        description: 'Phiên bản đầu tiên của Ong Bay.',
-        icon: Gamepad2,
-        color: 'from-green-400 to-emerald-500',
-        path: '/games/bee',
-        badge: 'Cổ điển',
-        difficulty: 'Trung bình',
-    },
+
 ];
 
 const container = {
@@ -126,7 +106,7 @@ export default function Games() {
                         <Gamepad2 size={48} className="text-indigo-600 drop-shadow-lg" />
                     </motion.div>
                     <h1 className="text-4xl md:text-5xl font-bold text-slate-800 tracking-tight">
-                        Game <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-pink-500">Center</span> 🕹️
+                        Khu Vui Chơi
                     </h1>
                     <p className="text-lg text-slate-500 max-w-xl mx-auto">
                         Giải trí, luyện não và thư giãn sau giờ học căng thẳng.

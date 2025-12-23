@@ -1,12 +1,12 @@
 // src/components/layout/Sidebar.jsx
-// Chú thích: Sidebar v4.4 - Thêm nút Hỗ trợ khẩn cấp
+// Chú thích: Sidebar v4.5 - Thêm Gọi điện AI
 import { NavLink } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import {
   Home, Heart, Bot, Gamepad2, Sparkles,
   BookOpenCheck, Timer, Library, Settings, Moon,
   ChevronLeft, ChevronRight, BarChart3, Trophy,
-  Shield, Star, Menu, X, Bell, AlertTriangle
+  Shield, Star, Menu, X, Bell, AlertTriangle, Phone
 } from 'lucide-react';
 import SOSOverlay from '../sos/SOSOverlay';
 
@@ -16,6 +16,7 @@ const sections = [
     items: [
       { icon: Home, label: 'Trang chủ', path: '/app' },
       { icon: Bot, label: 'Trò chuyện AI', path: '/chat' },
+      { icon: Phone, label: 'Gọi điện AI', path: '/voice-call', badge: 'Mới' },
     ],
   },
   {
@@ -31,7 +32,7 @@ const sections = [
     items: [
       { icon: Gamepad2, label: 'Nhanh tay lẹ mắt', path: '/games' },
       { icon: Bell, label: 'Góc Nhỏ', path: '/corner' },
-      { icon: BookOpenCheck, label: 'Kể chuyện', path: '/stories', badge: 'Mới' },
+      { icon: BookOpenCheck, label: 'Kể chuyện', path: '/stories' },
     ],
   },
 ];
