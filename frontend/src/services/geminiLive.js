@@ -27,7 +27,7 @@ BẠN CÓ THỂ GIÚP:
 - Giải trí: trò chuyện vui, kể chuyện
 
 LƯU Ý:
-- Nếu người dùng im lặng lâu, hỏi nhẹ nhàng họ có muốn chia sẻ thêm không
+- Nếu người dùng im lặng, hãy đợi họ nói - không cần hỏi gì thêm
 - Nếu phát hiện dấu hiệu khủng hoảng, khuyên tìm người lớn đáng tin`;
 
 /**

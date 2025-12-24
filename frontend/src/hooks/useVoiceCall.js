@@ -28,6 +28,9 @@ export function useVoiceCall(options = {}) {
     const [isMuted, setIsMuted] = useState(false);
     const [sosDetected, setSosDetected] = useState(null); // { level, message }
 
+    // Silence timeout - auto end call after 30s of silence
+    const SILENCE_TIMEOUT = 30000; // 30 seconds
+
     // Refs
     const sessionRef = useRef(null);
     const audioPlayerRef = useRef(null);
@@ -35,9 +38,33 @@ export function useVoiceCall(options = {}) {
     const durationTimerRef = useRef(null);
     const isMutedRef = useRef(false);
     const isListeningRef = useRef(false);
+    const silenceTimeoutRef = useRef(null);
+    const endCallRef = useRef(null); // Ref to avoid circular dependency
+
+    // Reset silence timer - call this whenever user speaks
+    const resetSilenceTimer = useCallback((endCallFn) => {
+        if (silenceTimeoutRef.current) {
+            clearTimeout(silenceTimeoutRef.current);
+        }
+        silenceTimeoutRef.current = setTimeout(() => {
+            console.log('[VoiceCall] Silence timeout - auto ending call');
+            if (endCallFn) endCallFn();
+        }, SILENCE_TIMEOUT);
+    }, []);
+
+    // Clear silence timer
+    const clearSilenceTimer = useCallback(() => {
+        if (silenceTimeoutRef.current) {
+            clearTimeout(silenceTimeoutRef.current);
+            silenceTimeoutRef.current = null;
+        }
+    }, []);
 
     // Cleanup function
     const cleanup = useCallback(() => {
+        // Stop silence timer
+        clearSilenceTimer();
+
         // Stop duration timer
         if (durationTimerRef.current) {
             clearInterval(durationTimerRef.current);
@@ -71,7 +98,7 @@ export function useVoiceCall(options = {}) {
     // Cleanup on unmount
     useEffect(() => {
         return cleanup;
-    }, [cleanup]);
+    }, [cleanup, clearSilenceTimer]);
 
     // ========================================================================
     // SPEECH RECOGNITION (STT) - Web Speech API
@@ -122,6 +149,9 @@ export function useVoiceCall(options = {}) {
                 console.log('[VoiceCall] User said:', finalTranscript);
                 setLastUserMessage(finalTranscript);
                 setTranscript('');
+
+                // Reset silence timer - user đang nói
+                resetSilenceTimer(endCallRef.current);
 
                 // SOS Detection
                 const sosLevel = detectSOSLevel(finalTranscript);
@@ -191,7 +221,7 @@ export function useVoiceCall(options = {}) {
         } catch (e) {
             console.error('[VoiceCall] Failed to start STT:', e);
         }
-    }, [onSOS, status]);
+    }, [onSOS, status, resetSilenceTimer]);
 
     const stopListening = useCallback(() => {
         if (recognitionRef.current) {
@@ -282,6 +312,9 @@ export function useVoiceCall(options = {}) {
 
                     // Start Web Speech API STT
                     startListening();
+
+                    // Start silence timer
+                    resetSilenceTimer(endCallRef.current);
                 }
             });
 
@@ -312,6 +345,11 @@ export function useVoiceCall(options = {}) {
         setLastUserMessage('');
         setAiResponse('');
     }, [cleanup]);
+
+    // Keep endCallRef updated
+    useEffect(() => {
+        endCallRef.current = endCall;
+    }, [endCall]);
 
     // ========================================================================
     // TOGGLE MUTE
