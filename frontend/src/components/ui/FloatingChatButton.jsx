@@ -130,7 +130,7 @@ export default function FloatingChatButton() {
                                 {/* AI Avatar */}
                                 <img
                                     src="/ai-avatar.png"
-                                    alt="Chat với AI"
+                                    alt="Trò chuyện"
                                     className="w-full h-full object-cover"
                                 />
 

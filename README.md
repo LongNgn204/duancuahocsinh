@@ -418,7 +418,7 @@ Sau khi đăng nhập, bạn sẽ thấy Dashboard với các thành phần:
 - **Quick Actions**: Các nút truy cập nhanh đến tính năng chính
 - **Menu bên trái**: Điều hướng đến các trang khác
 
-#### 3. Chat với AI
+#### 3. Trò chuyện
 
 1. Nhấn vào mục **"Chat"** trên menu
 2. Nhập tin nhắn vào ô chat và nhấn Enter hoặc nút Gửi

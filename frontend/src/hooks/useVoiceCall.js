@@ -114,10 +114,10 @@ export function useVoiceCall(options = {}) {
 
         const recognition = new SpeechRecognition();
 
-        // Cấu hình STT cho tiếng Việt - chính xác cao
+        // Chú thích: Cấu hình STT cho tiếng Việt - tăng độ nhạy
         recognition.lang = 'vi-VN';
         recognition.continuous = true;        // Tiếp tục nghe
-        recognition.interimResults = true;    // Hiển thị kết quả tạm
+        recognition.interimResults = true;    // Hiển thị kết quả tạm (độ nhạy cao)
         recognition.maxAlternatives = 1;
 
         recognition.onstart = () => {
@@ -203,14 +203,14 @@ export function useVoiceCall(options = {}) {
             console.log('[VoiceCall] STT ended');
             isListeningRef.current = false;
 
-            // Auto-restart nếu vẫn đang trong cuộc gọi
+            // Chú thích: Auto-restart nhanh hơn (50ms) nếu vẫn đang trong cuộc gọi
             if (sessionRef.current?.isReady() && !isMutedRef.current && status !== 'error') {
-                console.log('[VoiceCall] Restarting STT...');
+                console.log('[VoiceCall] Restarting STT nhanh...');
                 setTimeout(() => {
                     if (sessionRef.current?.isReady() && !isMutedRef.current) {
                         startListening();
                     }
-                }, 100);
+                }, 50); // Giảm từ 100ms xuống 50ms để nhạy hơn
             }
         };
 

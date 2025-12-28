@@ -85,7 +85,7 @@ export default function MobileNav() {
 
   return (
     <>
-      <nav className="md:hidden fixed bottom-4 left-4 right-4 z-50">
+      <nav className="md:hidden fixed bottom-0 left-4 right-4 z-50 pb-[env(safe-area-inset-bottom)]">
         <div className="relative">
           {/* Main nav bar */}
           <div className="glass-strong rounded-2xl shadow-xl shadow-black/10 px-2 py-2">
@@ -113,7 +113,7 @@ export default function MobileNav() {
           <NavLink
             to="/chat"
             className="absolute left-1/2 -translate-x-1/2 -top-6"
-            aria-label="Chat với AI"
+            aria-label="Trò chuyện"
           >
             <motion.div
               className={`

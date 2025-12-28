@@ -55,7 +55,7 @@
 
 Bạn có thể sử dụng hầu hết các tính năng **mà không cần đăng ký**. Tuy nhiên, việc đăng ký giúp:
 
-- ✅ Lưu trữ lịch sử chat với AI trên đám mây
+- ✅ Lưu trữ lịch sử trò chuyện trên đám mây
 - ✅ Đồng bộ dữ liệu giữa các thiết bị
 - ✅ Theo dõi streak (chuỗi ngày sử dụng)
 
@@ -92,7 +92,7 @@ Dashboard là trang chủ hiển thị khi bạn mở ứng dụng.
 
 1. **Ghi nhận tâm trạng:** Nhấn vào emoji phù hợp với cảm xúc của bạn
 2. **Truy cập nhanh:** Nhấn vào các thẻ để đến tính năng mong muốn:
-   - 💬 Chat với AI
+   - 💬 Trò chuyện
    - 💚 Góc An Yên
    - ⭐ Lọ Biết Ơn
    - 📖 Kể Chuyện

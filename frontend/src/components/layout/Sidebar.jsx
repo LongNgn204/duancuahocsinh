@@ -15,24 +15,23 @@ const sections = [
     label: 'Chính',
     items: [
       { icon: Home, label: 'Trang chủ', path: '/app' },
-      { icon: Bot, label: 'Trò chuyện AI', path: '/chat' },
-      { icon: Phone, label: 'Gọi điện AI', path: '/voice-call', badge: 'Mới' },
+      { icon: Bot, label: 'Trò chuyện', path: '/chat' },
+      { icon: Phone, label: 'Gọi điện', path: '/voice-call', badge: 'Mới' },
     ],
   },
   {
     label: 'Sức khỏe tinh thần',
     items: [
-      { icon: Sparkles, label: 'Liều thuốc tinh thần', path: '/wellness', badge: 'Mới' },
+      { icon: Sparkles, label: 'Liều thuốc tinh thần', path: '/wellness' },
       { icon: Heart, label: 'Góc An Yên', path: '/breathing' },
       { icon: Star, label: 'Lọ Biết Ơn', path: '/gratitude' },
     ],
   },
+  // Chú thích: Bỏ label section, chỉ hiển thị tính năng trực tiếp
   {
     label: 'Thư giãn',
     items: [
       { icon: Gamepad2, label: 'Nhanh tay lẹ mắt', path: '/games' },
-      { icon: Bell, label: 'Góc Nhỏ', path: '/corner' },
-      { icon: BookOpenCheck, label: 'Kể chuyện', path: '/stories' },
     ],
   },
 ];

@@ -19,8 +19,8 @@ import FloatingElements from '../components/ui/FloatingElements';
 const features = [
     {
         icon: Bot,
-        title: 'Trò chuyện AI',
-        description: 'Chat với AI thấu cảm, không phán xét. Bạn có thể chat bằng văn bản hoặc nói chuyện trực tiếp. Hệ thống tự động phát hiện khi bạn cần hỗ trợ khẩn cấp và hiển thị đường dây nóng.',
+        title: 'Trò chuyện',
+        description: 'Trò chuyện với người bạn thấu cảm, không phán xét. Bạn có thể chat bằng văn bản hoặc nói chuyện trực tiếp. Hệ thống tự động phát hiện khi bạn cần hỗ trợ khẩn cấp và hiển thị đường dây nóng.',
         color: 'from-teal-500 to-cyan-500',
         route: '/chat',
     },
@@ -78,8 +78,7 @@ const features = [
 
 // Stats data
 const stats = [
-    { value: '10,000+', label: 'Người dùng đã sử dụng', icon: Users },
-    { value: '50,000+', label: 'Cuộc trò chuyện', icon: Bot },
+    { value: '200+', label: 'Người dùng đã sử dụng', icon: Users },
     { value: '95%', label: 'Phản hồi tích cực', icon: Star },
     { value: '24/7', label: 'Luôn sẵn sàng', icon: Clock },
 ];
@@ -130,22 +129,22 @@ const benefitCards = [
 const testimonials = [
     {
         content: 'Mình hay lo lắng về điểm số nhưng không biết nói với ai. Bạn Đồng Hành giúp mình thấy thoải mái hơn khi chia sẻ.',
-        author: 'Học sinh',
-        location: 'Hà Nội',
+        author: 'L.N.A.T',
+        location: 'Tp,HCM',
         avatar: 'H',
         color: 'bg-pink-100 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400',
     },
     {
         content: 'Bài tập thở thực sự hiệu quả! Mỗi khi căng thẳng trước kỳ thi, mình dùng app này để bình tĩnh lại.',
-        author: 'Học sinh',
+        author: 'M.Đ',
         location: 'TP.HCM',
         avatar: 'T',
         color: 'bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400',
     },
     {
         content: 'Tính năng Lọ Biết Ơn giúp mình nhìn cuộc sống tích cực hơn. Đây là thói quen mình duy trì mỗi ngày.',
-        author: 'Giáo viên',
-        location: 'Đà Nẵng',
+        author: 'M.D.T',
+        location: 'TP.HCM',
         avatar: 'D',
         color: 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
     },
@@ -192,12 +191,12 @@ export default function LandingPage() {
                             Bạn Đồng Hành
                             <br />
                             <span className="text-3xl md:text-5xl lg:text-6xl text-slate-800 dark:text-white/90 font-semibold mt-2 block">
-                                Cùng nhau kiến tạo Trường học Hạnh phúc
+                                Mở lời mở lối - kết nối yêu thương
                             </span>
                         </h1>
 
                         <p className="text-lg md:text-xl text-slate-700 dark:text-slate-200/90 mb-10 max-w-2xl mx-auto leading-relaxed font-medium bg-white/50 dark:bg-slate-900/50 p-4 rounded-2xl backdrop-blur-sm shadow-sm ring-1 ring-white/50 dark:ring-white/10">
-                            Nơi lắng nghe, chia sẻ và đồng hành cùng học sinh Việt Nam trên hành trình trưởng thành. An toàn, Thân thiện và Hoàn toàn miễn phí.
+                            Nơi lắng nghe, chia sẻ và đồng hành cùng học sinh Việt Nam trên hành trình trưởng thành. An toàn, thân thiện,và miễn phí.
                         </p>
 
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -433,7 +432,7 @@ export default function LandingPage() {
                     >
                         <Card variant="gradient" className="p-12">
                             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                                Sẵn sàng bắt đầu?
+                                Sẵn sàng bắt đầu? Hành trình chia sẻ và kết nối.
                             </h2>
                             <p className="text-[--text-secondary] mb-8 max-w-lg mx-auto">
                                 Hãy để Bạn Đồng Hành đồng hành cùng bạn trên hành trình
@@ -479,10 +478,10 @@ export default function LandingPage() {
                         <div>
                             <h4 className="font-semibold text-[--text] mb-4">Tính năng</h4>
                             <ul className="space-y-2 text-sm text-[--text-secondary]">
-                                <li><Link to="/app/chat" className="hover:text-[--brand] transition-colors">Chat AI</Link></li>
-                                <li><Link to="/app/breathing" className="hover:text-[--brand] transition-colors">Góc An Yên</Link></li>
-                                <li><Link to="/app/gratitude" className="hover:text-[--brand] transition-colors">Lọ Biết Ơn</Link></li>
-                                <li><Link to="/app/games" className="hover:text-[--brand] transition-colors">Mini Games</Link></li>
+                                <li><Link to="/chat" className="hover:text-[--brand] transition-colors">Trò chuyện</Link></li>
+                                <li><Link to="/breathing" className="hover:text-[--brand] transition-colors">Góc An Yên</Link></li>
+                                <li><Link to="/gratitude" className="hover:text-[--brand] transition-colors">Lọ Biết Ơn</Link></li>
+                                <li><Link to="/games" className="hover:text-[--brand] transition-colors">Mini Games</Link></li>
                             </ul>
                         </div>
 

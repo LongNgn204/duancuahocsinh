@@ -1,113 +1,104 @@
 // src/pages/Wellness.jsx
-// Chú thích: Liều thuốc tinh thần v2.0 - Visual Upgrade & Peace Cards Integration
+// Chú thích: Liều thuốc tinh thần v3.0 - Layout tối ưu, ít rối mắt
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Button from '../components/ui/Button';
 import {
-    Heart, Sparkles, Flame, Wind, Star, Shield, Users,
-    Droplet, Cloud, Frown, Angry, AlertCircle, Zap, BookOpen, HeartCrack,
-    Coffee, Music, Phone, TreePine, PenLine, Volume2, CheckCircle2, Share2, Download
+    Heart, Sparkles, Zap, BookOpen, CheckCircle2, Share2, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { EMOTION_GROUPS } from '../data/quotes';
-import { ACTIVITIES } from '../data/activities';
+import { ACTIVITIES, MORE_ACTIVITIES } from '../data/activities';
 
 export default function Wellness() {
     const [selectedGroup, setSelectedGroup] = useState(EMOTION_GROUPS[0]);
     const [activeQuoteIndex, setActiveQuoteIndex] = useState(0);
+    const [showMoreActivities, setShowMoreActivities] = useState(false);
 
     const handleCopyQuote = (quote) => {
         navigator.clipboard.writeText(quote);
-        // Toast logic could go here
     };
 
     return (
-        <div className="space-y-6 md:space-y-10 pb-10">
+        <div className="space-y-6 pb-8">
             {/* Header */}
-            <div className="text-center space-y-2 px-4">
-                <h1 className="text-2xl md:text-4xl font-bold text-slate-800">
-                    Liều Thuốc <span className="text-[--brand]">Tinh Thần</span> 💊
+            <div className="text-center space-y-1 px-4">
+                <h1 className="text-xl md:text-3xl font-bold text-slate-800">
+                    Liều Thuốc <span className="text-violet-600">Tinh Thần</span> 💊
                 </h1>
-                <p className="text-slate-500 max-w-xl mx-auto text-sm md:text-base">
-                    Những lời khuyên và hoạt động nhỏ giúp bạn cân bằng cảm xúc mỗi ngày.
+                <p className="text-slate-500 text-sm">
+                    Hoạt động nhỏ giúp bạn cân bằng cảm xúc mỗi ngày
                 </p>
             </div>
 
-            {/* --- EMOTION SELECTOR --- */}
-            <div className="-mx-4 px-4 flex overflow-x-auto pb-4 gap-3 no-scrollbar snap-x md:mx-0 md:px-0">
-                {EMOTION_GROUPS.map((group) => (
-                    <motion.button
-                        key={group.id}
-                        onClick={() => { setSelectedGroup(group); setActiveQuoteIndex(0); }}
-                        whileTap={{ scale: 0.95 }}
+            {/* --- MAIN CONTENT: Sidebar nhỏ + Grid hoạt động to --- */}
+            <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+
+                {/* Chú thích: Sidebar trái - Thu nhỏ trên desktop */}
+                <div className="lg:w-72 shrink-0 space-y-4">
+                    {/* Emotion Selector - Horizontal scroll nhỏ gọn */}
+                    <div className="flex overflow-x-auto pb-2 gap-2 no-scrollbar">
+                        {EMOTION_GROUPS.map((group) => (
+                            <button
+                                key={group.id}
+                                onClick={() => { setSelectedGroup(group); setActiveQuoteIndex(0); }}
+                                className={`
+                                    shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all
+                                    ${selectedGroup.id === group.id
+                                        ? 'bg-violet-100 text-violet-700 shadow-sm'
+                                        : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}
+                                `}
+                            >
+                                <group.icon size={14} />
+                                <span>{group.name}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Quote Card - Nhỏ gọn */}
+                    <motion.div
+                        key={selectedGroup.id + activeQuoteIndex}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
                         className={`
-                            shrink-0 snap-center flex items-center gap-2 px-4 py-2 md:px-5 md:py-3 rounded-2xl transition-all border
-                            ${selectedGroup.id === group.id
-                                ? `bg-gradient-to-r ${group.gradient} text-white shadow-lg shadow-${group.bg.split('-')[1]}-500/30 border-transparent`
-                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}
+                            relative rounded-2xl overflow-hidden shadow-lg
+                            bg-gradient-to-br ${selectedGroup.gradient} p-4 text-center
                         `}
                     >
-                        <group.icon size={18} />
-                        <span className="font-semibold whitespace-nowrap text-sm md:text-base">{group.name}</span>
-                    </motion.button>
-                ))}
-            </div>
+                        <div className="absolute top-2 right-2 opacity-20"><Sparkles size={32} color="white" /></div>
 
-            {/* --- INSTAGRAM STYLE QUOTE CARDS --- */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-start">
-                {/* Visual Card */}
-                <motion.div
-                    key={selectedGroup.id + activeQuoteIndex}
-                    initial={{ opacity: 0, scale: 0.9, rotate: -2 }}
-                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                    transition={{ type: 'spring' }}
-                    className={`
-                        aspect-square md:aspect-square relative rounded-3xl overflow-hidden shadow-2xl
-                        bg-gradient-to-br ${selectedGroup.gradient} p-6 md:p-8 flex flex-col justify-center items-center text-center
-                    `}
-                >
-                    {/* Decor */}
-                    <div className="absolute top-0 right-0 p-8 md:p-12 opacity-20"><Sparkles size={80} color="white" /></div>
-                    <div className="absolute bottom-0 left-0 p-6 md:p-8 opacity-20"><Heart size={60} color="white" /></div>
-
-                    <div className="relative z-10 w-full">
-                        <div className="mb-4 md:mb-6 w-14 h-14 md:w-16 md:h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center mx-auto text-white">
-                            <selectedGroup.icon size={28} className="md:w-8 md:h-8" />
+                        <div className="relative z-10">
+                            <div className="mb-2 w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mx-auto text-white">
+                                <selectedGroup.icon size={18} />
+                            </div>
+                            <p className="text-sm md:text-base font-medium text-white leading-relaxed italic">
+                                "{selectedGroup.quotes[activeQuoteIndex]}"
+                            </p>
                         </div>
-                        <h3 className="text-xl md:text-3xl font-bold text-white leading-relaxed font-serif italic px-2">
-                            "{selectedGroup.quotes[activeQuoteIndex]}"
-                        </h3>
-                        <div className="mt-4 md:mt-6 w-12 h-1 bg-white/50 rounded-full mx-auto" />
-                    </div>
 
-                    {/* Actions */}
-                    <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 flex gap-2">
                         <button
                             onClick={() => handleCopyQuote(selectedGroup.quotes[activeQuoteIndex])}
-                            className="p-2 md:p-3 bg-white/20 backdrop-blur-md rounded-full text-white hover:bg-white/40 transition-colors"
+                            className="absolute bottom-2 right-2 p-1.5 bg-white/20 rounded-full text-white hover:bg-white/30 transition-colors"
                             title="Sao chép"
                         >
-                            <Share2 size={18} className="md:w-5 md:h-5" />
+                            <Share2 size={12} />
                         </button>
-                    </div>
-                </motion.div>
+                    </motion.div>
 
-                {/* List & Controls */}
-                <div className="space-y-4 md:space-y-6">
-                    <div className="bg-white rounded-3xl p-4 md:p-6 border border-slate-100 shadow-xl">
-                        <h3 className="text-base md:text-lg font-bold text-slate-700 mb-3 md:mb-4 flex items-center gap-2">
-                            <BookOpen size={20} className="text-[--brand]" />
+                    {/* Quote List - Compact */}
+                    <div className="bg-white rounded-xl p-3 border border-slate-100 shadow-sm">
+                        <h3 className="text-xs font-semibold text-slate-600 mb-2 flex items-center gap-1.5">
+                            <BookOpen size={14} className="text-violet-500" />
                             Lời hay ý đẹp
                         </h3>
-                        <div className="space-y-2 md:space-y-3 max-h-[250px] md:max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                        <div className="space-y-1 max-h-32 overflow-y-auto custom-scrollbar">
                             {selectedGroup.quotes.map((q, idx) => (
                                 <button
                                     key={idx}
                                     onClick={() => setActiveQuoteIndex(idx)}
-                                    className={`w-full text-left p-3 md:p-4 rounded-xl transition-all text-sm leading-relaxed
+                                    className={`w-full text-left p-2 rounded-lg text-xs leading-relaxed transition-all truncate
                                         ${idx === activeQuoteIndex
-                                            ? `bg-${selectedGroup.bg.split('-')[1]}-50 border border-${selectedGroup.bg.split('-')[1]}-200 text-slate-800 font-medium shadow-sm`
+                                            ? 'bg-violet-50 text-violet-700 font-medium'
                                             : 'hover:bg-slate-50 text-slate-500'}
                                     `}
                                 >
@@ -117,62 +108,97 @@ export default function Wellness() {
                         </div>
                     </div>
 
-                    <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-3xl p-4 md:p-6 text-white shadow-lg">
-                        <div className="flex items-center gap-4">
-                            <div className="p-2 md:p-3 bg-white/20 rounded-2xl">
-                                <Zap size={20} className="md:w-6 md:h-6" />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-base md:text-lg">Cần thêm lời khuyên?</h3>
-                                <p className="text-white/80 text-xs md:text-sm mb-2 md:mb-3">AI luôn sẵn sàng lắng nghe bạn.</p>
-                                <Link to="/chat">
-                                    <button className="px-3 py-1.5 md:px-4 md:py-2 bg-white text-indigo-600 rounded-lg text-xs md:text-sm font-bold shadow-sm hover:bg-indigo-50 transition-colors">
-                                        Trò chuyện ngay
-                                    </button>
-                                </Link>
+                    {/* Chat CTA - Nhỏ gọn */}
+                    <Link to="/chat" className="block">
+                        <div className="bg-gradient-to-r from-violet-500 to-purple-500 rounded-xl p-3 text-white shadow-md hover:shadow-lg transition-shadow">
+                            <div className="flex items-center gap-2">
+                                <Zap size={16} />
+                                <div>
+                                    <p className="font-semibold text-sm">Cần thêm lời khuyên?</p>
+                                    <p className="text-white/80 text-xs">AI sẵn sàng lắng nghe →</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </Link>
                 </div>
-            </div>
 
-            {/* --- SELF-CARE ACTIVITIES --- */}
-            <div>
-                <h2 className="text-lg md:text-2xl font-bold text-slate-800 mb-4 md:mb-6 flex items-center gap-2">
-                    <CheckCircle2 size={24} className="text-green-500" />
-                    Hoạt động chăm sóc bản thân
-                </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
-                    {ACTIVITIES.map((act) => (
-                        <motion.div
-                            key={act.id}
-                            whileHover={{ scale: 1.03, y: -2 }}
-                            whileTap={{ scale: 0.98 }}
-                        >
-                            {act.link ? (
-                                <Link to={act.link}>
+                {/* Chú thích: Phần chính - Grid hoạt động FULL WIDTH */}
+                <div className="flex-1">
+                    <h2 className="text-base md:text-lg font-bold text-slate-700 mb-3 flex items-center gap-2">
+                        <CheckCircle2 size={18} className="text-green-500" />
+                        Hoạt động chăm sóc bản thân
+                    </h2>
+
+                    {/* Grid hoạt động chính - Full width */}
+                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3">
+                        {ACTIVITIES.map((act) => (
+                            <motion.div
+                                key={act.id}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                {act.link ? (
+                                    <Link to={act.link}>
+                                        <ActivityCard act={act} />
+                                    </Link>
+                                ) : (
                                     <ActivityCard act={act} />
-                                </Link>
-                            ) : (
-                                <ActivityCard act={act} />
-                            )}
-                        </motion.div>
-                    ))}
+                                )}
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    {/* Chú thích: Góc nhỏ "Thêm hoạt động" cho các hoạt động phụ */}
+                    {MORE_ACTIVITIES.length > 0 && (
+                        <div className="mt-4">
+                            <button
+                                onClick={() => setShowMoreActivities(!showMoreActivities)}
+                                className="flex items-center gap-2 text-sm text-slate-500 hover:text-violet-600 transition-colors"
+                            >
+                                {showMoreActivities ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                <span>Thêm hoạt động ({MORE_ACTIVITIES.length})</span>
+                            </button>
+
+                            <AnimatePresence>
+                                {showMoreActivities && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-3 p-3 bg-slate-50 rounded-xl">
+                                            {MORE_ACTIVITIES.map((act) => (
+                                                <ActivityCard key={act.id} act={act} compact />
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
     );
 }
 
-function ActivityCard({ act }) {
+// Chú thích: Card hoạt động - Gọn hơn, ít màu hơn
+function ActivityCard({ act, compact = false }) {
     return (
         <div className={`
-            h-full p-4 rounded-2xl border border-transparent hover:border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer bg-white flex flex-col items-center text-center gap-3
+            h-full p-2 md:p-3 rounded-xl border border-slate-100 hover:border-violet-200 
+            shadow-sm hover:shadow-md transition-all cursor-pointer bg-white 
+            flex flex-col items-center text-center gap-1.5 md:gap-2
+            ${compact ? 'opacity-80' : ''}
         `}>
-            <div className={`w-12 h-12 rounded-full ${act.color} flex items-center justify-center`}>
-                <act.icon size={20} />
+            <div className={`${compact ? 'w-8 h-8' : 'w-10 h-10'} rounded-full ${act.color} flex items-center justify-center`}>
+                <act.icon size={compact ? 14 : 16} />
             </div>
-            <span className="font-medium text-slate-700 text-sm">{act.text}</span>
+            <span className={`font-medium text-slate-600 ${compact ? 'text-[10px]' : 'text-xs'} leading-tight`}>
+                {act.text}
+            </span>
         </div>
     );
 }
+

@@ -1,17 +1,18 @@
 // src/pages/Games.jsx
-// Chú thích: Games Hub v2.0 - Arcade Style Visuals
+// Chú thích: Games Hub v3.0 - Đã tối ưu theo yêu cầu
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Card from '../components/ui/Card';
 import GlowOrbs from '../components/ui/GlowOrbs';
 import Badge from '../components/ui/Badge';
-import { Gamepad2, Sparkles, Trophy, Zap, MousePointer2, Brain, Coffee, Rocket, Palette } from 'lucide-react';
+import { Gamepad2, Sparkles, Trophy, Zap, MousePointer2, Brain, Coffee, Palette, Heart } from 'lucide-react';
 import { useSound } from '../contexts/SoundContext';
 
+// Chú thích: Danh sách games đã cập nhật theo yêu cầu
 const games = [
     {
         id: 'bee-flying',
-        name: 'Ong Tập Bay',
+        name: 'Ong Bay',
         description: 'Luyện sự tập trung cao độ, đừng để ong lạc!',
         icon: MousePointer2,
         color: 'from-amber-400 to-yellow-500',
@@ -49,23 +50,15 @@ const games = [
         badge: 'Trí nhớ',
         difficulty: 'Trung bình',
     },
+
+    // Chú thích: Đổi Vẽ Tự Do thành Bảng Màu Cảm Xúc
     {
-        id: 'space-pilot',
-        name: 'Space Pilot',
-        description: 'Lái tàu tránh thiên thạch trong không gian!',
-        icon: Rocket,
-        color: 'from-indigo-400 to-purple-600',
-        path: '/games/space-pilot',
-        badge: 'Arcade',
-        difficulty: 'Khó',
-    },
-    {
-        id: 'doodle',
-        name: 'Vẽ Tự Do',
-        description: 'Thoả sức sáng tạo, vẽ mọi thứ bạn thích.',
-        icon: Palette,
-        color: 'from-teal-400 to-cyan-500',
-        path: '/games/doodle',
+        id: 'emotion-palette',
+        name: 'Bảng Màu Cảm Xúc',
+        description: 'Vẽ và thể hiện cảm xúc của bạn qua màu sắc.',
+        icon: Heart,
+        color: 'from-rose-400 to-pink-500',
+        path: '/games/emotion-palette',
         badge: 'Sáng tạo',
         difficulty: 'Dễ',
     },
@@ -95,20 +88,17 @@ export default function Games() {
                 <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-500/20 rounded-full blur-[100px]" />
             </div>
 
-            <div className="relative z-10 max-w-6xl mx-auto space-y-10 px-4">
-                {/* Header */}
-                <div className="text-center space-y-4 pt-4">
+            <div className="relative z-10 max-w-6xl mx-auto space-y-8 px-4">
+                {/* Chú thích: Header đơn giản - bỏ title "Khu vui chơi" */}
+                <div className="text-center space-y-2 pt-4">
                     <motion.div
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
-                        className="inline-block p-4 rounded-full bg-white/10 backdrop-blur-md border border-white/20 shadow-xl mb-2"
+                        className="inline-block p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 shadow-xl mb-2"
                     >
-                        <Gamepad2 size={48} className="text-indigo-600 drop-shadow-lg" />
+                        <Gamepad2 size={36} className="text-indigo-600 drop-shadow-lg" />
                     </motion.div>
-                    <h1 className="text-4xl md:text-5xl font-bold text-slate-800 tracking-tight">
-                        Khu Vui Chơi
-                    </h1>
-                    <p className="text-lg text-slate-500 max-w-xl mx-auto">
+                    <p className="text-base text-slate-500 max-w-xl mx-auto">
                         Giải trí, luyện não và thư giãn sau giờ học căng thẳng.
                     </p>
                 </div>
@@ -118,7 +108,7 @@ export default function Games() {
                     variants={container}
                     initial="hidden"
                     animate="show"
-                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
                 >
                     {games.map((game) => (
                         <motion.div key={game.id} variants={item}>

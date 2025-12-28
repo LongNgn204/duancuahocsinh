@@ -1,284 +1,296 @@
 // src/components/games/BeeFlying.jsx
-// Chú thích: Ong tập bay v2.0 - Với độ khó, nút quay lại, responsive
+// Chú thích: Ong Bay v3.0 - Gameplay Flappy Bird: nhấn để bay, né chướng ngại vật
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
-import { Play, RotateCcw, Heart, Clock, ArrowLeft, Settings2, Trophy } from 'lucide-react';
+import { Play, RotateCcw, ArrowLeft, Settings2, Trophy } from 'lucide-react';
 import { isLoggedIn, saveGameScore, rewardXP } from '../../utils/api';
 
-const WIDTH = 800;
-const HEIGHT = 500;
-const BEE_SIZE = 40;
+const WIDTH = 400;
+const HEIGHT = 600;
+const BEE_SIZE = 30;
+const PIPE_WIDTH = 60;
+const PIPE_GAP_BASE = 150;
 
-// Difficulty settings
+// Chú thích: Cấu hình độ khó - ảnh hưởng tốc độ, gap và trọng lực
 const DIFFICULTY_SETTINGS = {
   easy: {
     label: 'Dễ',
     icon: '🌱',
-    reactionTime: 4,
-    moveDurationMin: 3000,
-    moveDurationMax: 6000,
-    lives: 5,
+    pipeSpeed: 2,
+    gap: 180,
+    gravity: 0.3,
+    flapStrength: -6,
   },
   medium: {
     label: 'Trung bình',
     icon: '🔥',
-    reactionTime: 3,
-    moveDurationMin: 2000,
-    moveDurationMax: 5000,
-    lives: 3,
+    pipeSpeed: 3,
+    gap: 150,
+    gravity: 0.4,
+    flapStrength: -7,
   },
   hard: {
     label: 'Khó',
     icon: '💀',
-    reactionTime: 2,
-    moveDurationMin: 1500,
-    moveDurationMax: 3500,
-    lives: 2,
+    pipeSpeed: 4,
+    gap: 120,
+    gravity: 0.5,
+    flapStrength: -8,
   },
 };
 
 export default function BeeFlying() {
   const canvasRef = useRef(null);
-  const containerRef = useRef(null);
   const rafRef = useRef(0);
-  const beeXRef = useRef(WIDTH / 2);
+
+  // Chú thích: Game state refs để tránh re-render liên tục
   const beeYRef = useRef(HEIGHT / 2);
-  const targetXRef = useRef(WIDTH / 2);
-  const targetYRef = useRef(HEIGHT / 2);
-  const isMovingRef = useRef(true);
-  const isStoppedRef = useRef(false);
-  const stopStartTimeRef = useRef(0);
-  const moveStartTimeRef = useRef(0);
-  const moveDurationRef = useRef(0);
-  const reactionTimeLeftRef = useRef(3);
+  const beeVelocityRef = useRef(0);
+  const pipesRef = useRef([]);
+  const frameCountRef = useRef(0);
+  const scoreRef = useRef(0);
+  const gameActiveRef = useRef(false);
 
   const [difficulty, setDifficulty] = useState('medium');
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
-  const [lives, setLives] = useState(3);
   const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
-  const [reactionTimeLeft, setReactionTimeLeft] = useState(3);
-  const [isStopped, setIsStopped] = useState(false);
 
-  // Load settings
+  // Load high score và difficulty từ localStorage
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('bee_flying_high_score');
+      const saved = localStorage.getItem('bee_flying_flappy_high_score');
       if (saved) setHighScore(parseInt(saved, 10));
-      const savedDiff = localStorage.getItem('bee_flying_difficulty');
-      if (savedDiff) setDifficulty(savedDiff);
+      const savedDiff = localStorage.getItem('bee_flying_flappy_difficulty');
+      if (savedDiff && DIFFICULTY_SETTINGS[savedDiff]) setDifficulty(savedDiff);
     } catch (_) { }
   }, []);
 
   // Save difficulty
   useEffect(() => {
-    localStorage.setItem('bee_flying_difficulty', difficulty);
+    localStorage.setItem('bee_flying_flappy_difficulty', difficulty);
   }, [difficulty]);
 
   const getDiffSettings = useCallback(() => DIFFICULTY_SETTINGS[difficulty], [difficulty]);
 
-  const reset = () => {
-    const settings = getDiffSettings();
-    beeXRef.current = WIDTH / 2;
+  // Chú thích: Reset game về trạng thái ban đầu
+  const reset = useCallback(() => {
     beeYRef.current = HEIGHT / 2;
-    targetXRef.current = WIDTH / 2;
-    targetYRef.current = HEIGHT / 2;
-    isMovingRef.current = true;
-    isStoppedRef.current = false;
-    moveStartTimeRef.current = Date.now();
-    moveDurationRef.current = settings.moveDurationMin + Math.random() * (settings.moveDurationMax - settings.moveDurationMin);
-    reactionTimeLeftRef.current = settings.reactionTime;
+    beeVelocityRef.current = 0;
+    pipesRef.current = [];
+    frameCountRef.current = 0;
+    scoreRef.current = 0;
+    gameActiveRef.current = true;
     setScore(0);
-    setLives(settings.lives);
     setGameOver(false);
     setShowIntro(false);
     setRunning(true);
-    setIsStopped(false);
-  };
+  }, []);
 
   const startGame = () => {
     setShowIntro(false);
     reset();
   };
 
-  // Draw bee
-  const drawBee = (ctx, x, y, isStopped, scale = 1) => {
+  // Chú thích: Vẽ ong với animation cánh
+  const drawBee = (ctx, x, y) => {
     ctx.save();
-    const size = (BEE_SIZE / 2) * scale;
+    const size = BEE_SIZE / 2;
 
-    // Body
+    // Thân ong màu vàng
     ctx.fillStyle = '#FCD34D';
     ctx.beginPath();
     ctx.arc(x, y, size, 0, Math.PI * 2);
     ctx.fill();
 
-    // Stripes
+    // Vạch sọc đen
     ctx.fillStyle = '#0f172a';
-    const stripeWidth = 24 * scale;
-    const stripeHeight = 4 * scale;
-    ctx.fillRect(x - stripeWidth / 2, y - stripeHeight * 1.5, stripeWidth, stripeHeight);
-    ctx.fillRect(x - stripeWidth / 2, y + stripeHeight * 0.5, stripeWidth, stripeHeight);
+    ctx.fillRect(x - size * 0.8, y - 3, size * 1.6, 4);
+    ctx.fillRect(x - size * 0.8, y + 4, size * 1.6, 4);
 
-    // Eye
-    const eyeSize = 6 * scale;
+    // Mắt
     ctx.fillStyle = '#0f172a';
     ctx.beginPath();
-    ctx.arc(x + 10 * scale, y - 6 * scale, eyeSize, 0, Math.PI * 2);
+    ctx.arc(x + size * 0.5, y - size * 0.3, 4, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#fff';
     ctx.beginPath();
-    ctx.arc(x + 12 * scale, y - 7 * scale, eyeSize / 2, 0, Math.PI * 2);
+    ctx.arc(x + size * 0.6, y - size * 0.4, 2, 0, Math.PI * 2);
     ctx.fill();
 
-    // Wings
-    const wingOffset = isStopped ? 0 : Math.sin(Date.now() / 100) * 3;
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    // Cánh (animation đập)
+    const wingOffset = Math.sin(Date.now() / 50) * 4;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
     ctx.beginPath();
-    ctx.ellipse(x - 8 * scale, y - 20 * scale + wingOffset, 12 * scale, 18 * scale, -0.3, 0, Math.PI * 2);
+    ctx.ellipse(x - 5, y - size - 5 + wingOffset, 10, 15, -0.3, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
-    ctx.ellipse(x + 8 * scale, y - 20 * scale + wingOffset, 12 * scale, 18 * scale, 0.3, 0, Math.PI * 2);
+    ctx.ellipse(x + 5, y - size - 5 + wingOffset, 10, 15, 0.3, 0, Math.PI * 2);
     ctx.fill();
-
-    // Glow when stopped
-    if (isStopped) {
-      ctx.shadowBlur = 20;
-      ctx.shadowColor = '#FCD34D';
-      ctx.strokeStyle = '#FCD34D';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(x, y, size + 5, 0, Math.PI * 2);
-      ctx.stroke();
-    }
 
     ctx.restore();
   };
 
-  // Handle reaction
-  const handleReaction = useCallback(() => {
-    if (!running || !isStoppedRef.current) return;
+  // Chú thích: Vẽ ống chướng ngại vật (giống Flappy Bird)
+  const drawPipe = (ctx, pipe, gap) => {
+    const { x, gapY } = pipe;
 
+    // Ống trên
+    ctx.fillStyle = '#22c55e';
+    ctx.fillRect(x, 0, PIPE_WIDTH, gapY - gap / 2);
+    // Viền ống trên
+    ctx.fillStyle = '#16a34a';
+    ctx.fillRect(x - 3, gapY - gap / 2 - 20, PIPE_WIDTH + 6, 20);
+
+    // Ống dưới
+    ctx.fillStyle = '#22c55e';
+    ctx.fillRect(x, gapY + gap / 2, PIPE_WIDTH, HEIGHT - (gapY + gap / 2));
+    // Viền ống dưới
+    ctx.fillStyle = '#16a34a';
+    ctx.fillRect(x - 3, gapY + gap / 2, PIPE_WIDTH + 6, 20);
+  };
+
+  // Chú thích: Xử lý nhấn để bay lên
+  const handleFlap = useCallback(() => {
+    if (!gameActiveRef.current) return;
     const settings = getDiffSettings();
-    setScore((s) => {
-      const newScore = s + 1;
-      if (newScore > highScore) {
-        setHighScore(newScore);
-        localStorage.setItem('bee_flying_high_score', String(newScore));
-      }
-      return newScore;
-    });
+    beeVelocityRef.current = settings.flapStrength;
+  }, [getDiffSettings]);
 
-    isStoppedRef.current = false;
-    setIsStopped(false);
-
-    isMovingRef.current = true;
-    moveStartTimeRef.current = Date.now();
-    moveDurationRef.current = settings.moveDurationMin + Math.random() * (settings.moveDurationMax - settings.moveDurationMin);
-
-    targetXRef.current = BEE_SIZE + Math.random() * (WIDTH - BEE_SIZE * 2);
-    targetYRef.current = BEE_SIZE + Math.random() * (HEIGHT - BEE_SIZE * 2);
-  }, [running, getDiffSettings, highScore]);
-
+  // Chú thích: Game loop chính
   const loop = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !gameActiveRef.current) return;
     const ctx = canvas.getContext('2d');
     const settings = getDiffSettings();
 
-    // Clear with gradient background
+    // Background gradient bầu trời
     const bg = ctx.createLinearGradient(0, 0, 0, HEIGHT);
-    bg.addColorStop(0, '#e0f2fe');
-    bg.addColorStop(1, '#f0fdf4');
+    bg.addColorStop(0, '#7dd3fc');
+    bg.addColorStop(1, '#bae6fd');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    // Clouds
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    // Vẽ mây tĩnh
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
     ctx.beginPath();
-    ctx.arc(150, 80, 30, 0, Math.PI * 2);
-    ctx.arc(180, 70, 40, 0, Math.PI * 2);
-    ctx.arc(220, 80, 30, 0, Math.PI * 2);
+    ctx.arc(80, 100, 25, 0, Math.PI * 2);
+    ctx.arc(110, 90, 35, 0, Math.PI * 2);
+    ctx.arc(145, 100, 25, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(300, 150, 20, 0, Math.PI * 2);
+    ctx.arc(325, 140, 30, 0, Math.PI * 2);
+    ctx.arc(355, 150, 20, 0, Math.PI * 2);
     ctx.fill();
 
-    const now = Date.now();
+    // Vẽ mặt đất
+    ctx.fillStyle = '#854d0e';
+    ctx.fillRect(0, HEIGHT - 50, WIDTH, 50);
+    ctx.fillStyle = '#22c55e';
+    ctx.fillRect(0, HEIGHT - 60, WIDTH, 15);
 
-    // Update bee movement
-    if (isMovingRef.current) {
-      const elapsed = now - moveStartTimeRef.current;
+    frameCountRef.current++;
 
-      if (elapsed >= moveDurationRef.current) {
-        isMovingRef.current = false;
-        isStoppedRef.current = true;
-        setIsStopped(true);
-        stopStartTimeRef.current = now;
-        reactionTimeLeftRef.current = settings.reactionTime;
-        setReactionTimeLeft(settings.reactionTime);
-      } else {
-        beeXRef.current = beeXRef.current + (targetXRef.current - beeXRef.current) * 0.05;
-        beeYRef.current = beeYRef.current + (targetYRef.current - beeYRef.current) * 0.05;
-      }
-    } else if (isStoppedRef.current) {
-      const elapsed = (now - stopStartTimeRef.current) / 1000;
-      const remaining = Math.max(0, settings.reactionTime - elapsed);
-      reactionTimeLeftRef.current = remaining;
-      setReactionTimeLeft(remaining);
+    // Chú thích: Áp dụng trọng lực
+    beeVelocityRef.current += settings.gravity;
+    beeYRef.current += beeVelocityRef.current;
 
-      if (remaining <= 0) {
-        const newLives = lives - 1;
-        setLives(newLives);
+    // Chú thích: Tạo ống mới mỗi 100 frames
+    if (frameCountRef.current % 100 === 0) {
+      const minGapY = settings.gap / 2 + 50;
+      const maxGapY = HEIGHT - settings.gap / 2 - 100;
+      const gapY = minGapY + Math.random() * (maxGapY - minGapY);
+      pipesRef.current.push({
+        x: WIDTH,
+        gapY,
+        passed: false,
+      });
+    }
 
-        if (newLives <= 0) {
-          setGameOver(true);
-          setRunning(false);
+    // Chú thích: Di chuyển và vẽ ống
+    const beeX = 80;
+    const beeRadius = BEE_SIZE / 2;
+    let collision = false;
 
-          if (isLoggedIn() && score > 0) {
-            (async () => {
-              try {
-                await saveGameScore('bee_flying', score, 1);
-                await rewardXP('game_play');
-              } catch (e) {
-                console.warn('[BeeFlying] Sync failed:', e.message);
-              }
-            })();
-          }
-          return;
+    pipesRef.current = pipesRef.current.filter(pipe => {
+      pipe.x -= settings.pipeSpeed;
+      drawPipe(ctx, pipe, settings.gap);
+
+      // Kiểm tra va chạm với ống
+      if (
+        beeX + beeRadius > pipe.x &&
+        beeX - beeRadius < pipe.x + PIPE_WIDTH
+      ) {
+        if (
+          beeYRef.current - beeRadius < pipe.gapY - settings.gap / 2 ||
+          beeYRef.current + beeRadius > pipe.gapY + settings.gap / 2
+        ) {
+          collision = true;
         }
-
-        isStoppedRef.current = false;
-        setIsStopped(false);
-        isMovingRef.current = true;
-        moveStartTimeRef.current = now;
-        moveDurationRef.current = settings.moveDurationMin + Math.random() * (settings.moveDurationMax - settings.moveDurationMin);
-        targetXRef.current = BEE_SIZE + Math.random() * (WIDTH - BEE_SIZE * 2);
-        targetYRef.current = BEE_SIZE + Math.random() * (HEIGHT - BEE_SIZE * 2);
       }
+
+      // Chú thích: Tính điểm khi qua ống
+      if (!pipe.passed && pipe.x + PIPE_WIDTH < beeX) {
+        pipe.passed = true;
+        scoreRef.current++;
+        setScore(scoreRef.current);
+
+        // Cập nhật high score
+        if (scoreRef.current > highScore) {
+          setHighScore(scoreRef.current);
+          localStorage.setItem('bee_flying_flappy_high_score', String(scoreRef.current));
+        }
+      }
+
+      return pipe.x > -PIPE_WIDTH;
+    });
+
+    // Vẽ ong
+    drawBee(ctx, beeX, beeYRef.current);
+
+    // Chú thích: Kiểm tra va chạm với đất hoặc trần
+    if (beeYRef.current + beeRadius > HEIGHT - 60 || beeYRef.current - beeRadius < 0) {
+      collision = true;
     }
 
-    // Draw bee
-    drawBee(ctx, beeXRef.current, beeYRef.current, isStoppedRef.current);
+    // Game Over
+    if (collision) {
+      gameActiveRef.current = false;
+      setGameOver(true);
+      setRunning(false);
 
-    // Draw reaction timer when stopped
-    if (isStoppedRef.current) {
-      ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
-      ctx.font = 'bold 48px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText(Math.ceil(reactionTimeLeftRef.current), WIDTH / 2, 80);
-
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-      ctx.font = 'bold 20px Arial';
-      ctx.fillText('NHẤN SPACE HOẶC CHẠM!', WIDTH / 2, HEIGHT - 40);
+      // Lưu điểm lên server nếu đã đăng nhập
+      if (isLoggedIn() && scoreRef.current > 0) {
+        (async () => {
+          try {
+            await saveGameScore('bee_flying_flappy', scoreRef.current, 1);
+            await rewardXP('game_play');
+          } catch (e) {
+            console.warn('[BeeFlying] Sync failed:', e.message);
+          }
+        })();
+      }
+      return;
     }
 
-    if (running) {
-      rafRef.current = requestAnimationFrame(loop);
-    }
-  }, [running, lives, score, getDiffSettings]);
+    // Vẽ điểm trên canvas
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3;
+    ctx.font = 'bold 48px Arial';
+    ctx.textAlign = 'center';
+    ctx.strokeText(String(scoreRef.current), WIDTH / 2, 70);
+    ctx.fillText(String(scoreRef.current), WIDTH / 2, 70);
+
+    rafRef.current = requestAnimationFrame(loop);
+  }, [getDiffSettings, highScore]);
 
   useEffect(() => {
     if (!running) return;
@@ -286,6 +298,7 @@ export default function BeeFlying() {
     return () => cancelAnimationFrame(rafRef.current);
   }, [running, loop]);
 
+  // Chú thích: Event listeners cho keyboard và touch
   useEffect(() => {
     const onKey = (e) => {
       if (e.code === 'Space') {
@@ -295,7 +308,7 @@ export default function BeeFlying() {
         } else if (gameOver) {
           reset();
         } else if (running) {
-          handleReaction();
+          handleFlap();
         }
       }
     };
@@ -306,7 +319,7 @@ export default function BeeFlying() {
       } else if (gameOver) {
         reset();
       } else if (running) {
-        handleReaction();
+        handleFlap();
       }
     };
 
@@ -318,14 +331,14 @@ export default function BeeFlying() {
       window.removeEventListener('keydown', onKey);
       canvas?.removeEventListener('pointerdown', onPointer);
     };
-  }, [showIntro, gameOver, running, handleReaction]);
+  }, [showIntro, gameOver, running, handleFlap, reset]);
 
   const diffSettings = getDiffSettings();
 
   return (
     <div className="min-h-[70vh] relative px-2 sm:px-4">
-      <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
-        {/* Header với nút quay lại */}
+      <div className="max-w-md mx-auto w-full space-y-4 sm:space-y-6">
+        {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2 sm:gap-3">
             <Link to="/games">
@@ -342,29 +355,22 @@ export default function BeeFlying() {
               <span className="text-2xl sm:text-3xl">🐝</span>
               <div>
                 <h1 className="text-lg sm:text-xl md:text-2xl font-bold gradient-text">
-                  Ong Tập Bay
+                  Ong Bay
                 </h1>
                 <p className="text-[--muted] text-xs hidden sm:block">
-                  Nhấn khi ong dừng lại trong {diffSettings.reactionTime}s
+                  Chạm để bay, né ống chướng ngại vật!
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Badge variant="accent" size="sm">
-              <Trophy size={12} className="mr-1" />
-              {highScore}
-            </Badge>
-            {running && (
-              <Badge variant="primary" size="sm">
-                Điểm: {score}
-              </Badge>
-            )}
-          </div>
+          <Badge variant="accent" size="sm">
+            <Trophy size={12} className="mr-1" />
+            {highScore}
+          </Badge>
         </div>
 
-        {/* Difficulty selector - only when showing intro */}
+        {/* Difficulty selector */}
         {showIntro && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -392,9 +398,6 @@ export default function BeeFlying() {
                     <div className="font-medium text-xs sm:text-sm text-[--text]">
                       {level.label}
                     </div>
-                    <div className="text-[10px] text-[--muted]">
-                      {level.lives} mạng, {level.reactionTime}s
-                    </div>
                   </button>
                 ))}
               </div>
@@ -402,50 +405,21 @@ export default function BeeFlying() {
           </motion.div>
         )}
 
-        {/* Game Stats */}
-        {running && !gameOver && (
-          <Card size="sm">
-            <div className="grid grid-cols-3 gap-3 sm:gap-4 text-center">
-              <div>
-                <div className="text-xl sm:text-2xl font-bold text-[--brand]">{score}</div>
-                <div className="text-[10px] sm:text-xs text-[--muted]">Điểm</div>
-              </div>
-              <div>
-                <div className="flex items-center justify-center gap-0.5 sm:gap-1 text-lg sm:text-2xl font-bold text-red-500">
-                  {[...Array(lives)].map((_, i) => (
-                    <Heart key={i} size={16} className="fill-red-500 text-red-500 sm:w-5 sm:h-5" />
-                  ))}
-                </div>
-                <div className="text-[10px] sm:text-xs text-[--muted]">Mạng</div>
-              </div>
-              {isStopped && (
-                <div>
-                  <div className="text-xl sm:text-2xl font-bold text-orange-500 flex items-center justify-center gap-1">
-                    <Clock size={14} />
-                    {Math.ceil(reactionTimeLeft)}
-                  </div>
-                  <div className="text-[10px] sm:text-xs text-[--muted]">Giây còn lại</div>
-                </div>
-              )}
-            </div>
-          </Card>
-        )}
-
         {/* Game Canvas */}
-        <Card size="lg" className="!p-0 overflow-hidden relative" ref={containerRef}>
+        <Card size="lg" className="!p-0 overflow-hidden relative">
           {showIntro && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm">
               <div className="text-center space-y-4 sm:space-y-6 p-4 sm:p-8">
                 <div className="text-5xl sm:text-6xl mb-4">🐝</div>
                 <h2 className="text-xl sm:text-2xl font-bold text-[--text] mb-2">
-                  Ong Tập Bay
+                  Ong Bay
                 </h2>
-                <p className="text-[--muted] text-xs sm:text-sm max-w-md mx-auto">
-                  Theo dõi con ong di chuyển. Khi ong dừng lại và phát sáng,
-                  bạn có <strong>{diffSettings.reactionTime} giây</strong> để nhấn <strong>Space</strong> hoặc <strong>Chạm</strong>!
+                <p className="text-[--muted] text-xs sm:text-sm max-w-sm mx-auto">
+                  Chạm hoặc nhấn <strong>Space</strong> để ong bay lên.<br />
+                  Tránh các ống chướng ngại vật!
                 </p>
                 <Badge variant="default" size="sm">
-                  {diffSettings.icon} {diffSettings.label} - {diffSettings.lives} mạng
+                  {diffSettings.icon} {diffSettings.label}
                 </Badge>
                 <div>
                   <Button onClick={startGame} icon={<Play size={18} />} size="lg">
@@ -463,9 +437,11 @@ export default function BeeFlying() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="text-center space-y-4 sm:space-y-6 p-4 sm:p-8"
               >
-                <div className="text-5xl sm:text-6xl mb-4">🎉</div>
+                <div className="text-5xl sm:text-6xl mb-4">
+                  {score >= highScore && score > 0 ? '🏆' : '💥'}
+                </div>
                 <h2 className="text-xl sm:text-2xl font-bold text-[--text] mb-2">
-                  Kết thúc!
+                  Game Over!
                 </h2>
                 <div className="text-2xl sm:text-3xl font-bold text-[--brand] mb-4">
                   Điểm: {score}
@@ -500,8 +476,8 @@ export default function BeeFlying() {
             ref={canvasRef}
             width={WIDTH}
             height={HEIGHT}
-            className="w-full h-auto touch-none"
-            style={{ maxHeight: '400px' }}
+            className="w-full h-auto touch-none max-w-full"
+            style={{ maxHeight: '70vh', aspectRatio: `${WIDTH}/${HEIGHT}` }}
           />
         </Card>
 
@@ -510,10 +486,10 @@ export default function BeeFlying() {
           <div className="text-xs sm:text-sm text-[--muted] space-y-2">
             <p><strong className="text-[--text]">Cách chơi:</strong></p>
             <ul className="list-disc list-inside space-y-1 ml-2">
-              <li>Theo dõi con ong di chuyển trên màn hình</li>
-              <li>Khi ong dừng lại và phát sáng, bạn có {diffSettings.reactionTime} giây để phản ứng</li>
-              <li>Nhấn <strong>Space</strong> hoặc <strong>Chạm</strong> để phản ứng</li>
-              <li>Bạn có {diffSettings.lives} mạng. Mất hết mạng thì thua!</li>
+              <li>Nhấn <strong>Space</strong> hoặc <strong>Chạm</strong> để ong bay lên</li>
+              <li>Tránh va chạm vào các ống màu xanh</li>
+              <li>Mỗi ống vượt qua = 1 điểm</li>
+              <li>Đừng chạm đất hoặc bay quá cao!</li>
             </ul>
           </div>
         </Card>

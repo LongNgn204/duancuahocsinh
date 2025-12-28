@@ -299,25 +299,30 @@ export class AudioPlayer {
         this.onPlaybackStart = null;
         this.onPlaybackEnd = null;
         this.scheduledTime = 0; // Track scheduled audio end time
-        this.pendingBuffers = []; // Pending audio buffers
+        this.pendingBuffers = []; // Pre-buffer for smoother playback
         this.playbackStarted = false;
         this.lastSourceNode = null;
         this.checkEndInterval = null;
+        // Chú thích: Tăng buffer để tránh giựt khi hội thoại dài
+        this.LOOKAHEAD_TIME = 0.05; // 50ms lookahead buffer
+        this.MIN_BUFFER_SIZE = 3; // Chờ tối thiểu 3 chunks trước khi phát
+        this.bufferedChunks = [];
+        this.isBuffering = true; // Bắt đầu ở trạng thái buffering
     }
 
     init() {
         if (!this.audioContext) {
-            // Use interactive latency hint for lowest latency
+            // Chú thích: 'playback' latencyHint ổn định hơn 'interactive' cho hội thoại dài
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)({
                 sampleRate: 24000,
-                latencyHint: 'interactive' // Lowest latency for real-time audio
+                latencyHint: 'playback' // Ổn định hơn cho streaming dài
             });
             this.scheduledTime = this.audioContext.currentTime;
         }
         return this.audioContext;
     }
 
-    // Add audio chunk to queue (base64 PCM) - schedule immediately for gapless playback
+    // Chú thích: Pre-buffer để tránh giựt, đặc biệt khi hội thoại dài
     enqueue(base64Data) {
         try {
             const binaryString = atob(base64Data);
@@ -334,13 +339,28 @@ export class AudioPlayer {
             }
 
             this.init();
-            this.scheduleBuffer(float32Array);
+
+            // Pre-buffering: chờ đủ chunks trước khi phát để tránh giựt
+            if (this.isBuffering) {
+                this.bufferedChunks.push(float32Array);
+                if (this.bufferedChunks.length >= this.MIN_BUFFER_SIZE) {
+                    console.log('[AudioPlayer] Buffer ready, starting playback');
+                    this.isBuffering = false;
+                    // Phát tất cả buffered chunks
+                    for (const chunk of this.bufferedChunks) {
+                        this.scheduleBuffer(chunk);
+                    }
+                    this.bufferedChunks = [];
+                }
+            } else {
+                this.scheduleBuffer(float32Array);
+            }
         } catch (err) {
             console.error('[AudioPlayer] Enqueue error:', err);
         }
     }
 
-    // Schedule buffer for playback immediately (gapless, low latency)
+    // Chú thích: Schedule với lookahead buffer để gapless playback
     scheduleBuffer(samples) {
         if (!this.audioContext) return;
 
@@ -358,12 +378,24 @@ export class AudioPlayer {
         source.buffer = audioBuffer;
         source.connect(this.audioContext.destination);
 
-        // Calculate start time - minimize latency
+        // Calculate start time với lookahead để tránh gaps
         const currentTime = this.audioContext.currentTime;
-        // If this is the first chunk or no audio scheduled, start immediately
-        const startTime = this.playbackStarted
-            ? Math.max(currentTime, this.scheduledTime)
-            : currentTime + 0.01; // Start with tiny delay to ensure smooth
+        let startTime;
+
+        if (!this.playbackStarted) {
+            // Chunk đầu tiên: bắt đầu với lookahead nhỏ
+            startTime = currentTime + this.LOOKAHEAD_TIME;
+        } else {
+            // Chunks tiếp theo: nối liền với scheduled time
+            // Chú thích: Thêm buffer nhỏ nếu đang bị delay
+            if (currentTime > this.scheduledTime) {
+                // Đang bị trễ, cần catch up
+                startTime = currentTime + this.LOOKAHEAD_TIME;
+                console.log('[AudioPlayer] Catching up audio scheduling');
+            } else {
+                startTime = this.scheduledTime;
+            }
+        }
 
         // Update scheduled end time
         const duration = samples.length / 24000;
@@ -416,6 +448,8 @@ export class AudioPlayer {
     stop() {
         this.clearEndCheck();
         this.pendingBuffers = [];
+        this.bufferedChunks = [];
+        this.isBuffering = true; // Reset buffering state
         this.isPlaying = false;
         this.playbackStarted = false;
         this.scheduledTime = 0;

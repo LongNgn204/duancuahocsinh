@@ -13,7 +13,7 @@ import {
 
 const navItems = [
     { path: '/app', icon: Home, label: 'Trang chủ' },
-    { path: '/chat', icon: MessageCircle, label: 'Chat AI' },
+    { path: '/chat', icon: MessageCircle, label: 'Trò chuyện' },
     { path: '/wellness', icon: Sparkles, label: 'Wellness' },
     { path: '/games', icon: Gamepad2, label: 'Games' },
     { path: '/settings', icon: Settings, label: 'Cài đặt' },
@@ -28,8 +28,8 @@ function NavItem({ item, isActive }) {
         >
             <motion.div
                 className={`p-2 rounded-2xl transition-colors ${isActive
-                        ? 'bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-lg'
-                        : 'text-gray-500 dark:text-gray-400'
+                    ? 'bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-lg'
+                    : 'text-gray-500 dark:text-gray-400'
                     }`}
                 whileTap={{ scale: 0.9 }}
                 animate={isActive ? { scale: [1, 1.1, 1] } : {}}
@@ -40,8 +40,8 @@ function NavItem({ item, isActive }) {
 
             <motion.span
                 className={`text-[10px] mt-1 font-medium transition-colors ${isActive
-                        ? 'text-pink-600 dark:text-pink-400'
-                        : 'text-gray-500 dark:text-gray-400'
+                    ? 'text-pink-600 dark:text-pink-400'
+                    : 'text-gray-500 dark:text-gray-400'
                     }`}
                 initial={false}
                 animate={{

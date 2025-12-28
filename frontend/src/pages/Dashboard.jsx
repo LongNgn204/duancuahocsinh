@@ -38,7 +38,7 @@ const moodMapping = [
 const quickActions = [
     {
         icon: MessageCircle,
-        title: 'Chat với AI',
+        title: 'Trò chuyện',
         description: 'Tâm sự & Lời khuyên',
         path: '/chat',
         color: 'from-pink-500 to-rose-500',
