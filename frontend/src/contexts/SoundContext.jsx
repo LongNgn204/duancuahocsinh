@@ -17,9 +17,20 @@ const SOUND_URLS = {
     win: 'https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg',
     lose: 'https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg',
 
-    // Ambient (Loopable preferred)
+    // Chú thích: Ambient & Background Music (Royalty-Free)
+    // Nguồn: Pixabay, Google Actions (không bản quyền)
     nature: 'https://actions.google.com/sounds/v1/nature/forest_wind.ogg',
     rain: 'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg',
+    ocean: 'https://actions.google.com/sounds/v1/water/waves_crashing_on_rock_beach.ogg',
+    birds: 'https://actions.google.com/sounds/v1/animals/many_birds_background.ogg',
+    fireplace: 'https://actions.google.com/sounds/v1/elements/burning_fireplace.ogg',
+
+    // Chú thích: Lofi/Chill Music - File local hoặc Google Actions
+    // Đã tải: lofi-chill.mp3 từ Pixabay (không bản quyền)
+    lofi: '/sounds/lofi-chill.mp3',
+    // Sử dụng Google Actions sounds cho các ambient music khác
+    calm: 'https://actions.google.com/sounds/v1/ambiences/coffee_shop.ogg',
+    study: 'https://actions.google.com/sounds/v1/ambiences/clock_shop.ogg',
 };
 
 const SoundContext = createContext();

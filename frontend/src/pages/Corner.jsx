@@ -1,287 +1,326 @@
 // src/pages/Corner.jsx
-// Chú thích: Góc Nhỏ v2.0 - Personal Dashboard & Widget Board
-import { useState, useEffect, useMemo } from 'react';
+// Chú thích: Góc Nhỏ v3.0 - Theo giao diện mới với ngân hàng hoạt động và checkbox
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../components/ui/Button';
-import Badge from '../components/ui/Badge';
-import { Bell, Clock, Plus, X, CheckCircle2, Settings, Calendar, Heart, BookOpen, Sparkles, Pin, Sticker } from 'lucide-react';
-import Card from '../components/ui/Card';
+import { Calendar, Plus, Trash2, CheckCircle2, Sparkles, PartyPopper } from 'lucide-react';
+import Confetti from '../components/ui/Confetti';
+import { useSound } from '../contexts/SoundContext';
 
-const STORAGE_KEY = 'corner_activities_v1';
-const REMINDERS_KEY = 'corner_reminders_v1';
+const STORAGE_KEY = 'corner_activities_v2';
 
-// Các hoạt động mặc định
-const DEFAULT_ACTIVITIES = [
-  { id: 'gratitude', label: 'Viết Lọ Biết Ơn', icon: Heart, color: 'from-pink-400 to-rose-400', path: '/gratitude' },
-  { id: 'breathing', label: 'Bài tập thở', icon: Sparkles, color: 'from-blue-400 to-cyan-400', path: '/breathing' },
-  { id: 'wellness', label: 'Liều thuốc tinh thần', icon: Heart, color: 'from-purple-400 to-indigo-400', path: '/wellness' },
-  { id: 'stories', label: 'Kể chuyện', icon: BookOpen, color: 'from-amber-400 to-orange-400', path: '/stories' },
-];
-
-const REMINDER_TEMPLATES = [
-  { activity: '💧 Uống nước', time: '09:00' },
-  { activity: '👀 Nghỉ mắt 20-20-20', time: '10:00' },
-  { activity: '🧘 Thở sâu 5 lần', time: '11:00' },
-  { activity: '🍎 Ăn trưa đúng giờ', time: '12:00' },
-  { activity: '📚 Ôn bài 15 phút', time: '18:00' },
-  { activity: '🙏 Viết Lọ Biết Ơn', time: '20:00' },
-  { activity: '😴 Chuẩn bị đi ngủ', time: '21:30' },
-  { activity: '📵 Bỏ điện thoại', time: '22:00' },
+// Chú thích: Ngân hàng hoạt động gợi ý - người dùng chọn từ đây
+const ACTIVITY_BANK = [
+  { id: 'water', emoji: '💧', label: 'Uống một ly nước đầy', color: 'from-blue-100 to-cyan-100 border-blue-200' },
+  { id: 'proud', emoji: '👍', label: 'Viết ra 1 điều bạn tự hào về bản thân', color: 'from-amber-100 to-yellow-100 border-amber-200' },
+  { id: 'stretch', emoji: '🧘', label: 'Vươn vai và duỗi người trong 1 phút', color: 'from-purple-100 to-pink-100 border-purple-200' },
+  { id: 'wash', emoji: '💦', label: 'Rửa mặt với nước mát', color: 'from-cyan-100 to-sky-100 border-cyan-200' },
+  { id: 'cloud', emoji: '☁️', label: 'Nhìn ra ngoài cửa sổ và tìm một đám mây đẹp', color: 'from-sky-100 to-blue-100 border-sky-200' },
+  { id: 'tidy', emoji: '📚', label: 'Sắp xếp lại góc học tập/làm việc', color: 'from-orange-100 to-amber-100 border-orange-200' },
+  { id: 'music', emoji: '🎵', label: 'Nghe một bài hát bạn yêu thích', color: 'from-pink-100 to-rose-100 border-pink-200' },
+  { id: 'smile', emoji: '😊', label: 'Mỉm cười với chính mình trong gương', color: 'from-yellow-100 to-lime-100 border-yellow-200' },
+  { id: 'breathe', emoji: '🌬️', label: 'Hít thở sâu 5 lần', color: 'from-teal-100 to-emerald-100 border-teal-200' },
+  { id: 'gratitude', emoji: '🙏', label: 'Viết 1 điều biết ơn hôm nay', color: 'from-rose-100 to-pink-100 border-rose-200' },
+  { id: 'walk', emoji: '🚶', label: 'Đi bộ một vòng ngắn', color: 'from-green-100 to-emerald-100 border-green-200' },
+  { id: 'call', emoji: '📞', label: 'Gọi điện hỏi thăm người thân', color: 'from-indigo-100 to-violet-100 border-indigo-200' },
 ];
 
 export default function Corner() {
-  const [activities, setActivities] = useState(DEFAULT_ACTIVITIES);
-  const [reminders, setReminders] = useState([]);
-  const [showAddReminder, setShowAddReminder] = useState(false);
-  const [newReminder, setNewReminder] = useState({ time: '', activity: '', enabled: true });
+  const [selectedTasks, setSelectedTasks] = useState([]);
+  const [completedIds, setCompletedIds] = useState([]);
+  const [customTask, setCustomTask] = useState('');
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [showAllComplete, setShowAllComplete] = useState(false);
+  const { playSound } = useSound();
 
-  // Load Data
+  const todayKey = new Date().toISOString().split('T')[0];
+
+  // Load Data khi component mount
   useEffect(() => {
     try {
-      const savedReminders = JSON.parse(localStorage.getItem(REMINDERS_KEY) || '[]');
-      setReminders(savedReminders);
-      // Request notification permission
-      if ('Notification' in window && Notification.permission !== 'granted') {
-        Notification.requestPermission();
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      if (saved.date === todayKey) {
+        setSelectedTasks(saved.tasks || []);
+        setCompletedIds(saved.completed || []);
       }
     } catch (_) { }
-  }, []);
+  }, [todayKey]);
 
-  // Save Data
-  const saveReminders = (newReminders) => {
-    setReminders(newReminders);
-    localStorage.setItem(REMINDERS_KEY, JSON.stringify(newReminders));
+  // Save Data khi thay đổi
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      date: todayKey,
+      tasks: selectedTasks,
+      completed: completedIds
+    }));
+  }, [selectedTasks, completedIds, todayKey]);
+
+  // Thêm hoạt động từ ngân hàng vào danh sách
+  const addFromBank = (activity) => {
+    if (selectedTasks.find(t => t.id === activity.id)) return; // Đã có rồi
+    playSound('click');
+    setSelectedTasks([...selectedTasks, { ...activity, isCustom: false }]);
   };
 
-  const pendingActivities = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const completed = JSON.parse(localStorage.getItem('corner_completed_' + today) || '[]');
-    return activities.filter(act => !completed.includes(act.id));
-  }, [activities]);
+  // Thêm hoạt động tùy chỉnh
+  const addCustomTask = () => {
+    if (!customTask.trim()) return;
+    playSound('click');
+    const newTask = {
+      id: `custom_${Date.now()}`,
+      emoji: '❤️',
+      label: customTask.trim(),
+      color: 'from-rose-100 to-pink-100 border-rose-200',
+      isCustom: true
+    };
+    setSelectedTasks([...selectedTasks, newTask]);
+    setCustomTask('');
+  };
 
-  const markCompleted = (activityId) => {
-    const today = new Date().toISOString().split('T')[0];
-    const completed = JSON.parse(localStorage.getItem('corner_completed_' + today) || '[]');
-    if (!completed.includes(activityId)) {
-      completed.push(activityId);
-      localStorage.setItem('corner_completed_' + today, JSON.stringify(completed));
-      // Force re-render logic via state or simple reload/alert? 
-      // React state update for 'activities' isn't needed here but 'pendingActivities' depends on localStorage content which isn't observed.
-      // Better: store completed in state.
-      setActivities([...activities]); // Trigger memo re-calc
+  // Xóa hoạt động khỏi danh sách
+  const removeTask = (id) => {
+    playSound('pop');
+    setSelectedTasks(selectedTasks.filter(t => t.id !== id));
+    setCompletedIds(completedIds.filter(cid => cid !== id));
+  };
+
+  // Đánh dấu hoàn thành / bỏ hoàn thành
+  const toggleComplete = (id) => {
+    const isCompleting = !completedIds.includes(id);
+
+    if (isCompleting) {
+      playSound('drop');
+      setCompletedIds([...completedIds, id]);
+
+      // Kiểm tra nếu hoàn thành tất cả
+      const newCompleted = [...completedIds, id];
+      if (newCompleted.length === selectedTasks.length && selectedTasks.length > 0) {
+        // Hoàn thành TẤT CẢ!
+        setTimeout(() => {
+          setShowConfetti(true);
+          setShowAllComplete(true);
+          playSound('notification');
+        }, 300);
+      } else {
+        // Chỉ hoàn thành 1 task - bong bóng nhỏ
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 2000);
+      }
+    } else {
+      playSound('click');
+      setCompletedIds(completedIds.filter(cid => cid !== id));
+      setShowAllComplete(false);
     }
   };
 
-  const handleAddReminder = () => {
-    if (!newReminder.time || !newReminder.activity) return;
-    const reminder = {
-      id: Date.now(),
-      time: newReminder.time,
-      activity: newReminder.activity,
-      enabled: newReminder.enabled,
-      color: getRandomColor()
-    };
-    saveReminders([...reminders, reminder]);
-    setNewReminder({ time: '', activity: '', enabled: true });
-    setShowAddReminder(false);
-    scheduleNotification(reminder);
-  };
-
-  const deleteReminder = (id) => {
-    saveReminders(reminders.filter(r => r.id !== id));
-  };
-
-  const toggleReminder = (id) => {
-    saveReminders(reminders.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r));
-  };
-
-  const getRandomColor = () => {
-    const colors = ['bg-yellow-200', 'bg-blue-200', 'bg-pink-200', 'bg-green-200', 'bg-purple-200'];
-    return colors[Math.floor(Math.random() * colors.length)];
-  };
-
-  // Notification Logic (Simplified for brevity)
-  const scheduleNotification = (reminder) => {
-    // Logic same as before
-  };
+  const progress = selectedTasks.length > 0
+    ? Math.round((completedIds.length / selectedTasks.length) * 100)
+    : 0;
 
   return (
-    <div className="min-h-screen p-4 md:p-8 space-y-8 max-w-7xl mx-auto">
+    <div className="min-h-screen p-4 md:p-8 space-y-8 max-w-5xl mx-auto relative">
+      <Confetti active={showConfetti} />
 
       {/* Header */}
-      <div className="text-center md:text-left flex flex-col md:flex-row justify-between items-center gap-4">
-        <div>
-          <h1 className="text-4xl font-bold text-slate-800 flex items-center gap-3 justify-center md:justify-start">
-            <span className="p-2 bg-indigo-100 rounded-xl text-indigo-600"><Calendar size={32} /></span>
-            Góc Nhỏ Của Bạn
-          </h1>
-          <p className="text-slate-500 mt-2 text-lg">Quản lý thời gian & thói quen tốt mỗi ngày</p>
-        </div>
-        <Button onClick={() => setShowAddReminder(true)} icon={<Plus size={20} />} className="shadow-lg shadow-indigo-500/20">
-          Thêm nhắc nhở
-        </Button>
+      <div className="text-center">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="inline-block p-3 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-2xl text-white shadow-lg mb-4"
+        >
+          <Calendar size={32} />
+        </motion.div>
+        <h1 className="text-3xl md:text-4xl font-bold text-slate-800">
+          Góc Nhỏ Của Bạn
+        </h1>
+        <p className="text-slate-500 mt-2">Quản lý thói quen tốt mỗi ngày</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Progress Bar */}
+      {selectedTasks.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-2xl p-4 shadow-md border border-slate-100"
+        >
+          <div className="flex justify-between text-sm mb-2">
+            <span className="font-medium text-slate-600">Tiến độ hôm nay</span>
+            <span className="font-bold text-indigo-600">{completedIds.length}/{selectedTasks.length} hoàn thành</span>
+          </div>
+          <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.5 }}
+              className="h-full bg-gradient-to-r from-indigo-400 to-purple-500 rounded-full"
+            />
+          </div>
+        </motion.div>
+      )}
 
-        {/* Left Col: Pending Tasks (TodoList style) */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white rounded-[2rem] p-6 shadow-xl border border-slate-100 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl -mr-10 -mt-10"></div>
+      {/* Ngân hàng hoạt động */}
+      <div className="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
+        <h2 className="text-xl font-bold text-center mb-6 flex items-center justify-center gap-2">
+          <span className="text-2xl">🌈</span>
+          Chọn từ ngân hàng hoạt động:
+        </h2>
 
-            <h3 className="font-bold text-xl text-slate-700 mb-6 flex items-center gap-2">
-              <CheckCircle2 className="text-green-500" />
-              Việc cần làm hôm nay
-            </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {ACTIVITY_BANK.map((activity) => {
+            const isAdded = selectedTasks.find(t => t.id === activity.id);
+            return (
+              <motion.button
+                key={activity.id}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => addFromBank(activity)}
+                disabled={isAdded}
+                className={`
+                                    p-4 rounded-xl border-2 text-left transition-all flex items-center gap-3
+                                    bg-gradient-to-r ${activity.color}
+                                    ${isAdded
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:shadow-md cursor-pointer'
+                  }
+                                `}
+              >
+                <span className="text-2xl">{activity.emoji}</span>
+                <span className="font-medium text-slate-700 text-sm">{activity.label}</span>
+                {isAdded && <CheckCircle2 size={18} className="ml-auto text-green-500" />}
+              </motion.button>
+            );
+          })}
+        </div>
+      </div>
 
-            {pendingActivities.length > 0 ? (
-              <div className="space-y-3">
-                {pendingActivities.map(act => (
+      {/* Danh sách việc đã chọn */}
+      {selectedTasks.length > 0 && (
+        <div className="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
+          <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+            📋 Danh sách việc đã chọn hôm nay ({todayKey}):
+          </h3>
+
+          <div className="space-y-3">
+            <AnimatePresence>
+              {selectedTasks.map((task) => {
+                const isCompleted = completedIds.includes(task.id);
+                return (
                   <motion.div
-                    key={act.id}
+                    key={task.id}
+                    layout
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-md transition-all"
+                    exit={{ opacity: 0, x: 20 }}
+                    className={`
+                                            flex items-center gap-3 p-4 rounded-xl border-2 transition-all
+                                            bg-gradient-to-r ${task.color}
+                                            ${isCompleted ? 'opacity-60' : ''}
+                                        `}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg bg-gradient-to-br ${act.color} text-white`}>
-                        <act.icon size={16} />
-                      </div>
-                      <span className="font-medium text-slate-700">{act.label}</span>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-indigo-600 bg-indigo-50 hover:bg-indigo-100"
-                      onClick={() => { markCompleted(act.id); window.location.href = act.path; }}
+                    {/* Checkbox */}
+                    <button
+                      onClick={() => toggleComplete(task.id)}
+                      className={`
+                                                w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all
+                                                ${isCompleted
+                          ? 'bg-green-500 border-green-500 text-white'
+                          : 'border-slate-300 hover:border-green-400'
+                        }
+                                            `}
                     >
-                      Làm ngay
-                    </Button>
+                      {isCompleted && <CheckCircle2 size={16} />}
+                    </button>
+
+                    {/* Content */}
+                    <span className="text-xl">{task.emoji}</span>
+                    <span className={`flex-1 font-medium ${isCompleted ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                      {task.label}
+                    </span>
+
+                    {/* Delete button */}
+                    <button
+                      onClick={() => removeTask(task.id)}
+                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </motion.div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-10 opacity-60">
-                <Sparkles size={48} className="mx-auto text-yellow-400 mb-3" />
-                <p className="font-medium text-slate-500">Bạn đã hoàn thành hết rồi!<br />Tuyệt vời!</p>
-              </div>
-            )}
+                );
+              })}
+            </AnimatePresence>
           </div>
         </div>
+      )}
 
-        {/* Right Col: Reminder Board (Corkboard/Sticky Notes) */}
-        <div className="lg:col-span-2">
-          <div className="bg-[#f0f4f8] rounded-[2rem] p-6 min-h-[500px] border-4 border-white shadow-inner relative">
-            {/* Header for Board */}
-            <div className="flex items-center gap-2 mb-6 opacity-60">
-              <Pin size={20} className="text-slate-400" />
-              <span className="font-bold text-slate-400 uppercase tracking-wider text-sm">Bảng nhắc nhở</span>
-            </div>
-
-            {reminders.length === 0 ? (
-              <div className="absolute inset-0 flex items-center justify-center text-slate-400 flex-col opacity-50">
-                <Sticker size={64} className="mb-4" />
-                <p>Chưa có ghi chú nào. Hãy thêm nhắc nhở mới!</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
-                <AnimatePresence>
-                  {reminders.map((reminder) => (
-                    <motion.div
-                      key={reminder.id}
-                      layout
-                      initial={{ scale: 0, rotate: -5 }}
-                      animate={{ scale: 1, rotate: Math.random() * 4 - 2 }}
-                      exit={{ scale: 0 }}
-                      className={`
-                                            aspect-square p-5 shadow-lg relative flex flex-col justify-between
-                                            ${reminder.color || 'bg-yellow-200'}
-                                            ${!reminder.enabled && 'opacity-60 grayscale'}
-                                        `}
-                      style={{
-                        borderRadius: '2px 2px 20px 2px', // Folded corner effect
-                        clipPath: 'polygon(0% 0%, 100% 0%, 100% 85%, 85% 100%, 0% 100%)'
-                      }}
-                    >
-                      {/* Pin */}
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-red-400 shadow-sm border-2 border-white/50 z-10"></div>
-
-                      <div>
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-bold text-slate-800 text-lg leading-tight font-handwriting">{reminder.activity}</h3>
-                          <button onClick={() => deleteReminder(reminder.id)} className="text-slate-500 hover:text-red-500"><X size={16} /></button>
-                        </div>
-                        <p className="text-4xl font-bold text-slate-900/40 tracking-tighter mt-2">{reminder.time}</p>
-                      </div>
-
-                      <div className="flex justify-end mt-4">
-                        <button
-                          onClick={() => toggleReminder(reminder.id)}
-                          className={`p-2 rounded-full ${reminder.enabled ? 'bg-black/10 text-slate-800' : 'bg-white/50 text-slate-400'}`}
-                          title="Bật/Tắt"
-                        >
-                          <Bell size={18} className={reminder.enabled ? 'fill-current' : ''} />
-                        </button>
-                      </div>
-
-                      {/* Fold corner aesthetic */}
-                      <div className="absolute bottom-0 right-0 w-8 h-8 bg-black/5" style={{ clipPath: 'polygon(0 0, 100% 100%, 0 100%)' }}></div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-            )}
-          </div>
+      {/* Thêm hoạt động tùy chỉnh */}
+      <div className="bg-white rounded-3xl p-6 shadow-lg border border-slate-100">
+        <h3 className="font-bold text-lg mb-4">
+          ✨ Thêm một hoạt động mới vào danh sách:
+        </h3>
+        <div className="flex gap-3">
+          <input
+            value={customTask}
+            onChange={(e) => setCustomTask(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addCustomTask()}
+            placeholder="Nhập hoạt động bạn muốn làm..."
+            className="flex-1 p-4 bg-slate-50 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400 border border-slate-200"
+          />
+          <Button
+            onClick={addCustomTask}
+            icon={<Plus size={20} />}
+            className="shadow-lg"
+          >
+            Thêm
+          </Button>
         </div>
       </div>
 
-      {/* Add Modal */}
+      {/* Modal chúc mừng hoàn thành tất cả */}
       <AnimatePresence>
-        {showAddReminder && (
+        {showAllComplete && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => {
+              setShowAllComplete(false);
+              setShowConfetti(false);
+            }}
           >
             <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl"
+              initial={{ scale: 0.5, y: 50 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.5, y: 50 }}
+              className="bg-white rounded-3xl p-8 max-w-md text-center shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-xl font-bold mb-4">Tạo nhắc nhở mới 📌</h3>
-
-              {/* Quick Select */}
-              <div className="flex flex-wrap gap-2 mb-6">
-                {REMINDER_TEMPLATES.map(t => (
-                  <button
-                    key={t.activity}
-                    onClick={() => setNewReminder({ ...newReminder, activity: t.activity, time: t.time })}
-                    className="px-3 py-1 bg-slate-100 rounded-full text-xs hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
-                  >
-                    {t.activity}
-                  </button>
-                ))}
-              </div>
-
-              <div className="space-y-4">
-                <input
-                  value={newReminder.activity}
-                  onChange={e => setNewReminder({ ...newReminder, activity: e.target.value })}
-                  placeholder="Tên hoạt động..."
-                  className="w-full p-4 bg-slate-50 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-                <input
-                  type="time"
-                  value={newReminder.time}
-                  onChange={e => setNewReminder({ ...newReminder, time: e.target.value })}
-                  className="w-full p-4 bg-slate-50 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div className="flex gap-3 mt-8">
-                <Button className="flex-1" onClick={handleAddReminder}>Lưu Sticky Note</Button>
-                <Button variant="ghost" onClick={() => setShowAddReminder(false)}>Hủy</Button>
+              <motion.div
+                animate={{ rotate: [0, -10, 10, -10, 0] }}
+                transition={{ repeat: Infinity, duration: 1 }}
+                className="text-7xl mb-4"
+              >
+                🎉
+              </motion.div>
+              <h2 className="text-3xl font-bold text-slate-800 mb-2">
+                Tuyệt vời!
+              </h2>
+              <p className="text-xl text-indigo-600 font-medium mb-4">
+                Bạn đã hoàn thành tất cả hoạt động hôm nay!
+              </p>
+              <p className="text-slate-500 mb-6">
+                Tiếp tục phát huy tinh thần này nhé! Mỗi ngày một cố gắng nhỏ sẽ tạo nên thành công lớn. 💪
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  onClick={() => {
+                    setShowAllComplete(false);
+                    setShowConfetti(false);
+                  }}
+                  className="px-8"
+                >
+                  Đóng
+                </Button>
               </div>
             </motion.div>
           </motion.div>

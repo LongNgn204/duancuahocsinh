@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../ui/Button';
-import { Heart, Sparkles, Plus, Trash2, Calendar, Lightbulb, X, Edit3, Save } from 'lucide-react';
+import { Heart, Sparkles, Plus, Trash2, Calendar, Lightbulb, X, Edit3, Save, Volume2, VolumeX, RefreshCw } from 'lucide-react';
 import { isLoggedIn, rewardXP } from '../../utils/api';
 import Confetti from '../ui/Confetti';
 import { useSound } from '../../contexts/SoundContext';
@@ -31,6 +31,121 @@ const DAILY_SUGGESTIONS = [
     "Một kỷ niệm đẹp chợt hiện về?",
 ];
 
+// Chú thích: 80 câu động viên để hiển thị trong card "Lời động viên"
+const ENCOURAGEMENT_MESSAGES = [
+    // Về niềm vui và hạnh phúc
+    "Hãy nhớ rằng, những điều nhỏ bé nhất cũng có thể mang lại niềm vui lớn. Bạn đã làm rất tốt rồi!",
+    "Mỗi ngày là một cơ hội mới để bạn tỏa sáng. Hãy tin vào bản thân mình nhé!",
+    "Bạn xứng đáng được yêu thương và trân trọng. Đừng bao giờ quên điều đó.",
+    "Nụ cười của bạn có sức mạnh lan tỏa niềm vui đến mọi người xung quanh.",
+    "Hạnh phúc không ở đâu xa, nó ở ngay trong trái tim biết yêu thương của bạn.",
+
+    // Về sự kiên trì và cố gắng
+    "Mỗi bước nhỏ đều đưa bạn đến gần hơn với ước mơ. Tiếp tục cố gắng nhé!",
+    "Thất bại không phải là dấu chấm hết, mà là bài học quý giá cho thành công.",
+    "Bạn mạnh mẽ hơn bạn nghĩ, dũng cảm hơn bạn tin, và thông minh hơn bạn tưởng.",
+    "Đừng so sánh hành trình của mình với người khác. Mỗi người có một con đường riêng.",
+    "Những khó khăn hôm nay sẽ trở thành sức mạnh của bạn ngày mai.",
+
+    // Về lòng biết ơn
+    "Biết ơn là chìa khóa mở cánh cửa hạnh phúc. Cảm ơn bạn đã thực hành điều này!",
+    "Khi tập trung vào những điều tốt đẹp, cuộc sống sẽ trở nên tươi sáng hơn.",
+    "Một trái tim biết ơn sẽ luôn tìm thấy điều kỳ diệu trong mỗi ngày.",
+    "Cảm ơn bạn đã dành thời gian để nhìn nhận những điều đáng trân trọng.",
+    "Lòng biết ơn biến những gì ta có thành đủ đầy. Bạn thật giàu có!",
+
+    // Về tình yêu thương
+    "Bạn được yêu thương nhiều hơn bạn biết và quan trọng hơn bạn nghĩ.",
+    "Hãy yêu thương bản thân như cách bạn yêu thương người thân yêu nhất.",
+    "Tình yêu thương bạn trao đi sẽ quay về gấp bội. Tiếp tục lan tỏa yêu thương nhé!",
+    "Mỗi hành động tử tế của bạn đều tạo nên sự khác biệt trong cuộc sống ai đó.",
+    "Bạn là món quà quý giá cho thế giới này. Đừng bao giờ quên điều đó.",
+
+    // Về sự bình yên
+    "Hít thở thật sâu và nhớ rằng mọi thứ sẽ ổn thôi. Bạn đang làm tốt lắm!",
+    "Bình yên không phải là không có sóng gió, mà là biết cách giữ tâm an.",
+    "Hãy cho phép bản thân được nghỉ ngơi. Bạn xứng đáng được chăm sóc.",
+    "Mỗi khoảnh khắc yên tĩnh là cơ hội để bạn kết nối với chính mình.",
+    "An yên bắt đầu từ việc chấp nhận chính mình. Bạn đã rất dũng cảm!",
+
+    // Về thành công và tiến bộ
+    "Thành công không phải đích đến, mà là hành trình. Tận hưởng từng bước nhé!",
+    "Mỗi ngày bạn đang trưởng thành hơn, dù bạn có nhận ra hay không.",
+    "Bạn đã vượt qua 100% những ngày khó khăn. Tỷ lệ thành công tuyệt vời!",
+    "Tiến bộ nhỏ mỗi ngày tạo nên kết quả lớn. Kiên nhẫn với bản thân nhé!",
+    "Bạn không cần hoàn hảo, chỉ cần cố gắng. Và bạn đang làm rất tốt!",
+
+    // Về can đảm và dám làm
+    "Dũng cảm không phải là không sợ hãi, mà là tiến về phía trước dù sợ.",
+    "Bạn có sức mạnh để vượt qua mọi thử thách. Tin vào bản thân mình!",
+    "Mỗi lần bạn thử điều mới là một lần bạn lớn hơn. Tiếp tục khám phá nhé!",
+    "Sai lầm là bằng chứng bạn đang cố gắng. Đừng sợ mắc lỗi!",
+    "Ước mơ của bạn xứng đáng được theo đuổi. Hãy dũng cảm bước tới!",
+
+    // Về hy vọng và tương lai
+    "Ngày mai luôn mang đến những cơ hội mới. Hãy chờ đón với niềm tin!",
+    "Sau cơn mưa trời lại sáng. Những điều tốt đẹp đang đến với bạn.",
+    "Bạn có quyền hy vọng và mơ ước những điều tuyệt vời nhất.",
+    "Tương lai của bạn rạng rỡ như chính nụ cười của bạn vậy!",
+    "Mỗi ngày mới là một trang giấy trắng. Hãy viết nên câu chuyện đẹp!",
+
+    // Về việc học hỏi
+    "Học hỏi là hành trình không có điểm dừng. Bạn đang tiến bộ mỗi ngày!",
+    "Mỗi câu hỏi đều đưa bạn đến gần hơn với tri thức. Tiếp tục tò mò nhé!",
+    "Sai lầm là người thầy tốt nhất. Cảm ơn bạn đã dũng cảm học hỏi!",
+    "Kiến thức bạn tích lũy hôm nay sẽ là sức mạnh của ngày mai.",
+    "Bạn thông minh hơn bạn nghĩ và có khả năng học bất cứ điều gì!",
+
+    // Về bạn bè và gia đình
+    "Những người yêu thương bạn luôn ở bên, dù bạn có nhận ra hay không.",
+    "Tình bạn chân thành là báu vật. Hãy trân trọng những người bên cạnh!",
+    "Gia đình là nơi bạn luôn được yêu thương vô điều kiện.",
+    "Mỗi cuộc gọi, tin nhắn đều kết nối những trái tim. Hãy lan tỏa yêu thương!",
+    "Bạn không đơn độc. Luôn có người sẵn sàng lắng nghe và đồng hành cùng bạn.",
+
+    // Về sức khỏe
+    "Chăm sóc bản thân là hành động yêu thương quan trọng nhất.",
+    "Sức khỏe là tài sản quý giá. Cảm ơn cơ thể đã đồng hành cùng bạn!",
+    "Một giấc ngủ ngon, một ly nước mát - những điều nhỏ bé nhưng đáng trân trọng.",
+    "Hãy lắng nghe cơ thể và cho phép mình nghỉ ngơi khi cần.",
+    "Mỗi hơi thở là một phép màu. Hãy biết ơn sự sống tuyệt vời này!",
+
+    // Về thiên nhiên
+    "Thiên nhiên luôn sẵn sàng chữa lành. Hãy dành thời gian ngắm bầu trời!",
+    "Ánh nắng, làn gió, tiếng chim hót - những món quà miễn phí tuyệt vời!",
+    "Mỗi bông hoa, mỗi chiếc lá đều mang vẻ đẹp riêng. Giống như bạn vậy!",
+    "Kết nối với thiên nhiên giúp tâm hồn bạn được thư thái và bình yên.",
+    "Hãy dành một phút ngắm hoàng hôn. Vũ trụ đang tặng bạn một bức tranh đẹp!",
+
+    // Về sáng tạo
+    "Sự sáng tạo của bạn là duy nhất. Đừng ngại thể hiện bản thân!",
+    "Mỗi ý tưởng đều có giá trị. Hãy tin vào trí tưởng tượng của mình!",
+    "Nghệ thuật không cần hoàn hảo, chỉ cần chân thành. Hãy tự do sáng tạo!",
+    "Bạn có khả năng tạo nên những điều tuyệt vời. Tin vào năng lực của mình!",
+    "Viết, vẽ, hát, nhảy - mọi hình thức biểu đạt đều đáng trân trọng!",
+
+    // Về thời gian
+    "Mỗi khoảnh khắc đều quý giá. Hãy sống trọn vẹn với hiện tại!",
+    "Quá khứ đã qua, tương lai chưa đến. Hãy tận hưởng ngày hôm nay!",
+    "Thời gian bạn dành cho bản thân là đầu tư xứng đáng nhất.",
+    "Không có ai trễ trên hành trình của chính mình. Bạn đang đúng lúc!",
+    "Hôm nay là ngày tốt nhất để bắt đầu điều gì đó mới. Bạn sẵn sàng chưa?",
+
+    // Về giấc mơ
+    "Giấc mơ của bạn đáng được theo đuổi. Đừng bao giờ từ bỏ!",
+    "Mỗi người thành công đều từng là người dám mơ. Bạn cũng vậy!",
+    "Ước mơ lớn bắt đầu từ những bước nhỏ. Hãy bắt đầu ngay hôm nay!",
+    "Bạn có quyền mơ ước những điều tuyệt vời nhất cho cuộc sống của mình.",
+    "Ngay cả khi ước mơ xa vời, hành trình theo đuổi cũng đáng giá!",
+
+    // Lời động viên chung
+    "Bạn là phiên bản duy nhất và tuyệt vời nhất của chính mình!",
+    "Cảm ơn bạn đã tồn tại và làm cho thế giới này tốt đẹp hơn.",
+    "Bạn đang làm tốt hơn bạn nghĩ. Hãy tự hào về bản thân!",
+    "Mỗi ngày bạn thức dậy là một phép màu. Hãy trân trọng!",
+    "Bạn xứng đáng có được hạnh phúc. Đừng ngừng theo đuổi nó!",
+];
+
 const GRATITUDE_KEY = 'gratitude_entries_v1';
 const STREAK_KEY = 'gratitude_streak_v1';
 
@@ -42,6 +157,8 @@ export default function GratitudeJar() {
     const [showSuggestion, setShowSuggestion] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
     const [showConfetti, setShowConfetti] = useState(false);
+    const [encouragement, setEncouragement] = useState('');
+    const [isSpeaking, setIsSpeaking] = useState(false);
     const { playSound } = useSound();
 
     // Load Data
@@ -53,6 +170,8 @@ export default function GratitudeJar() {
             setStreak(savedStreak.count);
             // Random suggestion
             setSuggestion(DAILY_SUGGESTIONS[Math.floor(Math.random() * DAILY_SUGGESTIONS.length)]);
+            // Random encouragement
+            setEncouragement(ENCOURAGEMENT_MESSAGES[Math.floor(Math.random() * ENCOURAGEMENT_MESSAGES.length)]);
         } catch (e) {
             console.error(e);
         }
@@ -204,11 +323,79 @@ export default function GratitudeJar() {
                         </div>
                     </div>
 
-                    {/* Image/Decoration */}
-                    <div className="hidden md:block p-8 text-center opacity-60">
-                        <img src="https://em-content.zobj.net/source/microsoft-teams/337/pot-of-food_1f372.png" alt="Jar" className="w-64 mx-auto drop-shadow-2xl filter contrast-125" />
-                        <p className="mt-4 font-handwriting text-2xl text-slate-400 rotate-2">"Lọ của sự hạnh phúc"</p>
-                    </div>
+                    {/* Chú thích: Card động viên thay thế phần hình ảnh */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="bg-gradient-to-br from-violet-100 to-purple-100 rounded-3xl p-6 border-2 border-violet-200/50 shadow-lg"
+                    >
+                        {/* Icon sao vàng */}
+                        <div className="flex justify-center mb-4">
+                            <div className="w-14 h-14 bg-gradient-to-br from-amber-300 to-yellow-400 rounded-full flex items-center justify-center shadow-lg">
+                                <span className="text-2xl">⭐</span>
+                            </div>
+                        </div>
+
+                        {/* Nội dung động viên */}
+                        <AnimatePresence mode="wait">
+                            <motion.p
+                                key={encouragement}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="text-center text-lg md:text-xl font-medium text-violet-900 leading-relaxed"
+                            >
+                                {encouragement}
+                            </motion.p>
+                        </AnimatePresence>
+
+                        {/* Các nút điều khiển */}
+                        <div className="flex justify-center gap-3 mt-6">
+                            {/* Nút đọc */}
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => {
+                                    playSound('click');
+                                    if (isSpeaking) {
+                                        speechSynthesis.cancel();
+                                        setIsSpeaking(false);
+                                    } else {
+                                        const utterance = new SpeechSynthesisUtterance(encouragement);
+                                        utterance.lang = 'vi-VN';
+                                        utterance.rate = 0.9;
+                                        utterance.onend = () => setIsSpeaking(false);
+                                        speechSynthesis.speak(utterance);
+                                        setIsSpeaking(true);
+                                    }
+                                }}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all ${isSpeaking
+                                        ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                                        : 'bg-violet-200 text-violet-700 hover:bg-violet-300'
+                                    }`}
+                            >
+                                {isSpeaking ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                                <span>{isSpeaking ? 'Dừng đọc' : 'Đọc cho tôi'}</span>
+                            </motion.button>
+
+                            {/* Nút đổi câu */}
+                            <motion.button
+                                whileHover={{ scale: 1.05, rotate: 180 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => {
+                                    playSound('click');
+                                    speechSynthesis.cancel();
+                                    setIsSpeaking(false);
+                                    const newMsg = ENCOURAGEMENT_MESSAGES[Math.floor(Math.random() * ENCOURAGEMENT_MESSAGES.length)];
+                                    setEncouragement(newMsg);
+                                }}
+                                className="p-2 bg-amber-200 text-amber-700 rounded-full hover:bg-amber-300 transition-all"
+                                title="Câu khác"
+                            >
+                                <RefreshCw size={18} />
+                            </motion.button>
+                        </div>
+                    </motion.div>
                 </div>
 
                 {/* Right Column: Entries Stream (Masonry style) */}

@@ -1,12 +1,13 @@
 // src/components/layout/Sidebar.jsx
-// Chú thích: Sidebar v4.5 - Thêm Gọi điện AI
+// Chú thích: Sidebar v4.6 - Thêm tất cả games vào mục Thư giãn
 import { NavLink } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import {
   Home, Heart, Bot, Gamepad2, Sparkles,
   BookOpenCheck, Timer, Library, Settings, Moon,
   ChevronLeft, ChevronRight, BarChart3, Trophy,
-  Shield, Star, Menu, X, Bell, AlertTriangle, Phone
+  Shield, Star, Menu, X, Bell, AlertTriangle, Phone,
+  MousePointer2, Coffee, Brain, Palette
 } from 'lucide-react';
 import SOSOverlay from '../sos/SOSOverlay';
 
@@ -25,19 +26,26 @@ const sections = [
       { icon: Sparkles, label: 'Liều thuốc tinh thần', path: '/wellness' },
       { icon: Heart, label: 'Góc An Yên', path: '/breathing' },
       { icon: Star, label: 'Lọ Biết Ơn', path: '/gratitude' },
+      { icon: Timer, label: 'Góc Nhỏ', path: '/corner' },
+      { icon: Shield, label: 'SOS', path: '/emergency', badge: 'SOS' },
     ],
   },
-  // Chú thích: Bỏ label section, chỉ hiển thị tính năng trực tiếp
+  // Chú thích: Đưa tất cả games và Kể chuyện vào mục Thư giãn
   {
     label: 'Thư giãn',
     items: [
-      { icon: Gamepad2, label: 'Nhanh tay lẹ mắt', path: '/games' },
+      { icon: BookOpenCheck, label: 'Kể Chuyện', path: '/stories' },
+      { icon: MousePointer2, label: 'Ong Bay', path: '/games/bee-flying' },
+      { icon: Trophy, label: 'Chọn Hình', path: '/games/match-shape' },
+      { icon: Coffee, label: 'Bấm Bong Bóng', path: '/games/bubble' },
+      { icon: Brain, label: 'Ghép Màu', path: '/games/memory' },
+      { icon: Palette, label: 'Bảng Màu Cảm Xúc', path: '/games/emotion-palette' },
     ],
   },
 ];
 
 export default function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [sosOpen, setSosOpen] = useState(false);
 

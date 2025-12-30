@@ -43,6 +43,7 @@ const KnowledgeHub = lazy(() => import('./pages/KnowledgeHub'));
 const Stories = lazy(() => import('./pages/Stories'));
 const VoiceCall = lazy(() => import('./pages/VoiceCall'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const EmergencySupport = lazy(() => import('./pages/EmergencySupport'));
 
 // Loading fallback với animation
 function LoadingFallback() {
@@ -170,6 +171,7 @@ function AppRoutes() {
           <Route path="/stories" element={<AppLayout><RequireAuth featureName="Câu chuyện"><Stories /></RequireAuth></AppLayout>} />
           <Route path="/voice-call" element={<AppLayout><RequireAuth featureName="Gọi điện"><VoiceCall /></RequireAuth></AppLayout>} />
           <Route path="/settings" element={<AppLayout><RequireAuth featureName="Cài đặt"><Settings /></RequireAuth></AppLayout>} />
+          <Route path="/emergency" element={<AppLayout><RequireAuth featureName="Hỗ trợ khẩn cấp"><EmergencySupport /></RequireAuth></AppLayout>} />
 
 
           {/* Admin Dashboard - Standalone layout, has its own auth */}

@@ -64,19 +64,20 @@ export function useAI() {
   const syncTimeoutRef = useRef(null);
   const lastSyncRef = useRef(0);
 
-  // Sync threads lên server (debounced)
-  const syncToServer = useCallback(async (threadsToSync) => {
+  // Chú thích: Sync threads lên server - có 2 mode: debounced và force
+  const syncToServer = useCallback(async (threadsToSync, force = false) => {
     if (!isLoggedIn() || !threadsToSync.length) return;
 
-    // Debounce: không sync quá thường xuyên
+    // Force sync: bypass debounce (sau khi AI trả lời xong)
+    // Normal sync: debounce 3s giữa các sync
     const now = Date.now();
-    if (now - lastSyncRef.current < 10000) return; // Min 10s giữa các sync
+    if (!force && now - lastSyncRef.current < 3000) return;
 
     try {
       setSyncing(true);
       lastSyncRef.current = now;
       await syncChatThreadsToServer(threadsToSync);
-      console.log('[ChatSync] Synced', threadsToSync.length, 'threads to server');
+      console.log('[ChatSync] Synced', threadsToSync.length, 'threads to server', force ? '(forced)' : '');
     } catch (err) {
       console.warn('[ChatSync] Sync failed:', err.message);
     } finally {
@@ -84,13 +85,20 @@ export function useAI() {
     }
   }, []);
 
-  // Schedule sync with debounce
+  // Force sync now - không debounce, dùng sau khi AI trả lời xong
+  const forceSyncNow = useCallback(async () => {
+    if (threads.length > 0) {
+      await syncToServer(threads, true);
+    }
+  }, [threads, syncToServer]);
+
+  // Schedule sync with debounce (cho các thay đổi nhỏ như typing)
   const scheduleSync = useCallback((threadsToSync) => {
     if (syncTimeoutRef.current) {
       clearTimeout(syncTimeoutRef.current);
     }
     syncTimeoutRef.current = setTimeout(() => {
-      syncToServer(threadsToSync);
+      syncToServer(threadsToSync, false);
     }, SYNC_DEBOUNCE_MS);
   }, [syncToServer]);
 
@@ -248,53 +256,55 @@ export function useAI() {
       const currentUser = getCurrentUser();
       const userName = currentUser?.display_name || currentUser?.username || 'Bạn';
 
-      // Streaming response với Gemini - buffer để gom text, tránh spam render
-      let assistantIndex = -1;
-      let textBuffer = '';
-      let updateScheduled = false;
-      const messageId = 'msg_' + Math.random().toString(36).slice(2);
-
-      // Function để flush buffer vào state - filter profanity cho output
-      const flushBuffer = () => {
-        if (!textBuffer) return;
-        // Filter profanity trước khi hiển thị
-        const currentBuffer = filterProfanity(textBuffer);
-        textBuffer = '';
-
-        if (assistantIndex === -1) {
-          setThreads((prev) => prev.map((t) => {
-            if (t.id !== currentId) return t;
-            assistantIndex = t.messages.length;
-            return {
-              ...t,
-              messages: [...t.messages, {
-                role: 'assistant',
-                content: currentBuffer,
-                ts: nowISO(),
-                messageId
-              }],
-              updatedAt: nowISO()
-            };
-          }));
-        } else {
-          setThreads((prev) => prev.map((t) => {
-            if (t.id !== currentId) return t;
-            const copy = t.messages.slice();
-            copy[assistantIndex] = {
-              ...copy[assistantIndex],
-              content: (copy[assistantIndex].content || '') + currentBuffer
-            };
-            return { ...t, messages: copy, updatedAt: nowISO() };
-          }));
-        }
-        updateScheduled = false;
+      // Chú thích: Streaming response với Gemini - sử dụng object để tránh closure issues
+      const streamState = {
+        assistantIndex: -1,
+        fullText: '',
+        messageId: 'msg_' + Math.random().toString(36).slice(2),
+        updatePending: false
       };
 
-      // Schedule update với debounce
-      const scheduleUpdate = () => {
-        if (!updateScheduled) {
-          updateScheduled = true;
-          setTimeout(flushBuffer, 50);
+      // Flush buffer vào state - tạo hoặc cập nhật tin nhắn AI
+      const flushToState = () => {
+        if (!streamState.fullText) return;
+
+        const filteredText = filterProfanity(streamState.fullText);
+
+        setThreads((prev) => {
+          return prev.map((t) => {
+            if (t.id !== currentId) return t;
+
+            const copy = [...t.messages];
+
+            if (streamState.assistantIndex === -1) {
+              // Tạo tin nhắn AI mới
+              streamState.assistantIndex = copy.length;
+              copy.push({
+                role: 'assistant',
+                content: filteredText,
+                ts: nowISO(),
+                messageId: streamState.messageId
+              });
+            } else {
+              // Cập nhật tin nhắn AI đã có
+              copy[streamState.assistantIndex] = {
+                ...copy[streamState.assistantIndex],
+                content: filteredText
+              };
+            }
+
+            return { ...t, messages: copy, updatedAt: nowISO() };
+          });
+        });
+
+        streamState.updatePending = false;
+      };
+
+      // Schedule update với debounce nhỏ để giảm render
+      const scheduleFlush = () => {
+        if (!streamState.updatePending) {
+          streamState.updatePending = true;
+          setTimeout(flushToState, 50);
         }
       };
 
@@ -304,15 +314,19 @@ export function useAI() {
         historyCap,
         (chunk) => {
           if (chunk) {
-            textBuffer += chunk;
-            scheduleUpdate();
+            streamState.fullText += chunk; // Gom vào fullText thay vì buffer riêng
+            scheduleFlush();
           }
         },
         { userName, memorySummary }
       );
 
-      // Final flush sau khi stream kết thúc
-      flushBuffer();
+      // Final flush sau khi stream kết thúc - đảm bảo lưu tất cả
+      flushToState();
+
+      // Chú thích: Sync ngay lập tức lên server sau khi AI trả lời xong
+      // Điều này đảm bảo tin nhắn không bị mất khi user refresh trang
+      setTimeout(() => forceSyncNow(), 500);
     } catch (err) {
       console.error('[useAI] Gemini error:', err);
       const errorMsg = isGeminiConfigured()

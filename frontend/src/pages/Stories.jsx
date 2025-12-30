@@ -21,14 +21,39 @@ export default function Stories() {
     const [isPlaying, setIsPlaying] = useState(false);
     const [theme, setTheme] = useState('light'); // 'light', 'sepia', 'dark'
 
-    // Split content into sentences for TTS reading
+    // Chú thích: Split content thành từng câu cho TTS - Tương thích Unicode tiếng Việt
     const getSentences = (content) => {
         if (!content) return [];
         if (Array.isArray(content)) return content; // Backward compatibility
-        // Split by period followed by space, keep the period
-        return content
-            .split(/(?<=\.)\s+/)
-            .filter(s => s.trim().length > 0);
+
+        // Cách tiếp cận an toàn hơn cho tiếng Việt:
+        // Split theo dấu chấm câu + khoảng trắng, lưu giữ dấu chấm
+        const result = [];
+        let current = '';
+
+        for (let i = 0; i < content.length; i++) {
+            current += content[i];
+
+            // Nếu gặp dấu chấm câu và ký tự tiếp theo là khoảng trắng hoặc hết chuỗi
+            if ((content[i] === '.' || content[i] === '!' || content[i] === '?') &&
+                (i === content.length - 1 || content[i + 1] === ' ')) {
+                if (current.trim()) {
+                    result.push(current.trim());
+                }
+                current = '';
+                // Skip khoảng trắng sau dấu chấm
+                if (i + 1 < content.length && content[i + 1] === ' ') {
+                    i++;
+                }
+            }
+        }
+
+        // Thêm phần còn lại nếu có
+        if (current.trim()) {
+            result.push(current.trim());
+        }
+
+        return result;
     };
 
     // Memoized sentences for current story
@@ -36,8 +61,9 @@ export default function Stories() {
         return selectedStory ? getSentences(selectedStory.content) : [];
     }, [selectedStory]);
 
-    // Get current sentence text
-    const currentSentence = sentences[currentLine] || '';
+    // Get current sentence text - normalize để fix dấu tiếng Việt
+    // Chú thích: NFC normalization đảm bảo dấu gắn liền với chữ cái (ví dụ: "rất" thay vì "râ´t")
+    const currentSentence = (sentences[currentLine] || '').normalize('NFC');
 
     // Auto advance to next sentence
     const advanceToNext = useCallback(() => {
@@ -132,7 +158,9 @@ export default function Stories() {
                                 </h3>
                             </div>
                         </div>
-                        <p className="text-xs text-center text-slate-500 font-medium">Bấm để đọc</p>
+                        <button className="w-full mt-2 px-3 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-sm font-bold rounded-xl shadow-md hover:shadow-lg transition-all">
+                            📖 Bấm để đọc
+                        </button>
                     </motion.div>
                 ))}
             </div>
@@ -171,12 +199,12 @@ export default function Stories() {
                                         key={selectedStory.id}
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        className="text-3xl md:text-4xl font-bold font-serif mb-8"
+                                        className="text-3xl md:text-4xl font-bold mb-8"
                                     >
                                         {selectedStory.title}
                                     </motion.h2>
 
-                                    <div className="space-y-6 text-lg md:text-2xl leading-relaxed font-serif min-h-[200px] flex items-center justify-center">
+                                    <div className="space-y-6 text-lg md:text-2xl leading-relaxed min-h-[200px] flex items-center justify-center">
                                         <AnimatePresence mode="wait">
                                             <motion.p
                                                 key={currentLine}

@@ -13,14 +13,14 @@ import { useSound } from '../contexts/SoundContext';
 
 // Châm ngôn cuộc sống
 const lifeQuotes = [
-    { text: "Không có việc gì khó, chỉ sợ lòng không bền. Đào núi và lấp biển, quyết chí ắt làm nên.", author: "Hồ Chí Minh" },
-    { text: "Học, học nữa, học mãi.", author: "Hồ Chí Minh" },
-    { text: "Vì lợi ích mười năm thì phải trồng cây, vì lợi ích trăm năm thì phải trồng người.", author: "Hồ Chí Minh" },
-    { text: "Một năm khởi đầu từ mùa xuân. Một đời khởi đầu từ tuổi trẻ. Tuổi trẻ là mùa xuân của xã hội.", author: "Hồ Chí Minh" },
-    { text: "Lao động là vinh quang, không lao động là nhục.", author: "Hồ Chí Minh" },
-    { text: "Gian nan rèn luyện mới thành công.", author: "Hồ Chí Minh" },
-    { text: "Đoàn kết, đoàn kết, đại đoàn kết. Thành công, thành công, đại thành công.", author: "Hồ Chí Minh" },
-    { text: "Muốn đi nhanh thì đi một mình, muốn đi xa thì đi cùng nhau.", author: "Tục ngữ Châu Phi" },
+    { text: "Không có việc gì khó, chỉ sợ lòng không bền. Đào núi và lấp biển, quyết chí ắt làm nên.", author: "Chủ tịch Hồ Chí Minh" },
+    { text: "Học, học nữa, học mãi.", author: "Chủ tịch Hồ Chí Minh" },
+    { text: "Vì lợi ích mười năm thì phải trồng cây, vì lợi ích trăm năm thì phải trồng người.", author: "Chủ tịch Hồ Chí Minh" },
+    { text: "Một năm khởi đầu từ mùa xuân. Một đời khởi đầu từ tuổi trẻ. Tuổi trẻ là mùa xuân của xã hội.", author: "Chủ tịch Hồ Chí Minh" },
+    { text: "Lao động là vinh quang, không lao động là nhục.", author: "Chủ tịch Hồ Chí Minh" },
+    { text: "Gian nan rèn luyện mới thành công.", author: "Chủ tịch Hồ Chí Minh" },
+    { text: "Đoàn kết, đoàn kết, đại đoàn kết. Thành công, thành công, đại thành công.", author: "Chủ tịch Hồ Chí Minh" },
+    { text: "Muốn đi nhanh thì đi một mình, muốn đi xa thì đi cùng nhau.", author: "Warren Buffett" },
     { text: "Thành công không phải đích đến, mà là hành trình.", author: "Zig Ziglar" },
     { text: "Hôm nay khó khăn, ngày mai sẽ tồi tệ hơn, nhưng ngày kia sẽ tuyệt vời.", author: "Jack Ma" },
 ];

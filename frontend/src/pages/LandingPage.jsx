@@ -435,8 +435,7 @@ export default function LandingPage() {
                                 Sẵn sàng bắt đầu? Hành trình chia sẻ và kết nối.
                             </h2>
                             <p className="text-[--text-secondary] mb-8 max-w-lg mx-auto">
-                                Hãy để Bạn Đồng Hành đồng hành cùng bạn trên hành trình
-                                chăm sóc sức khỏe tâm thần.
+                                Hãy để Bạn Đồng Hành đồng hành cùng bạn trên hành trình chia sẻ và kết nối.
                             </p>
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                                 <Link to="/app">
