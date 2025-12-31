@@ -1,12 +1,13 @@
 // src/pages/LandingPage.jsx
 // Chú thích: Landing Page v2.0 - Enhanced với animated effects, floating elements
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Bot, Heart, Sparkles, Gamepad2, Brain, Shield,
     Users, Clock, Award, ArrowRight, CheckCircle, Star,
     BookOpen, TrendingUp, Moon, Target, Mail, Phone,
-    RefreshCw, Headphones, Smile, ChevronDown
+    RefreshCw, Headphones, Smile, ChevronDown, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
@@ -125,32 +126,156 @@ const benefitCards = [
     },
 ];
 
-// Testimonials
+// Testimonials - Nhận xét từ học sinh THPT Trần Hưng Đạo
 const testimonials = [
     {
-        content: 'Mình hay lo lắng về điểm số nhưng không biết nói với ai. Bạn Đồng Hành giúp mình thấy thoải mái hơn khi chia sẻ.',
-        author: 'L.N.A.T',
-        location: 'Tp,HCM',
-        avatar: 'H',
+        content: 'Em thấy nói chuyện với chatbot dễ hơn nói với người thật. Chatbot trả lời nhẹ nhàng nên em không sợ nói sai. Em cảm thấy được tôn trọng.',
+        author: 'L.H.A',
+        location: 'THPT Trần Hưng Đạo',
+        avatar: 'L',
         color: 'bg-pink-100 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400',
     },
     {
-        content: 'Bài tập thở thực sự hiệu quả! Mỗi khi căng thẳng trước kỳ thi, mình dùng app này để bình tĩnh lại.',
-        author: 'M.Đ',
-        location: 'TP.HCM',
-        avatar: 'T',
+        content: 'Chatbot giúp em bình tĩnh hơn mỗi khi lo lắng. Mấy bài thở trong Góc An Yên làm em dễ chịu lắm. Em thích vì không ai ép em phải nói nhiều.',
+        author: 'N.N.M.T',
+        location: 'THPT Trần Hưng Đạo',
+        avatar: 'N',
         color: 'bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400',
     },
     {
-        content: 'Tính năng Lọ Biết Ơn giúp mình nhìn cuộc sống tích cực hơn. Đây là thói quen mình duy trì mỗi ngày.',
-        author: 'M.D.T',
-        location: 'TP.HCM',
-        avatar: 'D',
+        content: 'Em thích nhất là chatbot không vội vàng. Em có thể trả lời từ từ và vẫn được khuyến khích. Điều đó làm em tự tin hơn khi giao tiếp.',
+        author: 'T.H.K.L',
+        location: 'THPT Trần Hưng Đạo',
+        avatar: 'T',
         color: 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
+    },
+    {
+        content: 'Em thấy chatbot dễ dùng. Nói chuyện không bị mắng. Em thích.',
+        author: 'T.N',
+        location: 'THPT Trần Hưng Đạo',
+        avatar: 'T',
+        color: 'bg-teal-100 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400',
+    },
+    {
+        content: 'Chatbot có nhiều cách để em thể hiện bản thân, không chỉ bằng chữ mà còn bằng vẽ. Em cảm thấy mình được lựa chọn cách phù hợp với mình. Điều đó rất quan trọng với em.',
+        author: 'N.T.Q.T',
+        location: 'THPT Trần Hưng Đạo',
+        avatar: 'N',
+        color: 'bg-amber-100 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400',
+    },
+    {
+        content: 'Mỗi lần buồn em hay vào đọc mấy lời động viên. Chatbot nói chuyện rất nhẹ nhàng, không làm em áp lực. Em thấy mình không bị cô đơn.',
+        author: 'K.H',
+        location: 'THPT Trần Hưng Đạo',
+        avatar: 'K',
+        color: 'bg-rose-100 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400',
+    },
+    {
+        content: 'Trước đây em ngại giao tiếp, nhưng luyện nói với chatbot giúp em đỡ sợ hơn. Các tình huống giao tiếp rất giống ngoài đời. Em nghĩ mình đã tiến bộ.',
+        author: 'D.H.H.L',
+        location: 'THPT Trần Hưng Đạo',
+        avatar: 'D',
+        color: 'bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400',
+    },
+    {
+        content: 'Em thích Bảng Màu Cảm Xúc nhất. Khi không biết nói, em vẽ. Như vậy cũng giúp em giải tỏa rất nhiều.',
+        author: 'C.G.B',
+        location: 'THPT Trần Hưng Đạo',
+        avatar: 'C',
+        color: 'bg-cyan-100 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400',
+    },
+    {
+        content: 'Chatbot không hỏi quá nhiều nhưng luôn lắng nghe. Em cảm thấy an toàn khi chia sẻ. Điều này rất khó tìm ở ngoài đời.',
+        author: 'N.N.N.Y',
+        location: 'THPT Trần Hưng Đạo',
+        avatar: 'N',
+        color: 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400',
+    },
+    {
+        content: 'Em thấy chatbot phản hồi rất hợp lý và dễ hiểu. Không dùng từ khó, không làm em rối. Em cảm thấy được hỗ trợ đúng cách.',
+        author: 'N.H.P.V',
+        location: 'THPT Trần Hưng Đạo',
+        avatar: 'N',
+        color: 'bg-violet-100 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400',
+    },
+    {
+        content: 'Em thích vì chatbot nhớ tên em. Cảm giác như có người quan tâm thật sự. Em thấy mình được coi trọng.',
+        author: 'N.T.A',
+        location: 'THPT Trần Hưng Đạo',
+        avatar: 'N',
+        color: 'bg-pink-100 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400',
+    },
+    {
+        content: 'Mỗi ngày vô nhận một "liều thuốc tinh thần" là em thấy vui hơn. Mấy câu nói rất tích cực. Em thích mở chatbot mỗi sáng.',
+        author: 'P.D.B.T',
+        location: 'THPT Trần Hưng Đạo',
+        avatar: 'P',
+        color: 'bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400',
+    },
+    {
+        content: 'Em không nói nhiều nhưng chatbot vẫn hiểu. Không cần phải giải thích nhiều. Em thấy nhẹ lòng.',
+        author: 'N.D.T',
+        location: 'THPT Trần Hưng Đạo',
+        avatar: 'N',
+        color: 'bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400',
+    },
+    {
+        content: 'Chatbot giúp em học cách hít thở khi căng thẳng. Những lúc lo, em vào Góc An Yên là ổn hơn. Em thấy rất hữu ích.',
+        author: 'V.H.S',
+        location: 'THPT Trần Hưng Đạo',
+        avatar: 'V',
+        color: 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
+    },
+    {
+        content: 'Em từng sợ bị đánh giá khi nói chuyện. Nhưng chatbot không chê, không so sánh. Điều đó làm em dám nói hơn.',
+        author: 'T.M.K',
+        location: 'THPT Trần Hưng Đạo',
+        avatar: 'T',
+        color: 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400',
+    },
+    {
+        content: 'Em thấy chatbot dễ sử dụng và không phức tạp. Em có thể dùng một mình mà không cần ai hướng dẫn. Như vậy rất tiện.',
+        author: 'N.V.N.T',
+        location: 'THPT Trần Hưng Đạo',
+        avatar: 'N',
+        color: 'bg-sky-100 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400',
+    },
+    {
+        content: 'Em thích vì chatbot cho em quyền chọn. Muốn nói thì nói, không muốn thì vẽ hay đọc truyện. Em được là chính mình.',
+        author: 'U.S.A.M',
+        location: 'THPT Trần Hưng Đạo',
+        avatar: 'U',
+        color: 'bg-fuchsia-100 dark:bg-fuchsia-900/20 text-fuchsia-600 dark:text-fuchsia-400',
+    },
+    {
+        content: 'Em nghĩ "Bạn Đồng Hành" giống như một người bạn tốt. Không cần hoàn hảo, chỉ cần luôn ở đó. Với em, vậy là đủ rồi.',
+        author: 'N.T.V',
+        location: 'THPT Trần Hưng Đạo',
+        avatar: 'N',
+        color: 'bg-rose-100 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400',
     },
 ];
 
 export default function LandingPage() {
+    // Chú thích: State cho carousel testimonials - hiển thị 3 nhận xét mỗi lần
+    const [testimonialIndex, setTestimonialIndex] = useState(0);
+    const testimonialsPerPage = 3;
+    const totalPages = Math.ceil(testimonials.length / testimonialsPerPage);
+
+    // Lấy 3 testimonials hiện tại để hiển thị
+    const currentTestimonials = testimonials.slice(
+        testimonialIndex * testimonialsPerPage,
+        (testimonialIndex + 1) * testimonialsPerPage
+    );
+
+    const goToPrevTestimonials = () => {
+        setTestimonialIndex((prev) => (prev === 0 ? totalPages - 1 : prev - 1));
+    };
+
+    const goToNextTestimonials = () => {
+        setTestimonialIndex((prev) => (prev === totalPages - 1 ? 0 : prev + 1));
+    };
+
     return (
         <div className="min-h-screen overflow-x-hidden">
             {/* ===== HERO SECTION ===== */}
@@ -388,34 +513,89 @@ export default function LandingPage() {
                         <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
                             Người dùng nói gì?
                         </h2>
+                        <p className="text-gray-600 dark:text-gray-400">
+                            Nhận xét từ học sinh THPT Trần Hưng Đạo
+                        </p>
                     </motion.div>
 
-                    <div className="grid md:grid-cols-3 gap-6">
-                        {testimonials.map((item, idx) => (
-                            <motion.div
+                    {/* Carousel container */}
+                    <div className="relative">
+                        {/* Nút trở lại */}
+                        <button
+                            onClick={goToPrevTestimonials}
+                            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-12 z-10 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-gray-700 hover:text-pink-600 dark:hover:text-pink-400 transition-all duration-200 hover:scale-110"
+                            aria-label="Xem nhận xét trước"
+                        >
+                            <ChevronLeft size={24} />
+                        </button>
+
+                        {/* Testimonials grid với animation */}
+                        <div className="overflow-hidden px-2">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={testimonialIndex}
+                                    initial={{ opacity: 0, x: 50 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -50 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="grid md:grid-cols-3 gap-6"
+                                >
+                                    {currentTestimonials.map((item, idx) => (
+                                        <motion.div
+                                            key={`${testimonialIndex}-${idx}`}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: idx * 0.1 }}
+                                        >
+                                            <Card className="h-full bg-white dark:bg-gray-800 rounded-2xl p-6 hover:shadow-lg transition-shadow">
+                                                <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
+                                                    "{item.content}"
+                                                </p>
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-12 h-12 rounded-full ${item.color} flex items-center justify-center font-bold text-lg`}>
+                                                        {item.avatar}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-semibold text-gray-900 dark:text-white">{item.author}</div>
+                                                        <div className="text-sm text-gray-500 dark:text-gray-400">{item.location}</div>
+                                                    </div>
+                                                </div>
+                                            </Card>
+                                        </motion.div>
+                                    ))}
+                                </motion.div>
+                            </AnimatePresence>
+                        </div>
+
+                        {/* Nút lướt tiếp */}
+                        <button
+                            onClick={goToNextTestimonials}
+                            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-12 z-10 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-gray-700 hover:text-pink-600 dark:hover:text-pink-400 transition-all duration-200 hover:scale-110"
+                            aria-label="Xem nhận xét tiếp theo"
+                        >
+                            <ChevronRight size={24} />
+                        </button>
+                    </div>
+
+                    {/* Indicator dots - hiển thị trang hiện tại */}
+                    <div className="flex justify-center items-center gap-2 mt-8">
+                        {Array.from({ length: totalPages }).map((_, idx) => (
+                            <button
                                 key={idx}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                transition={{ delay: idx * 0.1 }}
-                                viewport={{ once: true }}
-                            >
-                                <Card className="h-full bg-white dark:bg-gray-800 rounded-2xl p-6">
-                                    <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
-                                        "{item.content}"
-                                    </p>
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-12 h-12 rounded-full ${item.color} flex items-center justify-center font-bold text-lg`}>
-                                            {item.avatar}
-                                        </div>
-                                        <div>
-                                            <div className="font-semibold text-gray-900 dark:text-white">{item.author}</div>
-                                            <div className="text-sm text-gray-500 dark:text-gray-400">{item.location}</div>
-                                        </div>
-                                    </div>
-                                </Card>
-                            </motion.div>
+                                onClick={() => setTestimonialIndex(idx)}
+                                className={`w-2.5 h-2.5 rounded-full transition-all duration-200 ${idx === testimonialIndex
+                                    ? 'bg-pink-500 w-8'
+                                    : 'bg-gray-300 dark:bg-gray-600 hover:bg-pink-300 dark:hover:bg-pink-700'
+                                    }`}
+                                aria-label={`Trang ${idx + 1}`}
+                            />
                         ))}
                     </div>
+
+                    {/* Thông tin số trang */}
+                    <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
+                        Trang {testimonialIndex + 1} / {totalPages} • {testimonials.length} nhận xét
+                    </p>
                 </div>
             </section>
 
@@ -432,7 +612,7 @@ export default function LandingPage() {
                     >
                         <Card variant="gradient" className="p-12">
                             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                                Sẵn sàng bắt đầu? Hành trình chia sẻ và kết nối.
+                                Sẵn sàng bắt đầu?
                             </h2>
                             <p className="text-[--text-secondary] mb-8 max-w-lg mx-auto">
                                 Hãy để Bạn Đồng Hành đồng hành cùng bạn trên hành trình chia sẻ và kết nối.
