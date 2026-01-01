@@ -38,11 +38,16 @@ export class VoiceCallSession {
     }
 
     async fetch(request) {
+        console.log('[VoiceCallDO] fetch() called');
+
         const url = new URL(request.url);
 
         // Handle WebSocket upgrade
         const upgradeHeader = request.headers.get('Upgrade');
+        console.log('[VoiceCallDO] Upgrade header:', upgradeHeader);
+
         if (!upgradeHeader || upgradeHeader.toLowerCase() !== 'websocket') {
+            console.log('[VoiceCallDO] Not a WebSocket request');
             return new Response('Expected WebSocket', { status: 426 });
         }
 
@@ -50,27 +55,48 @@ export class VoiceCallSession {
         const webSocketPair = new WebSocketPair();
         const [client, server] = Object.values(webSocketPair);
 
-        // Accept the connection
+        // ⚠️ CRITICAL: Accept TRƯỚC, trả 101 NGAY LẬP TỨC
+        // Không để exception block việc trả 101
         this.state.acceptWebSocket(server);
         this.clientWs = server;
+        console.log('[VoiceCallDO] WebSocket accepted');
 
-        // Get access token and connect to Vertex AI
-        try {
-            const accessToken = await getVertexAccessToken(this.env);
-            await this.connectToVertexAI(accessToken);
-        } catch (err) {
-            console.error('[VoiceCallDO] Failed to connect to Vertex AI:', err);
-            server.send(JSON.stringify({
-                type: 'error',
-                message: 'Failed to connect to Vertex AI: ' + err.message
-            }));
-            server.close(1011, 'Failed to connect to Vertex AI');
-        }
-
-        return new Response(null, {
+        // ⚠️ TRẢ 101 NGAY - không đợi Vertex connect
+        const response = new Response(null, {
             status: 101,
             webSocket: client,
         });
+
+        // Connect Vertex AI ASYNC (sau khi đã trả 101)
+        // Dùng waitUntil để worker không terminate sớm
+        this.state.waitUntil(this.initVertexConnection());
+
+        console.log('[VoiceCallDO] Returning 101');
+        return response;
+    }
+
+    // Chú thích: Init Vertex connection ASYNC - không block 101 handshake
+    async initVertexConnection() {
+        try {
+            console.log('[VoiceCallDO] Starting Vertex AI connection...');
+            const accessToken = await getVertexAccessToken(this.env);
+            await this.connectToVertexAI(accessToken);
+            console.log('[VoiceCallDO] Vertex AI connected successfully');
+        } catch (err) {
+            console.error('[VoiceCallDO] Vertex connection failed:', err);
+            // Gửi error message đến client (WebSocket đã mở)
+            if (this.clientWs) {
+                try {
+                    this.clientWs.send(JSON.stringify({
+                        type: 'error',
+                        message: 'Failed to connect to Vertex AI: ' + err.message
+                    }));
+                    this.clientWs.close(1011, 'Vertex AI connection failed');
+                } catch (e) {
+                    console.error('[VoiceCallDO] Failed to send error to client:', e);
+                }
+            }
+        }
     }
 
     async connectToVertexAI(accessToken) {
@@ -184,12 +210,18 @@ export class VoiceCallSession {
 
 /**
  * Handler để route request đến Durable Object
+ * Chú thích: Thêm logging chi tiết để debug WebSocket 1006
  */
 export async function handleVoiceCall(request, env) {
+    console.log('[handleVoiceCall] Request received');
+    console.log('[handleVoiceCall] URL:', request.url);
+    console.log('[handleVoiceCall] Method:', request.method);
+
     const origin = request.headers.get('Origin') || '*';
 
     // Handle CORS preflight for WebSocket
     if (request.method === 'OPTIONS') {
+        console.log('[handleVoiceCall] CORS preflight');
         return new Response(null, {
             status: 204,
             headers: {
@@ -202,7 +234,10 @@ export async function handleVoiceCall(request, env) {
 
     // Check WebSocket upgrade header
     const upgradeHeader = request.headers.get('Upgrade');
+    console.log('[handleVoiceCall] Upgrade header:', upgradeHeader);
+
     if (!upgradeHeader || upgradeHeader.toLowerCase() !== 'websocket') {
+        console.log('[handleVoiceCall] Not a WebSocket upgrade request');
         return new Response(JSON.stringify({
             error: 'websocket_required',
             message: 'WebSocket upgrade required'
@@ -215,13 +250,33 @@ export async function handleVoiceCall(request, env) {
         });
     }
 
-    // Tạo unique session ID
-    const sessionId = crypto.randomUUID();
+    try {
+        // Tạo unique session ID
+        const sessionId = crypto.randomUUID();
+        console.log('[handleVoiceCall] Session ID:', sessionId);
 
-    // Get Durable Object stub
-    const id = env.VOICE_CALL_SESSION.idFromName(sessionId);
-    const stub = env.VOICE_CALL_SESSION.get(id);
+        // Get Durable Object stub
+        console.log('[handleVoiceCall] Getting DO stub...');
+        const id = env.VOICE_CALL_SESSION.idFromName(sessionId);
+        const stub = env.VOICE_CALL_SESSION.get(id);
 
-    // Forward request to Durable Object
-    return stub.fetch(request);
+        // Forward request to Durable Object
+        console.log('[handleVoiceCall] Forwarding to DO...');
+        const response = await stub.fetch(request);
+        console.log('[handleVoiceCall] DO response status:', response.status);
+
+        return response;
+    } catch (err) {
+        console.error('[handleVoiceCall] Error:', err);
+        return new Response(JSON.stringify({
+            error: 'internal_error',
+            message: err.message
+        }), {
+            status: 500,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': origin,
+            }
+        });
+    }
 }

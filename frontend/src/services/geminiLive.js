@@ -8,10 +8,10 @@ const LIVE_ENDPOINT = `${BACKEND_API_URL}/api/ai/live`;
 
 /**
  * Check if Voice Call is available
- * Hiện tại Voice Call chưa hoạt động do Durable Objects WebSocket có vấn đề
+ * Sử dụng Backend Durable Objects để proxy WebSocket đến Vertex AI
  */
 export function isLiveAPIAvailable() {
-    return false; // TẠM DISABLE - Durable Objects WebSocket đang debug
+    return true; // Enabled via Durable Objects
 }
 
 export function getVoiceCallDisabledMessage() {
