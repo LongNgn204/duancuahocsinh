@@ -86,11 +86,14 @@ export function useAI() {
   }, []);
 
   // Force sync now - không debounce, dùng sau khi AI trả lời xong
+  // Chú thích: Dùng setThreads callback để lấy threads mới nhất, tránh closure stale
   const forceSyncNow = useCallback(async () => {
-    if (threads.length > 0) {
-      await syncToServer(threads, true);
+    // Dùng ref pattern để lấy threads mới nhất
+    const currentThreads = loadThreads(); // Load từ localStorage để đảm bảo có dữ liệu mới nhất
+    if (currentThreads.length > 0) {
+      await syncToServer(currentThreads, true);
     }
-  }, [threads, syncToServer]);
+  }, [syncToServer]);
 
   // Schedule sync with debounce (cho các thay đổi nhỏ như typing)
   const scheduleSync = useCallback((threadsToSync) => {
@@ -324,9 +327,13 @@ export function useAI() {
       // Final flush sau khi stream kết thúc - đảm bảo lưu tất cả
       flushToState();
 
-      // Chú thích: Sync ngay lập tức lên server sau khi AI trả lời xong
-      // Điều này đảm bảo tin nhắn không bị mất khi user refresh trang
-      setTimeout(() => forceSyncNow(), 500);
+      // Chú thích: Đợi state update xong rồi sync sau 1s
+      // saveThreads được gọi trong useEffect khi threads thay đổi
+      // forceSyncNow sẽ load từ localStorage để đảm bảo có data mới nhất
+      setTimeout(() => {
+        console.log('[ChatSync] Force syncing after AI response...');
+        forceSyncNow();
+      }, 1000);
     } catch (err) {
       console.error('[useAI] Gemini error:', err);
       const errorMsg = isGeminiConfigured()

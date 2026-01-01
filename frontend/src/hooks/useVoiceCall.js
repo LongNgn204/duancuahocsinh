@@ -84,13 +84,13 @@ export function useVoiceCall(options = {}) {
 
         // Stop audio player
         if (audioPlayerRef.current) {
-            audioPlayerRef.current.destroy();
+            audioPlayerRef.current.stop();
             audioPlayerRef.current = null;
         }
 
         // Close session
         if (sessionRef.current) {
-            sessionRef.current.close();
+            sessionRef.current.disconnect();
             sessionRef.current = null;
         }
     }, []);

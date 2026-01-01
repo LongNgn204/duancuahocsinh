@@ -1,20 +1,19 @@
 // src/services/geminiTTS.js
-// Gemini TTS API service for Text-to-Speech
-// Model: gemini-2.5-pro-preview-tts
+// Chú thích: Gemini TTS API - v2.0 Gọi qua Backend Vertex AI
 // Fallback: Browser SpeechSynthesis
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
-const TTS_MODEL = 'gemini-2.5-pro-preview-tts';
-const TTS_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent`;
+// Backend API URL - Default to production URL
+const BACKEND_API_URL = import.meta.env.VITE_API_URL || 'https://ban-dong-hanh-worker.stu725114073.workers.dev';
+const TTS_ENDPOINT = `${BACKEND_API_URL}/api/ai/tts`;
 
 // Voice options - Aoede works well for Vietnamese
 const DEFAULT_VOICE = 'Aoede';
 
 /**
- * Check if Gemini TTS is available
+ * Check if backend TTS is available (always true since TTS runs via backend)
  */
 export function isGeminiTTSAvailable() {
-    return Boolean(GEMINI_API_KEY);
+    return true;
 }
 
 /**
@@ -152,17 +151,13 @@ function getAudioPlayer() {
 }
 
 /**
- * Generate speech from text using Gemini TTS API
+ * Generate speech from text using Backend Vertex AI TTS
  * @param {string} text - Text to convert to speech
  * @param {Object} options - TTS options
  * @returns {Promise<string>} - Base64 encoded PCM audio
  */
 export async function generateSpeech(text, options = {}) {
-    const { voice = DEFAULT_VOICE, style = '' } = options;
-
-    if (!isGeminiTTSAvailable()) {
-        throw new Error('Gemini API key not configured');
-    }
+    const { voice = DEFAULT_VOICE } = options;
 
     // Clean text - remove emoji
     const cleanText = stripEmoji(text);
@@ -170,51 +165,34 @@ export async function generateSpeech(text, options = {}) {
         throw new Error('No text to speak after cleaning');
     }
 
-    // Prepare prompt - can include style instructions
-    let prompt = cleanText;
-    if (style) {
-        prompt = `${style}: ${cleanText}`;
-    }
-
-    console.log('[GeminiTTS] Generating speech for:', cleanText.substring(0, 50) + '...');
+    console.log('[GeminiTTS] Generating speech via backend for:', cleanText.substring(0, 50) + '...');
 
     try {
-        const response = await fetch(`${TTS_API_URL}?key=${GEMINI_API_KEY}`, {
+        const response = await fetch(TTS_ENDPOINT, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                contents: [{
-                    parts: [{ text: prompt }]
-                }],
-                generationConfig: {
-                    responseModalities: ['AUDIO'],
-                    speechConfig: {
-                        voiceConfig: {
-                            prebuiltVoiceConfig: {
-                                voiceName: voice
-                            }
-                        }
-                    }
-                }
+                text: cleanText,
+                voice
             })
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('[GeminiTTS] API Error:', errorText);
-            throw new Error(`Gemini TTS API error: ${response.status}`);
+            console.error('[GeminiTTS] Backend API Error:', errorText);
+            throw new Error(`TTS API error: ${response.status}`);
         }
 
         const data = await response.json();
-        const audioData = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        const audioData = data?.audio;
 
         if (!audioData) {
             throw new Error('No audio data in response');
         }
 
-        console.log('[GeminiTTS] Speech generated successfully');
+        console.log('[GeminiTTS] Speech generated successfully via backend');
         return audioData;
 
     } catch (error) {

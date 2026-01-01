@@ -16,16 +16,36 @@ binding = "ban_dong_hanh_db"
 database_name = "ban-dong-hanh-db"
 database_id = "a6a814eb-b5fb-4626-9258-f519060d8c89"
 
+# Durable Objects cho Voice Call WebSocket proxy
+# Chú thích: Durable Objects hỗ trợ outbound WebSocket để proxy đến Vertex AI
+[durable_objects]
+bindings = [
+  { name = "VOICE_CALL_SESSION", class_name = "VoiceCallSession" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["VoiceCallSession"]
+
 [vars]
 # CORS origin allow-list
 ALLOW_ORIGIN = "http://localhost:5173,https://duancuahocsinh.pages.dev,*.bandonghanh.pages.dev"
 # Workers AI model (chỉ dùng cho embeddings, KHÔNG dùng cho chat - đã deprecated)
-# Chat sử dụng Gemini API frontend với model: gemini-2.5-flash-native-audio-dialog
+# Chat sử dụng Vertex AI Gemini qua backend proxy
 MODEL = "@cf/meta/llama-3.1-8b-instruct"
 # Token limit hàng tháng
 MONTHLY_TOKEN_LIMIT = "500000"
 # Token budget hàng ngày cho AI (kiểm soát chi phí)
 MAX_TOKEN_BUDGET = "50000"
+
+# Vertex AI Configuration - US region để test (preview models chưa available ở Asia)
+VERTEX_PROJECT_ID = "ban-dong-hanh-483002"
+VERTEX_LOCATION = "us-central1"
+# Fallback region
+VERTEX_LOCATION_FALLBACK = "us-east1"
+# Secrets (set via: wrangler secret put VERTEX_CLIENT_EMAIL, wrangler secret put VERTEX_PRIVATE_KEY)
+# VERTEX_CLIENT_EMAIL = "your-service-account@project.iam.gserviceaccount.com"
+# VERTEX_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 
 # Admin Authentication (standalone - không cần database)
 # Đổi password này thành password riêng của bạn!

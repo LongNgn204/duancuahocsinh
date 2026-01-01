@@ -47,6 +47,19 @@ import { formatMessagesForLLM, getRecentMessages } from './memory.js';
 import { createTraceContext, addTraceHeader } from './observability.js';
 import { rateLimitMiddleware } from './rate-limiter.js';
 
+// AI modules - Vertex AI integration
+import aiProxy from './ai-proxy.js';
+import aiTTS from './ai-tts.js';
+import aiLive from './ai-live.js';
+import aiLiveConfig from './ai-live-config.js';
+import debugVertex from './debug-vertex.js';
+
+// Durable Objects cho Voice Call WebSocket proxy
+import { VoiceCallSession, handleVoiceCall } from './voice-call-do.js';
+
+// Re-export Durable Object class để wrangler có thể tìm thấy
+export { VoiceCallSession };
+
 // =============================================================================
 // CORS HELPERS
 // =============================================================================
@@ -175,9 +188,22 @@ function matchRoute(pathname, method) {
     if (pathname === '/api/data/bookmarks' && method === 'DELETE') return 'data:bookmarks:delete';
     if (pathname.match(/^\/api\/data\/bookmarks\/\d+$/) && method === 'DELETE') return 'data:bookmarks:delete-id';
 
-    // AI Chat (legacy path)
+    // AI Chat (Vertex AI via backend)
     if (pathname === '/' && method === 'POST') return 'ai:chat';
     if (pathname === '/api/chat' && method === 'POST') return 'ai:chat';
+    if (pathname === '/api/ai/chat' && method === 'POST') return 'ai:chat';
+
+    // AI TTS (Vertex AI TTS via backend)
+    if (pathname === '/api/ai/tts' && method === 'POST') return 'ai:tts';
+
+    // AI Live (Voice Call via backend - WebSocket)
+    if (pathname === '/api/ai/live') return 'ai:live';
+
+    // AI Live Config (HTTP endpoint để lấy access token)
+    if (pathname === '/api/ai/live-config' && method === 'POST') return 'ai:live-config';
+
+    // Debug Vertex AI (temporary)
+    if (pathname === '/api/debug/vertex') return 'debug:vertex';
 
     // Forum routes
     if (pathname === '/api/forum/posts' && method === 'GET') return 'forum:posts:list';
@@ -431,14 +457,30 @@ export default {
                     response = await syncChatThreads(request, env);
                     break;
 
-                // AI Chat - DEPRECATED: Frontend gọi Gemini trực tiếp
-                // Backend chỉ lưu trữ chat history, không gọi AI API nữa
+                // AI Chat - Vertex AI Gemini via backend proxy
                 case 'ai:chat':
-                    response = json({
-                        error: 'deprecated',
-                        message: 'API chat đã chuyển sang frontend. Vui lòng sử dụng Gemini API trực tiếp từ frontend.',
-                        note: 'Backend chỉ hỗ trợ sync chat threads qua /api/data/chat/threads'
-                    }, 410); // 410 Gone
+                    response = await aiProxy.fetch(request, env);
+                    break;
+
+                // AI TTS - Vertex AI TTS via backend proxy
+                case 'ai:tts':
+                    response = await aiTTS.fetch(request, env);
+                    break;
+
+                // AI Live - Voice Call WebSocket proxy via Durable Objects
+                case 'ai:live':
+                    // Sử dụng Durable Objects để proxy WebSocket đến Vertex AI
+                    response = await handleVoiceCall(request, env);
+                    break;
+
+                // AI Live Config - lấy access token cho Voice Call
+                case 'ai:live-config':
+                    response = await aiLiveConfig.fetch(request, env);
+                    break;
+
+                // Debug Vertex AI (temporary)
+                case 'debug:vertex':
+                    response = await debugVertex.fetch(request, env);
                     break;
 
                 // Forum endpoints

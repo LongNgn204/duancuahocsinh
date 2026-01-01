@@ -180,7 +180,8 @@ function sseHeaders(origin = '*', traceId) {
   return {
     ...corsHeaders(origin),
     'Content-Type': 'text/event-stream; charset=utf-8',
-    'Cache-Control': 'no-cache',
+    'Cache-Control': 'no-cache, no-transform',
+    'Connection': 'keep-alive',
     'X-Trace-Id': traceId
   };
 }
@@ -211,73 +212,138 @@ export default {
       }, 200, origin, traceId);
     }
 
-    // Check if Workers AI binding exists
-    if (!env.AI) {
+    // Kiểm tra Vertex AI credentials
+    if (!env.VERTEX_PROJECT_ID || !env.VERTEX_LOCATION) {
       return json({
-        error: 'ai_not_configured',
-        note: 'Workers AI binding chưa được cấu hình. Vui lòng kiểm tra wrangler.toml'
+        error: 'vertex_not_configured',
+        note: 'Thiếu VERTEX_PROJECT_ID hoặc VERTEX_LOCATION. Vui lòng kiểm tra wrangler.toml'
       }, 500, origin, traceId);
     }
 
-    const model = env.MODEL || '@cf/meta/llama-3.1-8b-instruct';
-    const messages = formatMessagesForWorkersAI(history, message);
+    // Import vertex-auth động để tránh circular dependency
+    const { getVertexAccessToken } = await import('./vertex-auth.js');
+
+    // Model và URL
+    const VERTEX_MODEL = 'gemini-2.0-flash';
+    const VERTEX_URL = `https://${env.VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/${env.VERTEX_PROJECT_ID}/locations/${env.VERTEX_LOCATION}/publishers/google/models/${VERTEX_MODEL}:streamGenerateContent?alt=sse`;
+
+    // Format messages cho Vertex AI (Gemini format)
+    const summary = summarizeHistory(history);
+    const contents = [];
+
+    // System context as first exchange
+    let systemContent = SYSTEM_INSTRUCTIONS;
+    if (summary) systemContent += `\n\nTóm tắt cuộc trò chuyện trước:\n${summary}`;
+
+    contents.push({ role: 'user', parts: [{ text: systemContent }] });
+    contents.push({ role: 'model', parts: [{ text: 'Mình hiểu rồi! Mình là Bạn Đồng Hành, sẵn sàng lắng nghe và đồng hành cùng bạn.' }] });
+
+    // Add recent history
+    const recentHistory = history.slice(-10);
+    for (const h of recentHistory) {
+      contents.push({
+        role: h.role === 'user' ? 'user' : 'model',
+        parts: [{ text: h.content || '' }]
+      });
+    }
+
+    // Add current message
+    contents.push({ role: 'user', parts: [{ text: message }] });
+
+    // Request body
+    const requestBody = JSON.stringify({
+      contents,
+      generationConfig: {
+        temperature: 0.8,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 1024,
+      },
+      safetySettings: [
+        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      ]
+    });
 
     try {
-      // Streaming response với Cloudflare Workers AI
+      // Lấy access token từ Service Account
+      const accessToken = await getVertexAccessToken(env);
+      console.log('[AI Proxy] Calling Vertex AI...');
+
+      // Streaming response với Vertex AI
       const stream = new ReadableStream({
         async start(controller) {
           const enc = new TextEncoder();
           const send = (line) => controller.enqueue(enc.encode(line));
 
-          // Send meta event
-          send(`event: meta\n`);
-          send(`data: {"trace_id":"${traceId}","sosLevel":"${level}"}\n\n`);
+          // Send meta event - dùng JSON.stringify để đảm bảo format đúng
+          const metaPayload = JSON.stringify({ trace_id: traceId, sosLevel: level });
+          send(`event: meta\ndata: ${metaPayload}\n\n`);
 
           try {
-            // Gọi Workers AI với streaming
-            const aiStream = await env.AI.run(model, {
-              messages,
-              stream: true,
-              max_tokens: 1024,
-              temperature: 0.7,
+            // Gọi Vertex AI API với OAuth2 token
+            const response = await fetch(VERTEX_URL, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: requestBody
             });
 
-            // Đọc stream và forward tới client
-            const reader = aiStream.getReader();
+            if (!response.ok) {
+              const errorBody = await response.text();
+              console.error('[AI Proxy] Vertex API error:', response.status, errorBody.slice(0, 1000));
+              // Parse để lấy message chi tiết nếu có
+              let errorMessage = `Vertex API error: ${response.status}`;
+              try {
+                const errJson = JSON.parse(errorBody);
+                errorMessage = errJson?.error?.message || errorMessage;
+              } catch (_) { }
+              throw new Error(errorMessage);
+            }
+
+            console.log('[AI Proxy] Vertex AI connected, streaming...');
+
+            // Đọc SSE stream từ Gemini API
+            const reader = response.body.getReader();
             const decoder = new TextDecoder();
+            let buffer = '';
 
             while (true) {
               const { value, done } = await reader.read();
               if (done) break;
 
-              const text = decoder.decode(value, { stream: true });
+              buffer += decoder.decode(value, { stream: true });
 
-              // Parse SSE data từ Workers AI
-              const lines = text.split('\n');
+              // Parse SSE events
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+
               for (const line of lines) {
                 if (line.startsWith('data: ')) {
                   const dataStr = line.slice(6).trim();
-                  if (dataStr === '[DONE]') continue;
+                  if (!dataStr) continue;
 
                   try {
                     const data = JSON.parse(dataStr);
-                    const content = data?.response || '';
-                    if (content) {
-                      send(`data: ${JSON.stringify({ type: 'delta', text: content })}\n\n`);
+                    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) {
+                      send(`data: ${JSON.stringify({ type: 'delta', text })}\n\n`);
                     }
                   } catch (_) {
-                    // Nếu không parse được JSON, gửi raw text
-                    if (dataStr && dataStr !== '[DONE]') {
-                      send(`data: ${JSON.stringify({ type: 'delta', text: dataStr })}\n\n`);
-                    }
+                    // Skip invalid JSON
                   }
                 }
               }
             }
 
             send(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
+
           } catch (err) {
-            console.error('[AI Proxy] Stream error:', err);
+            console.error('[AI Proxy] Error:', err);
             const errPayload = {
               type: 'error',
               error: 'model_error',
@@ -286,9 +352,9 @@ export default {
             };
             send(`event: error\n`);
             send(`data: ${JSON.stringify(errPayload)}\n\n`);
-          } finally {
-            controller.close();
           }
+
+          controller.close();
         },
       });
 
