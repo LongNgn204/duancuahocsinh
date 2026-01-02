@@ -20,7 +20,10 @@ import {
 
 function formatTime(ts) {
   try {
+    if (!ts) return ''; // Không có timestamp
     const d = new Date(ts);
+    // Check if date is valid
+    if (isNaN(d.getTime())) return '';
     return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
   } catch (_) { return ''; }
 }

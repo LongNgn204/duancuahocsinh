@@ -95,23 +95,28 @@ export function getStreak() {
 
 /**
  * Lấy start of week (Monday) - dùng cho weekly progress
+ * Chú thích: Clone date để không modify object gốc
  */
 export function getWeekStart() {
     const now = new Date();
-    const day = now.getDay();
-    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(now.setDate(diff));
+    const day = now.getDay(); // 0=CN, 1=T2, ..., 6=T7
+    // Tính offset về thứ 2: nếu CN (0) thì lùi 6 ngày, còn lại lùi (day-1) ngày
+    const diff = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diff);
     monday.setHours(0, 0, 0, 0);
     return monday;
 }
 
 /**
  * Generate dữ liệu tiến độ tuần này
+ * Chú thích: Hiển thị theo thứ tự T2, T3, T4, T5, T6, T7, CN
  * @returns {Array} Mảng 7 ngày với thông tin completed, current, isPast
  */
 export function generateWeeklyProgress() {
     const history = getLoginHistory();
-    const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+    // Mapping: index 0=T2, 1=T3, ..., 5=T7, 6=CN
+    const dayNamesOrdered = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
     const weekStart = getWeekStart();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -121,9 +126,9 @@ export function generateWeeklyProgress() {
         const date = new Date(weekStart);
         date.setDate(weekStart.getDate() + i);
         const dateStr = date.toISOString().split('T')[0];
-        const dayOfWeek = date.getDay();
 
-        const dayName = dayNames[dayOfWeek];
+        // Dùng dayNamesOrdered theo index (0=T2, 6=CN)
+        const dayName = dayNamesOrdered[i];
         const isToday = dateStr === today.toISOString().split('T')[0];
         const isCompleted = history.includes(dateStr);
         const isPast = date < today;
@@ -139,3 +144,4 @@ export function generateWeeklyProgress() {
 
     return progress;
 }
+

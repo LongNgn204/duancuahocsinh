@@ -1,16 +1,15 @@
 // src/services/geminiLive.js
-// Chú thích: Voice Call tạm thời disable - chờ production access cho Gemini Live API
+// Chú thích: Voice Call - 🔧 ĐANG BẢO TRÌ
 
 /**
  * Check if Voice Call is available
- * Tạm thời disable - Gemini Live API cần special access
  */
 export function isLiveAPIAvailable() {
-    return false; // DISABLED - Coming soon
+    return false; // 🔧 ĐANG BẢO TRÌ
 }
 
 export function getVoiceCallDisabledMessage() {
-    return '🚧 Tính năng Gọi điện AI đang được phát triển. Vui lòng sử dụng Chat văn bản trong thời gian này! 💬';
+    return '🔧 Tính năng Gọi điện AI đang được bảo trì nâng cấp. Vui lòng sử dụng Trò chuyện văn bản trong thời gian này!';
 }
 
 /**

@@ -24,7 +24,18 @@ function loadThreads() {
   try {
     const raw = localStorage.getItem(THREADS_KEY);
     const list = raw ? JSON.parse(raw) : [];
-    return Array.isArray(list) ? list : [];
+    if (!Array.isArray(list)) return [];
+
+    // Chú thích: Đảm bảo mỗi thread và message có timestamp hợp lệ
+    return list.map(thread => ({
+      ...thread,
+      createdAt: thread.createdAt || nowISO(),
+      updatedAt: thread.updatedAt || nowISO(),
+      messages: (thread.messages || []).map(msg => ({
+        ...msg,
+        ts: msg.ts || nowISO() // Thêm ts nếu thiếu
+      }))
+    }));
   } catch (_) {
     return [];
   }
@@ -48,8 +59,15 @@ function mergeThreads(localThreads, serverThreads) {
     }
   }
 
-  // Sắp xếp theo updatedAt
-  merged.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+  // Sắp xếp theo updatedAt - handle Invalid Date
+  merged.sort((a, b) => {
+    const dateA = new Date(a.updatedAt || 0);
+    const dateB = new Date(b.updatedAt || 0);
+    // Nếu Invalid Date, dùng 0
+    const timeA = isNaN(dateA.getTime()) ? 0 : dateA.getTime();
+    const timeB = isNaN(dateB.getTime()) ? 0 : dateB.getTime();
+    return timeB - timeA;
+  });
 
   return merged;
 }

@@ -17,7 +17,7 @@ const sections = [
     items: [
       { icon: Home, label: 'Trang chủ', path: '/app' },
       { icon: Bot, label: 'Trò chuyện', path: '/chat' },
-      { icon: Phone, label: 'Gọi điện', path: '/voice-call', badge: 'Mới' },
+      // { icon: Phone, label: 'Gọi điện', path: '/voice-call', badge: 'Mới' }, // 🔧 Đang bảo trì
     ],
   },
   {
