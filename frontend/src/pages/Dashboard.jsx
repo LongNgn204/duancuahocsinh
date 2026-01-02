@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useSound } from '../contexts/SoundContext';
+// Import streak service thay vì định nghĩa local
+import { getStreak, getLoginHistory, generateWeeklyProgress, getTodayString, recordActivity } from '../utils/streakService';
 
 // Châm ngôn cuộc sống
 const lifeQuotes = [
@@ -95,111 +97,7 @@ const quickActions = [
 ];
 
 // Storage keys
-const LOGIN_HISTORY_KEY = 'bdh_login_history';
 const MOOD_HISTORY_KEY = 'bdh_mood_history';
-
-// Get today's date string (YYYY-MM-DD)
-function getTodayString() {
-    return new Date().toISOString().split('T')[0];
-}
-
-// Get start of week (Monday)
-function getWeekStart() {
-    const now = new Date();
-    const day = now.getDay();
-    const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
-    const monday = new Date(now.setDate(diff));
-    monday.setHours(0, 0, 0, 0);
-    return monday;
-}
-
-// Load login history from localStorage
-function loadLoginHistory() {
-    try {
-        const data = localStorage.getItem(LOGIN_HISTORY_KEY);
-        return data ? JSON.parse(data) : [];
-    } catch {
-        return [];
-    }
-}
-
-// Save login for today
-function recordTodayLogin() {
-    const today = getTodayString();
-    const history = loadLoginHistory();
-
-    // Check if already logged today
-    if (!history.includes(today)) {
-        history.push(today);
-        // Keep only last 90 days
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - 90);
-        const cutoffStr = cutoff.toISOString().split('T')[0];
-        const filtered = history.filter(d => d >= cutoffStr);
-        localStorage.setItem(LOGIN_HISTORY_KEY, JSON.stringify(filtered));
-    }
-    return history;
-}
-
-// Calculate streak from login history
-function calculateStreak(history) {
-    if (!history || history.length === 0) return 0;
-
-    const sorted = [...history].sort().reverse(); // Most recent first
-    const today = getTodayString();
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-
-    // If most recent is not today or yesterday, streak is broken
-    if (sorted[0] !== today && sorted[0] !== yesterday) {
-        return 0;
-    }
-
-    let streak = 1;
-    for (let i = 1; i < sorted.length; i++) {
-        const prevDate = new Date(sorted[i - 1]);
-        const currDate = new Date(sorted[i]);
-        const diffDays = Math.round((prevDate - currDate) / 86400000);
-
-        if (diffDays === 1) {
-            streak++;
-        } else {
-            break;
-        }
-    }
-    return streak;
-}
-
-// Generate weekly progress data
-function generateWeeklyProgress(history) {
-    const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-    const weekStart = getWeekStart();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const progress = [];
-    for (let i = 0; i < 7; i++) {
-        const date = new Date(weekStart);
-        date.setDate(weekStart.getDate() + i);
-        const dateStr = date.toISOString().split('T')[0];
-        const dayOfWeek = date.getDay();
-
-        // Reorder to start from Monday
-        const dayName = dayNames[dayOfWeek];
-        const isToday = dateStr === today.toISOString().split('T')[0];
-        const isCompleted = history.includes(dateStr);
-        const isPast = date < today;
-
-        progress.push({
-            day: dayName,
-            date: dateStr,
-            completed: isCompleted,
-            current: isToday,
-            isPast: isPast && !isToday
-        });
-    }
-
-    return progress;
-}
 
 // Greeting based on time with emoji
 function getGreeting() {
@@ -278,16 +176,18 @@ export default function Dashboard() {
 
     // Record login and calculate progress on mount
     useEffect(() => {
-        // Record today's login
-        const history = recordTodayLogin();
+        // Ghi nhận hoạt động hôm nay (từ streakService)
+        recordActivity('dashboard_visit');
+
+        // Lấy lịch sử và tính streak từ service
+        const history = getLoginHistory();
         setLoginHistory(history);
 
-        // Calculate streak
-        const currentStreak = calculateStreak(history);
+        const currentStreak = getStreak();
         setStreak(currentStreak);
 
-        // Generate weekly progress
-        const progress = generateWeeklyProgress(history);
+        // Generate weekly progress từ service
+        const progress = generateWeeklyProgress();
         setWeeklyProgress(progress);
 
         // Load today's mood if any

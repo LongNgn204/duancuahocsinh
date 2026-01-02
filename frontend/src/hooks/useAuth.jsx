@@ -2,6 +2,7 @@
 // Chú thích: Hook quản lý auth state với React context pattern
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getCurrentUser, setCurrentUser, logout as logoutApi, getMe, syncLocalDataToServer } from '../utils/api';
+import { recordActivity } from '../utils/streakService';
 
 const AuthContext = createContext(null);
 
@@ -15,6 +16,8 @@ export function AuthProvider({ children }) {
         const savedUser = getCurrentUser();
         if (savedUser) {
             setUser(savedUser);
+            // Ghi nhận streak khi user đã login trước đó và quay lại app
+            recordActivity('session_resume');
             // Verify với server (optional, có thể bỏ nếu không cần)
             // eslint-disable-next-line react-hooks/exhaustive-deps
             getMe().then(data => {
@@ -35,6 +38,8 @@ export function AuthProvider({ children }) {
         setUser(userData);
         setCurrentUser(userData);
         setShowAuthModal(false);
+        // Ghi nhận streak khi login thành công
+        recordActivity('login');
 
         // Auto sync local data sau khi login
         syncLocalDataToServer().then(result => {

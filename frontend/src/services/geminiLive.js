@@ -1,21 +1,16 @@
 // src/services/geminiLive.js
-// Chú thích: Gemini Live API - v3.0 Dùng Durable Objects proxy WebSocket
-// Backend Durable Objects sẽ proxy WebSocket đến Vertex AI, xử lý authentication
-
-// Backend API URL
-const BACKEND_API_URL = import.meta.env.VITE_API_URL || 'https://ban-dong-hanh-worker.stu725114073.workers.dev';
-const LIVE_ENDPOINT = `${BACKEND_API_URL}/api/ai/live`;
+// Chú thích: Voice Call tạm thời disable - chờ production access cho Gemini Live API
 
 /**
  * Check if Voice Call is available
- * Sử dụng Backend Durable Objects để proxy WebSocket đến Vertex AI
+ * Tạm thời disable - Gemini Live API cần special access
  */
 export function isLiveAPIAvailable() {
-    return true; // Enabled via Durable Objects
+    return false; // DISABLED - Coming soon
 }
 
 export function getVoiceCallDisabledMessage() {
-    return 'Voice Call đang trong quá trình nâng cấp. Vui lòng sử dụng Chat text trong thời gian này.';
+    return '🚧 Tính năng Gọi điện AI đang được phát triển. Vui lòng sử dụng Chat văn bản trong thời gian này! 💬';
 }
 
 /**
@@ -58,16 +53,15 @@ export function createLiveSession(callbacks = {}) {
         }
     };
 
-    // Connect qua Backend Durable Objects - proxy WebSocket đến Vertex AI
+    // Connect qua Cloud Run WebSocket proxy - hỗ trợ outbound WebSocket đến Vertex AI
     const connect = async () => {
         return new Promise(async (resolve, reject) => {
             try {
-                // Kết nối đến backend WebSocket endpoint (Durable Objects)
-                // Backend sẽ proxy đến Vertex AI và xử lý authentication
-                const wsUrl = LIVE_ENDPOINT.replace('https://', 'wss://').replace('http://', 'ws://');
-                console.log('[GeminiLive] Connecting to backend Durable Objects:', wsUrl);
+                // Kết nối đến Cloud Run WebSocket proxy
+                // Cloud Run sẽ proxy đến Vertex AI và xử lý authentication
+                console.log('[GeminiLive] Connecting to Cloud Run:', CLOUD_RUN_WS_URL);
 
-                ws = new WebSocket(wsUrl);
+                ws = new WebSocket(CLOUD_RUN_WS_URL);
 
                 ws.onopen = () => {
                     console.log('[GeminiLive] WebSocket connected to backend');

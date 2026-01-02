@@ -7,6 +7,7 @@ import { Heart, Sparkles, Plus, Trash2, Calendar, Lightbulb, X, Edit3, Save, Vol
 import { isLoggedIn, rewardXP } from '../../utils/api';
 import Confetti from '../ui/Confetti';
 import { useSound } from '../../contexts/SoundContext';
+import { recordActivity } from '../../utils/streakService';
 
 const DAILY_SUGGESTIONS = [
     "Hôm nay bạn biết ơn ai nhất?",
@@ -214,6 +215,9 @@ export default function GratitudeJar() {
             setShowSuggestion(false);
             setIsAdding(false);
 
+            // Ghi nhận hoạt động cho streak toàn app
+            recordActivity('gratitude');
+
             // Success Multimedia Effects
             playSound('drop');
             setShowConfetti(true);
@@ -370,8 +374,8 @@ export default function GratitudeJar() {
                                     }
                                 }}
                                 className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all ${isSpeaking
-                                        ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                                        : 'bg-violet-200 text-violet-700 hover:bg-violet-300'
+                                    ? 'bg-red-100 text-red-600 hover:bg-red-200'
+                                    : 'bg-violet-200 text-violet-700 hover:bg-violet-300'
                                     }`}
                             >
                                 {isSpeaking ? <VolumeX size={18} /> : <Volume2 size={18} />}

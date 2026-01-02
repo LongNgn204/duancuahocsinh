@@ -16,19 +16,31 @@ export function isGeminiConfigured() {
 
 /**
  * Lọc từ ngữ không phù hợp
+ * Chú thích: Chỉ lọc từ nguyên vẹn (word boundary) để tránh lọc nhầm
  */
 export function filterProfanity(text) {
     if (!text) return '';
-    // Danh sách từ cần lọc (có thể mở rộng)
+
+    // Danh sách từ cần lọc - CHỈ những từ tục thật sự nghiêm trọng
+    // Tránh lọc từ thông dụng có thể gây nhầm lẫn
     const profanityList = [
-        'đm', 'đéo', 'địt', 'lồn', 'cặc', 'buồi', 'đụ', 'vãi',
-        'chó', 'ngu', 'khốn', 'mẹ mày', 'con mẹ'
+        'đm', 'đéo', 'địt', 'lồn', 'cặc', 'buồi', 'đụ má', 'đcm',
+        'vl', 'vcl', 'vkl', 'cc', 'clgt'
     ];
 
     let filtered = text;
     profanityList.forEach(word => {
-        const regex = new RegExp(word, 'gi');
-        filtered = filtered.replace(regex, '*'.repeat(word.length));
+        // Chú thích: Dùng word boundary (\\b) để chỉ match từ nguyên vẹn
+        // Tránh lọc nhầm "giải" thành "***i" vì chứa "gia"
+        const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // Match từ đứng riêng biệt (đầu/cuối string, hoặc có space/punctuation xung quanh)
+        const regex = new RegExp(`(?:^|\\s|[.,!?])${escapedWord}(?:\\s|[.,!?]|$)`, 'gi');
+        filtered = filtered.replace(regex, (match) => {
+            // Giữ lại space/punctuation xung quanh
+            const prefix = match.match(/^[\s.,!?]/) ? match[0] : '';
+            const suffix = match.match(/[\s.,!?]$/) ? match[match.length - 1] : '';
+            return prefix + '*'.repeat(word.length) + suffix;
+        });
     });
     return filtered;
 }

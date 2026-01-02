@@ -6,6 +6,9 @@ import { useAI } from '../hooks/useAI';
 import { useVoiceAgentCF } from '../hooks/useVoiceAgentCF';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css'; // CSS cho LaTeX rendering
 import Button from '../components/ui/Button';
 import ChatList from '../components/chat/ChatList';
 import SOSOverlay from '../components/sos/SOSOverlay';
@@ -52,7 +55,10 @@ function Bubble({ role, children, ts, isUser, onRead }) {
           }
         `}>
           <div className={`text-[15px] md:text-base leading-relaxed prose prose-sm max-w-none prose-slate`}>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm, remarkMath]}
+              rehypePlugins={[rehypeKatex]}
+            >
               {String(children).replace(/\n/g, '  \n')}
             </ReactMarkdown>
           </div>

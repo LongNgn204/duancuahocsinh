@@ -22,12 +22,15 @@
     "@google/genai": "^1.34.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.26",
+    "katex": "^0.16.27",
     "lucide-react": "^0.561.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.10.1",
+    "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
     "zustand": "^5.0.9"
   },
   "devDependencies": {

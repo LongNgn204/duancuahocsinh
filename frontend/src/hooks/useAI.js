@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { detectSOSLevel, sosMessage, getSuggestedAction } from '../utils/sosDetector';
 import { getCurrentUser, isLoggedIn, getChatThreads, syncChatThreadsToServer } from '../utils/api';
 import { streamChat, isGeminiConfigured, filterProfanity } from '../services/gemini';
+import { recordActivity } from '../utils/streakService';
 
 const THREADS_KEY = 'chat_threads_v1';
 const SYNC_DEBOUNCE_MS = 5000; // Sync sau 5 giây không có thay đổi
@@ -234,6 +235,9 @@ export function useAI() {
     setThreads((prev) => prev.map((t) => (t.id === currentId ? { ...t, messages: [...t.messages, userMsg], updatedAt: nowISO(), title: t.messages.length === 0 ? (trimmed.slice(0, 30) + (trimmed.length > 30 ? '…' : '')) : t.title } : t)));
     setLoading(true);
 
+    // Ghi nhận hoạt động chat cho streak
+    recordActivity('chat');
+
     try {
       // Tăng số lượng messages gửi lên 15 để AI nhớ context tốt hơn
       const historyCap = messages.slice(-15);
@@ -327,13 +331,18 @@ export function useAI() {
       // Final flush sau khi stream kết thúc - đảm bảo lưu tất cả
       flushToState();
 
-      // Chú thích: Đợi state update xong rồi sync sau 1s
-      // saveThreads được gọi trong useEffect khi threads thay đổi
-      // forceSyncNow sẽ load từ localStorage để đảm bảo có data mới nhất
-      setTimeout(() => {
-        console.log('[ChatSync] Force syncing after AI response...');
-        forceSyncNow();
-      }, 1000);
+      // Chú thích: LƯU NGAY vào localStorage và sync ngay lập tức
+      // Không đợi useEffect - để tránh mất data khi F5
+      setThreads((currentThreads) => {
+        // Lưu trực tiếp vào localStorage
+        saveThreads(currentThreads);
+        console.log('[ChatSync] Saved threads to localStorage immediately');
+
+        // Sync lên server ngay
+        syncToServer(currentThreads, true);
+
+        return currentThreads; // Không thay đổi state
+      });
     } catch (err) {
       console.error('[useAI] Gemini error:', err);
       const errorMsg = isGeminiConfigured()

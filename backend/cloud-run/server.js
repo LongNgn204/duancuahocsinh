@@ -99,11 +99,18 @@ wss.on('connection', async (clientWs, req) => {
         console.log('[Proxy] Got access token');
 
         // Connect to Vertex AI Live API
-        const vertexUrl = `wss://${VERTEX_LOCATION}-aiplatform.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent`;
+        // Chú thích: Dùng Generative Language API endpoint cho Gemini Live
+        const vertexUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.BidiGenerateContent?key=`;
 
-        vertexWs = new WebSocket(vertexUrl, {
+        // Thử dùng endpoint khác - aiplatform
+        const aiPlatformUrl = `wss://${VERTEX_LOCATION}-aiplatform.googleapis.com/ws/google.cloud.aiplatform.v1beta1.LlmBidiService/BidiGenerateContent`;
+
+        console.log('[Proxy] Connecting to Vertex AI:', aiPlatformUrl);
+
+        vertexWs = new WebSocket(aiPlatformUrl, {
             headers: {
-                'Authorization': `Bearer ${accessToken}`
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
             }
         });
 
@@ -115,6 +122,7 @@ wss.on('connection', async (clientWs, req) => {
             clientWs.send(JSON.stringify({ type: 'connected' }));
 
             // Send setup message to Vertex AI
+            // Chú thích: Thử format models/ thay vì projects/
             const setupMessage = {
                 setup: {
                     model: `models/${LIVE_MODEL}`,
@@ -130,17 +138,6 @@ wss.on('connection', async (clientWs, req) => {
                     },
                     systemInstruction: {
                         parts: [{ text: SYSTEM_INSTRUCTION }]
-                    },
-                    realtimeInputConfig: {
-                        automaticActivityDetection: {
-                            disabled: false,
-                            startOfSpeechSensitivity: "START_OF_SPEECH_SENSITIVITY_HIGH",
-                            endOfSpeechSensitivity: "END_OF_SPEECH_SENSITIVITY_HIGH",
-                            prefixPaddingMs: 100,
-                            silenceTimeoutMs: 1000
-                        },
-                        activityHandling: "START_OF_ACTIVITY_INTERRUPTS",
-                        turnCoverage: "TURN_INCLUDES_ALL_INPUT"
                     }
                 }
             };
@@ -157,10 +154,13 @@ wss.on('connection', async (clientWs, req) => {
         });
 
         vertexWs.on('close', (code, reason) => {
-            console.log('[Proxy] Vertex AI closed:', code, reason.toString());
+            const reasonStr = reason ? reason.toString() : '';
+            console.log('[Proxy] Vertex AI closed:', code, reasonStr);
             isConnected = false;
             if (clientWs.readyState === WebSocket.OPEN) {
-                clientWs.close(code, reason.toString());
+                // Đảm bảo code là số hợp lệ (1000-4999)
+                const safeCode = (typeof code === 'number' && code >= 1000 && code <= 4999) ? code : 1000;
+                clientWs.close(safeCode, reasonStr.substring(0, 123));
             }
         });
 

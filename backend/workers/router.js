@@ -249,6 +249,58 @@ function extractId(pathname) {
 // =============================================================================
 export default {
     async fetch(request, env, ctx) {
+        const url = new URL(request.url);
+
+        // ========================================================================
+        // ⚠️ CRITICAL: XỬ LÝ WEBSOCKET NGAY ĐẦU - TRƯỚC MỌI MIDDLEWARE
+        // WebSocket upgrade request phải được forward trực tiếp đến DO
+        // KHÔNG qua rate-limit, KHÔNG wrap response, KHÔNG log (làm chậm handshake)
+        // ========================================================================
+        if (url.pathname === '/api/ai/live') {
+            const upgradeHeader = request.headers.get('Upgrade');
+            console.log('[Router] WebSocket request to /api/ai/live, Upgrade:', upgradeHeader);
+
+            if (upgradeHeader && upgradeHeader.toLowerCase() === 'websocket') {
+                try {
+                    // Tạo unique session ID
+                    const sessionId = crypto.randomUUID();
+                    console.log('[Router] Creating DO session:', sessionId);
+
+                    // Get Durable Object stub và forward TRỰC TIẾP
+                    const id = env.VOICE_CALL_SESSION.idFromName(sessionId);
+                    const stub = env.VOICE_CALL_SESSION.get(id);
+
+                    // Forward request - response 101 sẽ được DO trả về
+                    const response = await stub.fetch(request);
+                    console.log('[Router] DO response status:', response.status);
+
+                    // KHÔNG wrap response - trả về nguyên vẹn
+                    return response;
+                } catch (err) {
+                    console.error('[Router] WebSocket DO error:', err);
+                    return new Response(JSON.stringify({
+                        error: 'websocket_do_error',
+                        message: err.message
+                    }), {
+                        status: 500,
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                }
+            } else {
+                // HTTP request to /api/ai/live (không có Upgrade header)
+                return new Response(JSON.stringify({
+                    error: 'websocket_required',
+                    message: 'WebSocket upgrade required. Send request with Upgrade: websocket header.'
+                }), {
+                    status: 426,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
+        }
+        // ========================================================================
+        // END WEBSOCKET HANDLING
+        // ========================================================================
+
         // Tạo trace context cho observability
         const trace = createTraceContext(request, env);
 
@@ -261,7 +313,6 @@ export default {
             return addTraceHeader(response, trace.traceId);
         }
 
-        const url = new URL(request.url);
         const route = matchRoute(url.pathname, request.method);
 
         // Wrap response with CORS headers và trace ID

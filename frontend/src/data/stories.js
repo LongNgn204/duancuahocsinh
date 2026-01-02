@@ -1,188 +1,251 @@
 // src/data/stories.js
-// Bộ sưu tập truyện ngắn nâng cao (23+ truyện)
-// v2: Content dạng chuỗi đầy đủ để TTS đọc mượt hơn
+// Chú thích: Bộ sưu tập truyện chất lượng cao
+// v3.0: Ít truyện hơn, nội dung dài hơn, chia theo paragraphs
 
 export const STORIES = [
-    // --- 1. Confidence & Courage (Tự tin & Dũng cảm) ---
+    // --- 1. Chú ong nhỏ dũng cảm (Tự tin) ---
     {
         id: 1,
-        title: 'Chú ong nhỏ dũng cảm',
+        title: 'Chú Ong Nhỏ Dũng Cảm',
         category: 'confidence',
-        content: 'Ngày xửa ngày xưa, có một chú ong nhỏ tên là Bee sống trong một tổ ong ấm áp. Bee rất nhút nhát và sợ bay xa khỏi tổ. Một ngày, Bee quyết định thử bay xa hơn một chút. Chú ong nhỏ khám phá ra một cánh đồng hoa tuyệt đẹp. Từ đó, Bee hiểu rằng dũng cảm thử điều mới sẽ mang đến những điều tuyệt vời.',
-        moral: 'Đôi khi, một bước nhỏ ra khỏi vùng an toàn có thể mang đến những điều kỳ diệu!',
+        author: 'Bạn Đồng Hành',
+        ageRange: '6-12',
+        readingTime: '8 phút',
         color: 'from-amber-400 to-orange-500',
-        icon: '🐝'
-    },
-    {
-        id: 3,
-        title: 'Giọt nước nhỏ',
-        category: 'confidence',
-        content: 'Một giọt nước nhỏ cảm thấy mình vô nghĩa. Mình chỉ là một giọt nước, có thể làm được gì đâu, giọt nước tự hỏi. Nhưng khi hợp cùng nhiều giọt nước khác, chúng tạo thành một dòng suối. Dòng suối chảy xa, mang nước đến cho cánh đồng khô hạn. Giọt nước hiểu rằng mình cũng là một phần quan trọng.',
-        moral: 'Mỗi người đều có giá trị, dù đôi khi bạn không nhận ra điều đó!',
-        color: 'from-blue-400 to-cyan-500',
-        icon: '💧'
-    },
-    {
-        id: 8,
-        title: 'Ngôi sao nhỏ',
-        category: 'confidence',
-        content: 'Sao nhỏ luôn buồn vì mình không sáng bằng Mặt Trăng. Một đêm nọ, cậu bé đi lạc trong rừng tối. Cậu không thấy đường vì cây cối che khuất ánh trăng. Nhưng ánh sáng nhỏ bé của Sao nhỏ lại lọt qua kẽ lá, dẫn đường cho cậu bé. Sao nhỏ nhận ra mình không cần phải to lớn để trở nên hữu ích.',
-        moral: 'Bạn không cần phải to lớn hay nổi bật nhất để tỏa sáng theo cách riêng!',
-        color: 'from-yellow-300 to-yellow-500',
-        icon: '🌟'
+        icon: '🐝',
+        moral: 'Đôi khi, một bước nhỏ ra khỏi vùng an toàn có thể mang đến những điều kỳ diệu. Hãy dũng cảm thử những điều mới!',
+        paragraphs: [
+            'Ngày xửa ngày xưa, trong một khu rừng xanh tươi có một tổ ong ấm áp nằm trên cành cây sồi già. Trong tổ ong ấy, có một chú ong nhỏ tên là Bee. Bee có đôi cánh vàng óng ánh và đôi mắt to tròn luôn tràn đầy tò mò.',
+
+            'Không giống như các bạn ong khác, Bee rất nhút nhát. Chú sợ bay xa khỏi tổ vì lo lắng sẽ bị lạc hoặc gặp nguy hiểm. Mỗi ngày, Bee chỉ dám bay lượn quanh cành cây gần tổ, nhìn các bạn khác phiêu lưu khắp nơi.',
+
+            '"Sao cậu không đi xa hơn một chút?" Bella, cô bạn ong hàng xóm hỏi. "Ngoài kia có biết bao nhiêu bông hoa đẹp và mật ngọt lắm!"',
+
+            'Bee lắc đầu: "Mình sợ lắm! Ngoài kia có thể có chim, có gió mạnh, có cả con người nữa. Ở đây an toàn hơn."',
+
+            'Mùa xuân năm ấy, cả tổ ong gặp khó khăn. Những bông hoa gần tổ đã hết mật, mọi người phải bay thật xa để tìm nguồn thức ăn mới. Ong Chúa lo lắng nói: "Chúng ta cần tìm một cánh đồng hoa mới, nếu không cả tổ sẽ đói."',
+
+            'Bee nhìn mẹ ong vất vả bay đi bay về, trong lòng cảm thấy có gì đó thúc giục. Chú tự nhủ: "Mình không thể cứ ngồi đây mãi. Mình phải làm gì đó giúp gia đình!"',
+
+            'Sáng hôm sau, khi mặt trời vừa ló dạng, Bee quyết định làm một điều chưa từng làm. Chú hít một hơi thật sâu, vỗ cánh và bay thẳng về phía chân trời.',
+
+            'Tim Bee đập thình thịch khi bay qua những cành cây không quen thuộc. Gió thổi mạnh, có lúc Bee suýt bị cuốn đi, nhưng chú kiên nhẫn điều chỉnh và tiếp tục bay.',
+
+            'Sau một hồi lâu, Bee ngửi thấy mùi thơm ngọt ngào trong gió. Chú bay theo hướng đó và không tin nổi vào mắt mình. Một cánh đồng hoa hướng dương rộng mênh mông hiện ra trước mắt! Hàng triệu bông hoa vàng rực đang tắm nắng, căng tràn mật ngọt.',
+
+            '"Wow!" Bee không kìm được tiếng reo. Chú lao xuống và thử nếm một giọt mật. Ngọt lành và thơm ngon chưa từng thấy!',
+
+            'Bee bay về tổ thật nhanh để báo tin vui. Cả tổ ong reo hò khi nghe tin. Ong Chúa xoa đầu Bee: "Con thật dũng cảm! Nhờ con mà cả nhà có thức ăn cho cả mùa hè!"',
+
+            'Từ đó, Bee trở thành ong trinh sát giỏi nhất tổ. Chú không còn sợ bay xa nữa, vì đã hiểu rằng: Chỉ cần dũng cảm thử bước ra ngoài vùng an toàn, bạn sẽ khám phá được những điều tuyệt vời mà mình chưa từng biết!',
+
+            'Và mỗi khi có ai đó trong tổ cảm thấy sợ hãi, Bee lại kể câu chuyện của mình và mỉm cười: "Mình cũng từng run lắm, nhưng dũng cảm không có nghĩa là không sợ. Dũng cảm là dù sợ, vẫn bước đi!"'
+        ]
     },
 
-    // --- 2. Resilience & Perseverance (Kiên trì & Vượt khó) ---
+    // --- 2. Bông Hoa Kiên Cường (Kiên trì) ---
     {
         id: 2,
-        title: 'Bông hoa kiên cường',
+        title: 'Bông Hoa Kiên Cường',
         category: 'resilience',
-        content: 'Có một bông hoa nhỏ mọc giữa khe đá khô cằn. Mọi người nghĩ nó không thể sống được. Nhưng mỗi ngày, bông hoa vẫn cố gắng vươn rễ tìm nước và hướng về mặt trời. Dần dần, bông hoa nở rực rỡ, đẹp hơn cả những bông hoa trong vườn. Tất cả đều ngạc nhiên và ngưỡng mộ sức sống của nó.',
-        moral: 'Dù hoàn cảnh khó khăn, bạn vẫn có thể tỏa sáng nếu không bỏ cuộc!',
+        author: 'Bạn Đồng Hành',
+        ageRange: '6-12',
+        readingTime: '7 phút',
         color: 'from-pink-400 to-rose-500',
-        icon: '🌺'
-    },
-    {
-        id: 12,
-        title: 'Con cá vượt thác',
-        category: 'resilience',
-        content: 'Cá Chép nhỏ muốn bơi ngược dòng lên thượng nguồn. Dòng nước chảy xiết xô đẩy nó lùi lại nhiều lần. Bỏ cuộc đi, Cua đá khuyên. Nhưng Cá Chép nghỉ một chút, rồi lại tiếp tục bơi. Cuối cùng, nó đã vượt qua thác nước và đến được hồ nước trong xanh.',
-        moral: 'Thất bại chỉ là chặng nghỉ. Tiếp tục cố gắng sẽ đưa bạn đến đích!',
-        color: 'from-cyan-400 to-blue-600',
-        icon: '🐟'
-    },
-    {
-        id: 14,
-        title: 'Bài kiểm tra điểm kém',
-        category: 'resilience',
-        content: 'Nam cầm bài kiểm tra điểm 4 trên tay, nước mắt chực trào. Cậu đã ôn bài, nhưng lại quên hết khi vào phòng thi. Mình thật kém cỏi, Nam nghĩ. Thầy giáo vỗ vai và nói, điểm số này chỉ nói rằng em cần thay đổi cách học, không phải em kém. Nam bình tĩnh lại, cậu xem kỹ những lỗi sai để không mắc lại nữa. Lần sau, Nam đã tiến bộ hơn rất nhiều.',
-        moral: 'Điểm số không định nghĩa con người bạn. Sai lầm là cơ hội để học hỏi!',
-        color: 'from-red-400 to-orange-500',
-        icon: '📄'
+        icon: '🌺',
+        moral: 'Dù hoàn cảnh khó khăn đến đâu, bạn vẫn có thể tỏa sáng nếu không bỏ cuộc. Sức mạnh thực sự nằm trong sự kiên trì!',
+        paragraphs: [
+            'Giữa một vách đá khô cằn, nơi không có chút đất màu mỡ, một hạt giống nhỏ bé bị gió thổi lạc đến và rơi vào khe đá hẹp.',
+
+            'Mấy ngày đầu, hạt giống rất cô đơn và lo sợ. "Ở đây chẳng có gì cả! Làm sao mình sống được?" nghĩ thầm. Nhưng một giọt sương sớm rơi xuống, thấm qua khe đá, chạm vào hạt giống. Và hạt giống quyết định: "Mình sẽ thử xem sao!"',
+
+            'Từng ngày, hạt giống cố gắng nứt vỏ. Công việc này khó khăn gấp bội so với những hạt giống may mắn được nằm trong đất mềm. Nhưng chú bé không bỏ cuộc.',
+
+            'Một mầm xanh nhỏ xíu xuất hiện. Các bông hoa trong vườn bên cạnh nhìn sang, có cô hoa hồng lắc đầu: "Tội nghiệp nó, ở đó làm gì có đất, có nước. Sớm muộn gì cũng héo thôi."',
+
+            'Nhưng mầm nhỏ không nghe thấy. Cô bé tập trung vào việc vươn rễ, tìm kiếm từng giọt nước trong khe đá. Mỗi ngày, cô bé hướng về phía mặt trời, hấp thụ từng tia nắng quý giá.',
+
+            'Có những ngày nắng gắt, mầm nhỏ tưởng như sẽ khô héo. Có những đêm rét mướt, cô bé run rẩy trong gió lạnh. Nhưng mỗi sáng thức dậy, cô bé vẫn cố gắng vươn cao thêm một chút.',
+
+            '"Sao bạn không bỏ cuộc?" một chú chim sẻ bay ngang hỏi.',
+
+            '"Vì mình tin rằng mình sẽ nở hoa!" mầm nhỏ đáp, dù giọng còn yếu ớt.',
+
+            'Rồi mùa xuân đến. Sau bao tháng ngày kiên trì, mầm nhỏ đã trở thành một bông hoa. Không phải một bông hoa bình thường, mà là một bông hoa rực rỡ nhất vùng! Những cánh hoa màu đỏ cam xoè ra như đang ôm lấy mặt trời.',
+
+            'Mọi người đi qua đều ngẩn ngơ. "Làm sao bông hoa có thể mọc được ở đó?" họ thắc mắc. Các bông hoa trong vườn im lặng, thầm khâm phục.',
+
+            'Bông hoa kiên cường mỉm cười trong nắng. Cô đã chứng minh được rằng: Không quan trọng bạn được gieo ở đâu, điều quan trọng là bạn chọn vươn lên như thế nào.',
+
+            'Và mỗi khi có cơn gió mang theo những hạt giống nhỏ bay qua, bông hoa lại thì thầm: "Đừng sợ, dù khó khăn đến mấy, chỉ cần không bỏ cuộc, bạn sẽ nở hoa thôi!"'
+        ]
     },
 
-    // --- 3. Self-Love & Acceptance (Yêu bản thân) ---
+    // --- 3. Con Sên Chậm Rãi (Yêu bản thân) ---
+    {
+        id: 3,
+        title: 'Con Sên Chậm Rãi',
+        category: 'self-love',
+        author: 'Bạn Đồng Hành',
+        ageRange: '6-12',
+        readingTime: '9 phút',
+        color: 'from-emerald-400 to-green-500',
+        icon: '🐌',
+        moral: 'Mỗi người có tốc độ và cách riêng để đến đích. Đừng so sánh mình với người khác, hãy trân trọng những điểm đặc biệt của bản thân!',
+        paragraphs: [
+            'Trong khu rừng nhỏ có một chú sên tên là Bom. Bom có chiếc vỏ xoắn ốc nâu bóng và đôi râu dài hay vẫy vẫy khi di chuyển.',
+
+            'Vấn đề là, Bom di chuyển rất chậm. Chậm đến nỗi các bạn trong rừng hay trêu chọc: "Này Bom, cậu định đến bữa tiệc nào vậy? Bữa tiệc năm ngoái à?" rồi cười khúc khích.',
+
+            'Bom buồn lắm. Mỗi ngày, chú nhìn Thỏ chạy vun vút, Sóc nhảy thoăn thoắt, thậm chí cả Rùa cũng nhanh hơn mình. "Tại sao mình lại chậm thế này?" Bom tự hỏi.',
+
+            'Một hôm, cả rừng tổ chức hội thi chạy đến Cây Đại Thụ. Bom cũng muốn tham gia nhưng ai cũng can: "Thôi Bom ơi, đừng mất công!"',
+
+            'Bom vẫn quyết định thử. Dù biết mình không thể thắng, nhưng chú muốn hoàn thành đường đua theo cách của mình.',
+
+            'Cuộc đua bắt đầu. Thỏ lao đi như tên bắn. Sóc nhảy qua từng gốc cây. Rùa cũng cố gắng bò nhanh hơn thường ngày. Còn Bom, từng bước, từng bước, chậm rãi tiến về phía trước.',
+
+            'Nửa đường, bất ngờ xảy ra. Một cơn bão bất chợt ập đến. Gió thổi mạnh, mưa trút xối xả. Thỏ hoảng hốt chạy lung tung, không nhận ra đường. Sóc bám vào cành cây, không dám nhảy. Rùa thu mình vào mai, không thể tiếp tục.',
+
+            'Chỉ có Bom, với bước đi chậm rãi, vẫn tiếp tục. Chú quan sát kỹ từng ngã rẽ, nhớ đường đi, và bám chắc vào mặt đất để không bị gió cuốn.',
+
+            'Khi cơn bão qua đi, mọi người nhận ra mình đã lạc hết. "Làm sao về nhà đây?" ai nấy lo lắng.',
+
+            '"Theo mình này!" giọng bình tĩnh của Bom vang lên. Chú nhớ hết đường vì đã quan sát cẩn thận trong suốt hành trình.',
+
+            'Từng bước chậm rãi, Bom dẫn các bạn về đến an toàn. Thỏ, Sóc, Rùa, ai cũng ngạc nhiên và biết ơn.',
+
+            '"Xin lỗi vì đã trêu cậu!" Thỏ nói. "Hóa ra chậm mà chắc là một điều tuyệt vời!"',
+
+            'Bom mỉm cười: "Mình không nhanh như các bạn, nhưng mình có cách riêng của mình. Mỗi người đều có điểm mạnh, chỉ là đôi khi chưa nhận ra thôi!"',
+
+            'Từ đó, không ai còn chê Bom chậm nữa. Và mỗi khi cần một người dẫn đường cẩn thận, ai cũng nhớ đến chú sên chậm rãi đáng yêu.'
+        ]
+    },
+
+    // --- 4. Hai Người Bạn (Tình bạn) ---
     {
         id: 4,
-        title: 'Con sên chậm rãi',
-        category: 'self-love',
-        content: 'Con sên nhỏ luôn bị các bạn trong rừng trêu vì đi quá chậm. Tại sao mình không nhanh như thỏ hay sóc, sên tự hỏi buồn bã. Một ngày mưa bão, tất cả bạn bè chạy vội về nhà nhưng đều bị lạc đường. Riêng sên, với tốc độ chậm rãi, quan sát được từng ngã rẽ và về đến nhà an toàn. Sên còn quay lại giúp đỡ các bạn tìm đường về. Từ đó, mọi người hiểu rằng chậm mà chắc không có gì là xấu.',
-        moral: 'Mỗi người có tốc độ riêng. Chậm mà chắc vẫn đến đích!',
-        color: 'from-emerald-400 to-green-500',
-        icon: '🐌'
-    },
-    {
-        id: 7,
-        title: 'Cô bé và bông hoa',
-        category: 'self-love',
-        content: 'Linh luôn so sánh mình với các bạn. Sao mình không xinh như bạn A, giỏi như bạn B, Linh thường tự hỏi. Bà ngoại tặng Linh một chậu hoa xương rồng. Nó chẳng đẹp như hoa hồng, Linh bĩu môi. Nhưng khi cả vườn hoa héo rũ vì nắng nóng, xương rồng vẫn xanh tốt và nở hoa vàng rực. Cháu thấy không, nó đặc biệt vì nó là chính nó, bà nói.',
-        moral: 'Đừng so sánh mình với người khác. Bạn là phiên bản duy nhất!',
-        color: 'from-purple-400 to-fuchsia-500',
-        icon: '👧'
-    },
-    {
-        id: 15,
-        title: 'Chiếc gương thần kỳ',
-        category: 'self-love',
-        content: 'Mỗi sáng, Mèo Con nhìn vào gương và chỉ thấy bộ lông rối bù. Mình trông thật tệ, Mèo buồn bã. Mẹ Mèo dán lên gương một mảnh giấy với dòng chữ, con có đôi mắt rất sáng và nụ cười ấm áp. Hôm sau, Mèo Con nhìn vào gương và thử mỉm cười. Cậu nhận ra khi cười, mình trông thật rạng rỡ.',
-        moral: 'Hãy nhìn vào những điểm tốt đẹp của bản thân để thấy mình đáng yêu thế nào!',
-        color: 'from-teal-300 to-teal-500',
-        icon: '🪞'
+        title: 'Hai Người Bạn',
+        category: 'friendship',
+        author: 'Bạn Đồng Hành',
+        ageRange: '6-12',
+        readingTime: '6 phút',
+        color: 'from-red-400 to-rose-500',
+        icon: '🐕',
+        moral: 'Một lời xin lỗi chân thành có thể hàn gắn mọi hiểu lầm. Tình bạn thật sự sẽ vượt qua được những cơn giận nhỏ!',
+        paragraphs: [
+            'Mèo Mun và Chó Vàng là đôi bạn thân nhất xóm. Hai bạn làm gì cũng có nhau, từ chơi đuổi bắt đến chia sẻ thức ăn.',
+
+            'Một hôm, bà cụ hàng xóm tặng hai bạn một cái bánh thơm phức. "Chia đôi nhé các cháu!" bà dặn.',
+
+            'Nhưng khi chia bánh, phần của Chó Vàng trông nhỏ hơn một chút. Chó Vàng buồn bực: "Cậu ăn gian rồi Mèo Mun!"',
+
+            '"Không phải! Mình chia đều mà!" Mèo Mun vội thanh minh.',
+
+            '"Rõ ràng phần cậu to hơn! Cậu không phải bạn tốt!" Chó Vàng giận dữ bỏ đi.',
+
+            'Từ đó, hai bạn không nói chuyện với nhau. Mèo Mun đi qua nhà Chó Vàng, cả hai đều quay mặt đi. Cả xóm thấy lạ vì đôi bạn thân giờ thành người xa lạ.',
+
+            'Nhưng Mèo Mun cảm thấy rất buồn và trống vắng. Không có Chó Vàng, những trò chơi không còn vui nữa. Ban đêm, Mèo Mun nằm nhìn trần nhà, nhớ tiếng cười của bạn.',
+
+            'Chó Vàng cũng vậy. Cậu giận nhưng cũng nhớ bạn. "Có lẽ mình đã nói quá lời..." Chó Vàng nghĩ.',
+
+            'Một sáng, Mèo Mun quyết định làm hòa. Cậu viết một mảnh giấy: "Xin lỗi vì đã làm bạn buồn. Dù bánh to hay nhỏ, tình bạn của chúng mình mới là quan trọng nhất. Bạn có tha lỗi cho mình không?"',
+
+            'Mèo Mun run run đặt mảnh giấy trước cửa nhà Chó Vàng rồi trốn sau bụi cây chờ.',
+
+            'Chó Vàng đọc xong, nước mắt trào ra. Cậu chạy ra ngoài: "Mèo Mun ơi! Mình cũng xin lỗi! Mình đã cáu gắt quá đáng rồi!"',
+
+            'Hai bạn ôm nhau thật chặt. Mèo Mun lấy ra nửa cái bánh còn lại mà cậu đã để dành: "Chia lại nhé! Lần này, cậu chọn phần trước!"',
+
+            'Chó Vàng cười: "Thôi, chia thế nào cũng được! Miễn là chúng mình vẫn là bạn tốt!"',
+
+            'Từ đó, mỗi khi có chuyện giận hờn, hai bạn đều nhớ rằng: Một lời xin lỗi chân thành và hiểu nhau là điều quý giá hơn bất kỳ cái bánh nào!'
+        ]
     },
 
-    // --- 4. Friendship & Kindness (Tình bạn & Lòng tốt) ---
+    // --- 5. Chiếc Hộp Giận Dữ (Cảm xúc) ---
     {
         id: 5,
-        title: 'Bạn mới của Thỏ',
-        category: 'friendship',
-        content: 'Thỏ Trắng vừa chuyển đến khu rừng mới, không quen ai cả. Thỏ rất muốn làm quen nhưng sợ bị từ chối. Một ngày, Thỏ thấy Sóc đang cố với quả hạch trên cao. Mình giúp bạn nhé, Thỏ dũng cảm lên tiếng. Thỏ nhảy lên lấy quả hạch xuống cho Sóc. Cảm ơn bạn! Mình là Sóc, bạn tên gì, từ đó họ trở thành đôi bạn thân.',
-        moral: 'Đôi khi chỉ cần một hành động tốt nhỏ bé để bắt đầu một tình bạn đẹp!',
-        color: 'from-zinc-300 to-zinc-400',
-        icon: '🐰'
-    },
-    {
-        id: 10,
-        title: 'Hai người bạn',
-        category: 'friendship',
-        content: 'Mèo và Chó là bạn thân nhưng hôm nay giận nhau vì một cái bánh. Cả hai đều im lặng, không ai chịu nói chuyện trước. Mèo thấy buồn, liền viết một mảnh giấy, tớ xin lỗi vì đã ăn tham. Chó đọc xong liền chạy đến và nói, tớ cũng xin lỗi vì đã cáu gắt. Cả hai cùng cười và chia đôi cái bánh còn lại.',
-        moral: 'Một lời xin lỗi chân thành có thể hàn gắn mọi hiểu lầm!',
-        color: 'from-red-400 to-rose-500',
-        icon: '🐕'
-    },
-    {
-        id: 16,
-        title: 'Hộp bút màu chia sẻ',
-        category: 'friendship',
-        content: 'Lan quên mang hộp bút màu trong giờ vẽ. Cả lớp đang hăng say tô màu, Lan chỉ biết ngồi nhìn. Hùng thấy vậy, lẳng lặng đẩy hộp màu của mình sang giữa bàn. Dùng chung nhé, Hùng thì thầm. Bức tranh hôm đó của Lan và Hùng đều rực rỡ sắc màu.',
-        moral: 'Chia sẻ niềm vui là nhân đôi niềm vui!',
-        color: 'from-indigo-400 to-blue-500',
-        icon: '🎨'
-    },
-
-    // --- 5. Dealing with Emotions (Xử lý cảm xúc) ---
-    {
-        id: 13,
-        title: 'Mưa và nắng',
+        title: 'Chiếc Hộp Giận Dữ',
         category: 'emotions',
-        content: 'Hoa Hồng rất ghét những ngày mưa ướt át. Nó chỉ thích nắng ấm để khoe sắc. Ông Mặt Trời bảo, nếu không có mưa, rễ cây sẽ chết khát. Sau cơn mưa, cầu vồng hiện lên rực rỡ. Hoa Hồng hiểu rằng cả mưa và nắng đều cần thiết.',
-        moral: 'Nỗi buồn cũng có giá trị của nó. Sau cơn mưa trời lại sáng!',
-        color: 'from-indigo-400 to-violet-600',
-        icon: '🌧️'
-    },
-    {
-        id: 17,
-        title: 'Bình tĩnh trước đám đông',
-        category: 'emotions',
-        content: 'Hà phải lên thuyết trình trước cả trường. Tim cô bé đập thình thịch, tay run lẩy bẩy. Hà nhớ lời mẹ dặn, hít thở sâu ba lần. Một, hai, ba, Hà cảm thấy nhịp tim chậm lại. Cô bé bắt đầu nói, giọng lúc đầu hơi run rồi to dần. Kết thúc bài nói, tiếng vỗ tay vang dội.',
-        moral: 'Sợ hãi là bình thường. Hít thở sâu sẽ giúp bạn lấy lại bình tĩnh!',
-        color: 'from-sky-400 to-cyan-500',
-        icon: '🎤'
-    },
-    {
-        id: 18,
-        title: 'Chiếc hộp giận dữ',
-        category: 'emotions',
-        content: 'Tí rất hay cáu kỉnh khi mọi chuyện không như ý. Bố đưa cho Tí một chiếc hộp rỗng. Mỗi khi con giận, hãy hét vào hộp rồi đóng nắp lại, bố bảo. Tí làm theo. Một lúc sau, mở hộp ra, tiếng hét đã biến mất. Sự giận dữ cũng vậy, nếu con biết cách xả ra đúng chỗ, nó sẽ tan biến.',
-        moral: 'Đừng giữ sự tức giận trong lòng, hãy học cách giải tỏa nó lành mạnh!',
+        author: 'Bạn Đồng Hành',
+        ageRange: '6-12',
+        readingTime: '7 phút',
         color: 'from-gray-500 to-slate-700',
-        icon: '📦'
+        icon: '📦',
+        moral: 'Đừng giữ sự tức giận trong lòng, hãy học cách giải tỏa nó một cách lành mạnh. Giận dữ không xấu, nhưng cách ta xử lý nó mới quan trọng!',
+        paragraphs: [
+            'Tí là một cậu bé hay cáu kỉnh. Mỗi khi mọi chuyện không như ý, Tí lại nổi giận, la hét và đôi khi còn ném đồ đạc.',
+
+            '"Con không kiểm soát được mà!" Tí phân bua mỗi khi bị mắng. "Cơn giận nó cứ bùng lên vậy thôi!"',
+
+            'Bố nhìn Tí ân cần rồi lấy ra một chiếc hộp gỗ nhỏ, bên ngoài vẽ những ngọn lửa đỏ. "Đây là Hộp Giận Dữ," bố nói. "Mỗi khi con cảm thấy tức giận, hãy hét thật to vào hộp rồi đóng nắp lại."',
+
+            'Tí nhìn chiếc hộp nghi ngờ: "Làm vậy có ích gì ạ?"',
+
+            'Bố mỉm cười: "Con thử đi rồi sẽ biết!"',
+
+            'Hôm sau, khi em gái làm đổ nước lên bức tranh Tí vừa vẽ xong, cơn giận bùng lên trong lòng Tí. Tí định la hét như mọi khi, nhưng bỗng nhớ đến chiếc hộp.',
+
+            'Tí chạy về phòng, mở hộp ra và hét thật to: "Tại sao em lại làm hỏng tranh của con!" Rồi Tí đóng nắp lại thật chặt.',
+
+            'Một lúc sau, Tí mở hộp ra xem. Trống trơn. Tiếng hét đã biến mất. Và lạ thay, cơn giận trong lòng Tí cũng nhẹ đi rất nhiều.',
+
+            '"Bố ơi, hộp này kỳ diệu thật!" Tí chạy đến nói.',
+
+            'Bố ôm Tí: "Không phải hộp kỳ diệu đâu con. Khi con hét vào hộp, con đã cho cơn giận một lối thoát. Giận dữ giống như hơi nước trong nồi áp suất, nếu không xả ra đúng cách, nó sẽ nổ tung!"',
+
+            '"Nhưng hét vào mặt người khác thì sao ạ?" Tí hỏi.',
+
+            '"Hét vào mặt người khác sẽ làm họ đau và mình cũng không vui hơn. Nhưng hét vào hộp, hoặc hít thở sâu, hoặc vẽ tranh, hoặc đi bộ... đó là những cách xả giận lành mạnh!"',
+
+            'Từ đó, mỗi khi tức giận, Tí dùng chiếc hộp hoặc hít thở thật sâu. Dần dần, Tí học được cách kiểm soát cảm xúc của mình tốt hơn.',
+
+            'Và Tí hiểu ra: Giận dữ là cảm xúc bình thường mà ai cũng có. Điều quan trọng là học cách giải tỏa nó đúng cách, để không làm tổn thương người khác và chính mình!'
+        ]
     },
 
-    // --- 6. Adaptability & Growth (Thích nghi & Trưởng thành) ---
-    {
-        id: 9,
-        title: 'Cây tre uốn cong',
-        category: 'growth',
-        content: 'Cây Sồi già thường chê Cây Tre thân mình mảnh khảnh, yếu ớt. Một đêm bão lớn ập đến. Sồi cố đứng thẳng chống chọi nhưng bị gió quật gãy cành. Tre biết mình yếu nên nương theo chiều gió, uốn cong mình xuống. Sáng hôm sau, Sồi bị thương nặng, còn Tre vẫn xanh tươi vươn thẳng.',
-        moral: 'Linh hoạt thích nghi đôi khi tốt hơn là cứng nhắc chống đối!',
-        color: 'from-lime-400 to-green-600',
-        icon: '🎋'
-    },
+    // --- 6. Sâu Bướm Hóa Thân (Trưởng thành) ---
     {
         id: 6,
-        title: 'Đom đóm lạc đường',
+        title: 'Sâu Bướm Hóa Thân',
         category: 'growth',
-        content: 'Đom đóm nhỏ bị lạc khỏi đàn trong đêm tối. Thay vì ngồi khóc, nó nhớ ra mình có đèn ở đuôi. Nó thắp sáng lên, soi đường tìm lối về. Ánh sáng của nó còn giúp các bạn kiến tìm được đường về tổ. Đom đóm hiểu rằng trong khó khăn luôn có cách giải quyết.',
-        moral: 'Hãy dùng chính điểm mạnh của mình để vượt qua khó khăn!',
-        color: 'from-yellow-400 to-amber-300',
-        icon: '🌟'
-    },
-    {
-        id: 19,
-        title: 'Sâu bướm hóa thân',
-        category: 'growth',
-        content: 'Sâu nhỏ sợ hãi khi phải chui vào cái kén chật chội. Mình sẽ bị kẹt mãi mãi, nó lo lắng. Nhưng nó ngủ một giấc dài trong bóng tối. Khi tỉnh dậy, nó cảm thấy lưng mình ngứa ngáy. Nó vươn vai, một đôi cánh rực rỡ bung ra. Sâu nhỏ giờ đã là bướm xinh đẹp bay lượn trên bầu trời.',
-        moral: 'Thay đổi có thể đáng sợ, nhưng nó giúp chúng ta trưởng thành rực rỡ!',
+        author: 'Bạn Đồng Hành',
+        ageRange: '6-12',
+        readingTime: '8 phút',
         color: 'from-fuchsia-400 to-purple-600',
-        icon: '🦋'
-    },
-    {
-        id: 20,
-        title: 'Học cách nói Không',
-        category: 'growth',
-        content: 'Mi luôn đồng ý giúp mọi người dù mình rất mệt. Một hôm, Mi ốm nhưng vẫn nhận làm bài hộ bạn. Mẹ bảo, giúp đỡ là tốt, nhưng con cần biết chăm sóc mình trước. Lần sau, Mi dũng cảm từ chối và nói, xin lỗi, tớ đang bận rồi. Mi nhận ra các bạn vẫn quý mến mình dù mình từ chối.',
-        moral: 'Biết từ chối đúng lúc cũng là một cách tôn trọng bản thân!',
-        color: 'from-red-300 to-pink-400',
-        icon: '🙅‍♀️'
+        icon: '🦋',
+        moral: 'Thay đổi có thể đáng sợ, nhưng nó giúp chúng ta trưởng thành rực rỡ. Đừng sợ những giai đoạn khó khăn, đó là lúc bạn đang lớn lên!',
+        paragraphs: [
+            'Trong vườn hoa có một chú sâu nhỏ tên là Lili. Lili có thân hình mập mạp, nhiều đốt, và di chuyển bằng cách uốn éo trên lá cây.',
+
+            'Mỗi ngày, Lili nhìn những chú bướm bay lượn và thầm mơ ước: "Giá mình cũng có đôi cánh đẹp như thế!"',
+
+            'Một hôm, mẹ Lili nói: "Con ơi, đã đến lúc con phải vào kén rồi." Lili hoảng hốt: "Vào kén là sao ạ? Con sợ chỗ tối!"',
+
+            'Mẹ giải thích: "Đó là bước cần thiết để con trưởng thành. Trong kén, con sẽ thay đổi và trở thành một sinh vật mới."',
+
+            '"Nhưng... nhưng con thích là sâu mà! Con không muốn thay đổi!" Lili nói, nước mắt chực trào.',
+
+            'Mẹ ôm Lili: "Thay đổi đáng sợ lắm, mẹ biết. Nhưng đó là cách duy nhất để con có đôi cánh trong mơ của mình."',
+
+            'Cuối cùng, Lili quyết định tin tưởng mẹ. Chú nhả tơ, xây cái kén xung quanh mình. Bóng tối bao phủ. Lili cảm thấy cô đơn và sợ hãi.',
+
+            'Trong kén, Lili không thể di chuyển, không thể ăn lá cây như trước. Mọi thứ đều khác. "Mình có làm đúng không?" Lili tự hỏi trong những đêm dài.',
+
+            'Nhưng dần dần, Lili cảm thấy điều gì đó đang xảy ra trong cơ thể mình. Có gì đó đang mọc ra, đang duỗi dài. Cảm giác kỳ lạ nhưng không đau.',
+
+            'Rồi một sáng, ánh nắng chiếu xuyên qua vỏ kén. Lili cảm thấy chật chội. Chú cố vùng vẫy và... "Rách!" Vỏ kén xé toạc.',
+
+            'Lili chui ra, cảm thấy choáng ngợp. Nhưng khi nhìn xuống, chú không tin vào mắt mình: Một đôi cánh rực rỡ màu tím và cam đang xoè ra hai bên!',
+
+            '"Mình... mình là bướm rồi!" Lili sung sướng vỗ cánh. Lần đầu tiên trong đời, Lili bay lên bầu trời, cảm nhận gió mát và nhìn thấy thế giới từ trên cao.',
+
+            'Lili bay về chỗ mẹ: "Cảm ơn mẹ đã cho con dũng cảm bước vào bóng tối. Nếu không, con sẽ không bao giờ biết mình có thể bay được!"',
+
+            'Mẹ mỉm cười: "Thay đổi luôn đáng sợ lúc đầu, nhưng đó là cách chúng ta trưởng thành và tỏa sáng theo cách mới!"'
+        ]
     }
 ];
