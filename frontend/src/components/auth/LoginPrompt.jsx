@@ -112,7 +112,7 @@ export default function LoginPrompt({
                             className="w-full"
                             icon={<ChevronRight className="w-5 h-5" />}
                         >
-                            🚀 Đăng nhập ngay
+                            Đăng nhập ngay
                         </Button>
                     </motion.div>
 

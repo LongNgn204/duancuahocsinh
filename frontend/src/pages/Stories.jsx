@@ -1,114 +1,86 @@
 // src/pages/Stories.jsx
-// Chú thích: Thư Viện Truyện v3.0 - Nội dung dài, TTS cải tiến
+// Chú thích: Thư Viện Truyện v4.0 - Đọc thủ công (TTS đã tắt)
 // UX: Hiển thị toàn bộ truyện, highlight đoạn đang đọc, progress bar
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Play, Pause, SkipForward, ArrowLeft, Moon, Sun, Type, Clock, User, Volume2, VolumeX } from 'lucide-react';
+import { BookOpen, ChevronLeft, ChevronRight, ArrowLeft, Moon, Sun, Type, Clock, User } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { useSound } from '../contexts/SoundContext';
-import { useTTS } from '../hooks/useTTS';
 
 import { STORIES } from '../data/stories';
 
 export default function Stories() {
     const [selectedStory, setSelectedStory] = useState(null);
     const { playSound } = useSound();
-    const { play: ttsPlay, stop: ttsStop, speaking } = useTTS('vi-VN');
 
     // Reader State
     const [currentParagraph, setCurrentParagraph] = useState(0);
-    const [isPlaying, setIsPlaying] = useState(false);
     const [theme, setTheme] = useState('light'); // 'light', 'sepia', 'dark'
-    const [autoScroll, setAutoScroll] = useState(true);
+    const [isAudioPlaying, setIsAudioPlaying] = useState(false); // Track audio state
     const paragraphRefs = useRef([]);
     const contentRef = useRef(null);
+    const audioRef = useRef(null);
 
     // Chú thích: Lấy danh sách paragraphs của truyện hiện tại
     const paragraphs = useMemo(() => {
         return selectedStory?.paragraphs || [];
     }, [selectedStory]);
 
-    // Current paragraph text (normalized cho TTS)
-    const currentText = (paragraphs[currentParagraph] || '').normalize('NFC');
-
     // Progress percentage
     const progress = paragraphs.length > 0 ? ((currentParagraph + 1) / paragraphs.length) * 100 : 0;
 
     // Chú thích: Auto-scroll đến đoạn đang đọc
     useEffect(() => {
-        if (autoScroll && paragraphRefs.current[currentParagraph]) {
+        if (paragraphRefs.current[currentParagraph]) {
             paragraphRefs.current[currentParagraph].scrollIntoView({
                 behavior: 'smooth',
                 block: 'center'
             });
         }
-    }, [currentParagraph, autoScroll]);
+    }, [currentParagraph]);
 
-    // Chú thích: Chuyển đoạn tiếp theo
-    const advanceToNext = useCallback(() => {
-        if (currentParagraph < paragraphs.length - 1) {
-            setCurrentParagraph(prev => prev + 1);
-            playSound('pageFlip');
-        } else {
-            // Hết truyện
-            setIsPlaying(false);
-            ttsStop();
-        }
-    }, [currentParagraph, paragraphs.length, playSound, ttsStop]);
-
-    // Chú thích: Play TTS cho đoạn hiện tại
+    // Chú thích: Auto-scroll mỗi 6s khi audio đang phát
     useEffect(() => {
-        if (!isPlaying || !currentText) {
-            if (!isPlaying) ttsStop();
-            return;
-        }
-        ttsPlay(currentText, { rate: 0.95 }); // Đọc chậm hơn một chút
-    }, [isPlaying, currentText, ttsPlay, ttsStop]);
+        if (!isAudioPlaying) return;
 
-    // Chú thích: Watch speech end để chuyển đoạn
-    useEffect(() => {
-        if (isPlaying && !speaking && currentText) {
-            const timer = setTimeout(() => {
-                advanceToNext();
-            }, 500); // Pause ngắn giữa các đoạn
-            return () => clearTimeout(timer);
-        }
-    }, [speaking, isPlaying, currentText, advanceToNext]);
+        const timer = setInterval(() => {
+            setCurrentParagraph(prev => {
+                if (prev < paragraphs.length - 1) {
+                    return prev + 1;
+                }
+                return prev;
+            });
+        }, 10000); // 10 giây mỗi đoạn
 
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => ttsStop();
-    }, [ttsStop]);
+        return () => clearInterval(timer);
+    }, [isAudioPlaying, paragraphs.length]);
 
     const handleCardClick = (story) => {
         setSelectedStory(story);
         setCurrentParagraph(0);
-        setIsPlaying(false);
-        ttsStop();
         playSound('click');
     };
 
     const closeReader = () => {
-        setIsPlaying(false);
-        ttsStop();
         setSelectedStory(null);
-    };
-
-    const togglePlay = () => {
-        if (isPlaying) {
-            ttsStop();
-        }
-        setIsPlaying(!isPlaying);
-        playSound('click');
     };
 
     const goToParagraph = (index) => {
         setCurrentParagraph(index);
-        if (isPlaying) {
-            ttsStop();
-            setTimeout(() => {
-                ttsPlay((paragraphs[index] || '').normalize('NFC'), { rate: 0.95 });
-            }, 100);
+        playSound('pageFlip');
+    };
+
+    const nextParagraph = () => {
+        if (currentParagraph < paragraphs.length - 1) {
+            setCurrentParagraph(prev => prev + 1);
+            playSound('pageFlip');
+        }
+    };
+
+    const prevParagraph = () => {
+        if (currentParagraph > 0) {
+            setCurrentParagraph(prev => prev - 1);
+            playSound('pageFlip');
         }
     };
 
@@ -138,7 +110,7 @@ export default function Stories() {
                 </div>
             </div>
 
-            {/* Library Grid - 6 truyện */}
+            {/* Library Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 {STORIES.map((story) => (
                     <motion.div
@@ -147,7 +119,7 @@ export default function Stories() {
                         className="cursor-pointer group"
                         onClick={() => handleCardClick(story)}
                     >
-                        {/* Book Cover - to hơn */}
+                        {/* Book Cover */}
                         <div className={`
                             aspect-[3/4] rounded-2xl shadow-lg relative overflow-hidden
                             bg-gradient-to-br ${story.color}
@@ -219,15 +191,6 @@ export default function Stories() {
                                         <button onClick={() => setTheme('sepia')} className={`p-2 rounded-full transition-all ${theme === 'sepia' ? 'bg-[#e3d0b0] shadow-sm' : ''}`}><Type size={16} /></button>
                                         <button onClick={() => setTheme('dark')} className={`p-2 rounded-full transition-all ${theme === 'dark' ? 'bg-slate-700 shadow-sm text-white' : ''}`}><Moon size={16} /></button>
                                     </div>
-
-                                    {/* Auto scroll toggle */}
-                                    <button
-                                        onClick={() => setAutoScroll(!autoScroll)}
-                                        className={`p-2 rounded-full transition-all ${autoScroll ? 'bg-[--brand] text-white' : 'bg-black/5'}`}
-                                        title={autoScroll ? 'Tự động cuộn: BẬT' : 'Tự động cuộn: TẮT'}
-                                    >
-                                        {autoScroll ? <Volume2 size={16} /> : <VolumeX size={16} />}
-                                    </button>
                                 </div>
                             </div>
 
@@ -241,13 +204,65 @@ export default function Stories() {
                                 />
                             </div>
 
-                            {/* Story Title */}
+                            {/* Story Title + Audio Button */}
                             <div className="text-center py-6 px-4 shrink-0">
                                 <div className="text-4xl mb-2">{selectedStory.icon}</div>
                                 <h2 className="text-2xl md:text-3xl font-bold">{selectedStory.title}</h2>
                                 <p className="text-sm opacity-60 mt-2">
                                     {selectedStory.author} • {selectedStory.readingTime}
                                 </p>
+
+                                {/* Audio Player Button - Phát audio file MP3 */}
+                                {selectedStory.audioUrl && (
+                                    <div className="mt-4 flex justify-center">
+                                        <button
+                                            onClick={() => {
+                                                // Tạo hoặc lấy audio element
+                                                if (!audioRef.current) {
+                                                    audioRef.current = new Audio();
+                                                    audioRef.current.onplay = () => setIsAudioPlaying(true);
+                                                    audioRef.current.onpause = () => setIsAudioPlaying(false);
+                                                    audioRef.current.onended = () => setIsAudioPlaying(false);
+                                                }
+
+                                                const audio = audioRef.current;
+
+                                                if (audio.src !== window.location.origin + selectedStory.audioUrl) {
+                                                    audio.src = selectedStory.audioUrl;
+                                                }
+
+                                                if (audio.paused) {
+                                                    audio.play().catch(e => {
+                                                        alert('Chưa có file audio cho truyện này. Vui lòng đọc thủ công!');
+                                                        console.log('Audio error:', e);
+                                                    });
+                                                } else {
+                                                    audio.pause();
+                                                }
+
+                                                playSound('click');
+                                            }}
+                                            className={`flex items-center gap-2 px-5 py-2.5 font-medium rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all ${isAudioPlaying
+                                                ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
+                                                : 'bg-gradient-to-r from-[--brand] to-purple-500 text-white'
+                                                }`}
+                                        >
+                                            {isAudioPlaying ? (
+                                                /* Pause Icon */
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                                    <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+                                                    <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+                                                </svg>
+                                            ) : (
+                                                /* Play Icon */
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                                </svg>
+                                            )}
+                                            <span>{isAudioPlaying ? 'Tạm dừng' : 'Nghe đọc truyện'}</span>
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Content Area - Scrollable */}
@@ -290,48 +305,33 @@ export default function Stories() {
                                 </div>
                             </div>
 
-                            {/* Controls Footer */}
+                            {/* Controls Footer - Chỉ nút Next/Previous */}
                             <div className="p-4 border-t border-black/10 bg-black/5 backdrop-blur-sm shrink-0">
-                                <div className="flex items-center justify-center gap-4">
+                                <div className="flex items-center justify-center gap-6">
                                     {/* Previous */}
                                     <button
-                                        onClick={() => {
-                                            if (currentParagraph > 0) {
-                                                goToParagraph(currentParagraph - 1);
-                                            }
-                                        }}
-                                        className="p-3 rounded-full hover:bg-black/10 disabled:opacity-30 transition-all"
+                                        onClick={prevParagraph}
+                                        className="p-4 rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-30 transition-all"
                                         disabled={currentParagraph === 0}
                                     >
-                                        <SkipForward className="rotate-180" size={24} />
+                                        <ChevronLeft size={28} />
                                     </button>
 
-                                    {/* Play/Pause */}
-                                    <button
-                                        onClick={togglePlay}
-                                        className="w-16 h-16 rounded-full bg-[--brand] text-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
-                                    >
-                                        {isPlaying ? <Pause size={32} fill="currentColor" /> : <Play size={32} fill="currentColor" className="ml-1" />}
-                                    </button>
+                                    {/* Progress text */}
+                                    <div className="text-center min-w-[100px]">
+                                        <p className="text-lg font-bold">{currentParagraph + 1} / {paragraphs.length}</p>
+                                        <p className="text-xs opacity-60">đoạn văn</p>
+                                    </div>
 
                                     {/* Next */}
                                     <button
-                                        onClick={() => {
-                                            if (currentParagraph < paragraphs.length - 1) {
-                                                goToParagraph(currentParagraph + 1);
-                                            }
-                                        }}
-                                        className="p-3 rounded-full hover:bg-black/10 disabled:opacity-30 transition-all"
+                                        onClick={nextParagraph}
+                                        className="p-4 rounded-full bg-[--brand] text-white hover:opacity-90 disabled:opacity-30 transition-all"
                                         disabled={currentParagraph === paragraphs.length - 1}
                                     >
-                                        <SkipForward size={24} />
+                                        <ChevronRight size={28} />
                                     </button>
                                 </div>
-
-                                {/* Progress text */}
-                                <p className="text-center text-sm opacity-60 mt-3">
-                                    Đoạn {currentParagraph + 1} / {paragraphs.length}
-                                </p>
                             </div>
                         </motion.div>
                     </motion.div>

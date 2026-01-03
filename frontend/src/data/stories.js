@@ -13,7 +13,7 @@ export const STORIES = [
         readingTime: '8 phút',
         color: 'from-blue-500 to-indigo-600',
         icon: '📝',
-        audioUrl: '/audio/stories/story-1.mp3',
+        audioUrl: '/audio/stories/bai1.wav',
         moral: 'Điểm số chỉ là một phần nhỏ trong hành trình học tập. Quan trọng hơn là bạn đã cố gắng và học được gì từ thất bại.',
         paragraphs: [
             'Minh ngồi bất động trước tờ kết quả thi học kỳ. Con số 5.8 điểm Toán như đang nhảy múa trước mắt cậu. Lớp 10A1 – lớp chọn của trường – và cậu là học sinh có điểm thấp nhất.',
@@ -51,7 +51,7 @@ export const STORIES = [
         readingTime: '7 phút',
         color: 'from-purple-500 to-pink-500',
         icon: '🎓',
-        audioUrl: '/audio/stories/story-2.mp3',
+        audioUrl: '/audio/stories/bai2.wav',
         moral: 'Kỳ thi tốt nghiệp không phải là đích đến cuối cùng, mà chỉ là một cánh cửa trong nhiều cánh cửa của cuộc đời.',
         paragraphs: [
             'Còn 3 tháng nữa là kỳ thi tốt nghiệp THPT. Lan ngồi trước bàn học, đầu đau nhức vì những con số và công thức. Cô đã học liên tục 14 tiếng mỗi ngày suốt 2 tuần qua.',
@@ -90,7 +90,7 @@ export const STORIES = [
         readingTime: '7 phút',
         color: 'from-amber-400 to-orange-500',
         icon: '🎤',
-        audioUrl: '/audio/stories/story-3.mp3',
+        audioUrl: '/audio/stories/bai3.wav',
         moral: 'Bạn có quyền được lắng nghe. Tiếng nói của bạn quan trọng, dù đôi khi bạn nghĩ nó không đáng giá.',
         paragraphs: [
             'Hải ngồi trong lớp học, câu hỏi của thầy vẫn văng vẳng: "Ai có ý kiến gì không?" Cậu biết câu trả lời, nhưng tay cậu không thể giơ lên.',
@@ -126,7 +126,7 @@ export const STORIES = [
         readingTime: '8 phút',
         color: 'from-teal-400 to-cyan-500',
         icon: '📱',
-        audioUrl: '/audio/stories/story-4.mp3',
+        audioUrl: '/audio/stories/bai4.wav',
         moral: 'Mạng xã hội chỉ là phần nổi của tảng băng. Đừng so sánh hậu trường của mình với sân khấu của người khác.',
         paragraphs: [
             'Linh cuộn Facebook lúc nửa đêm. Bạn A check-in ở resort sang chảnh. Bạn B khoe điểm 10 Toán. Bạn C đăng ảnh với bạn trai điển trai. Còn mình? Một ngày bình thường, tẻ nhạt.',
@@ -161,7 +161,7 @@ export const STORIES = [
         readingTime: '8 phút',
         color: 'from-pink-400 to-rose-500',
         icon: '💔',
-        audioUrl: '/audio/stories/story-5.mp3',
+        audioUrl: '/audio/stories/bai5.wav',
         moral: 'Người bạn thật sự không cần gặp mỗi ngày. Quan trọng là khi cần, họ luôn ở đó.',
         paragraphs: [
             'An và Bình là bạn thân từ lớp 6. Hai người làm gì cũng có nhau: học nhóm, chơi game, chia sẻ bí mật. Nhưng lên lớp 10, mọi thứ bắt đầu thay đổi.',
@@ -199,7 +199,7 @@ export const STORIES = [
         readingTime: '7 phút',
         color: 'from-indigo-400 to-purple-500',
         icon: '🌊',
-        audioUrl: '/audio/stories/story-6.mp3',
+        audioUrl: '/audio/stories/bai6.wav',
         moral: 'Không có bạn không có nghĩa là bạn có vấn đề. Đôi khi chỉ cần một người bạn thật sự là đủ.',
         paragraphs: [
             'Tuấn mới chuyển trường. Lớp mới, thầy cô mới, và không một gương mặt quen thuộc. Cậu ngồi một mình ở góc lớp, nhìn các bạn cười đùa trong nhóm của họ.',
@@ -236,7 +236,7 @@ export const STORIES = [
         readingTime: '8 phút',
         color: 'from-green-500 to-emerald-600',
         icon: '👨‍👩‍👧',
-        audioUrl: '/audio/stories/story-7.mp3',
+        audioUrl: '/audio/stories/bai7.wav',
         moral: 'Bố mẹ không hoàn hảo, nhưng họ yêu thương con theo cách họ biết. Hiểu nhau là một hành trình cần cả hai phía.',
         paragraphs: [
             '"Mẹ không hiểu con gì hết!" Mai đóng sầm cửa phòng, nước mắt tràn mi. Cô vừa cãi nhau với mẹ về chuyện đi chơi với bạn.',
@@ -276,7 +276,7 @@ export const STORIES = [
         readingTime: '9 phút',
         color: 'from-slate-500 to-gray-600',
         icon: '🏠',
-        audioUrl: '/audio/stories/story-8.mp3',
+        audioUrl: '/audio/stories/bai8.wav',
         moral: 'Gia đình có thể thay đổi, nhưng điều đó không có nghĩa là bạn mất đi tình yêu. Bạn có quyền cảm thấy đau, và bạn sẽ ổn.',
         paragraphs: [
             'Bố mẹ Hoàng ly hôn vào mùa hè năm lớp 10. Cậu biết trước điều đó sẽ xảy ra – những trận cãi vã ngày càng nhiều, những bữa cơm im lặng, những ánh mắt mệt mỏi.',
@@ -317,7 +317,7 @@ export const STORIES = [
         readingTime: '8 phút',
         color: 'from-gray-600 to-slate-700',
         icon: '🌙',
-        audioUrl: '/audio/stories/story-9.mp3',
+        audioUrl: '/audio/stories/bai9.wav',
         moral: 'Cảm thấy kiệt sức là dấu hiệu bạn cần được giúp đỡ, không phải là yếu đuối. Hãy tìm đến ai đó khi bạn cần.',
         paragraphs: [
             'Có những buổi sáng Hân không muốn mở mắt ra. Không phải vì ngủ chưa đủ, mà vì cô không thấy lý do để bước ra khỏi giường. Mọi thứ đều xám xịt, vô nghĩa.',
@@ -355,7 +355,7 @@ export const STORIES = [
         readingTime: '7 phút',
         color: 'from-red-400 to-pink-500',
         icon: '🛡️',
-        audioUrl: '/audio/stories/story-10.mp3',
+        audioUrl: '/audio/stories/bai10.wav',
         moral: 'Nói "không" để bảo vệ bản thân không có nghĩa là bạn ích kỷ. Đó là cách bạn tự tôn trọng mình.',
         paragraphs: [
             'Quỳnh là người mà ai nhờ gì cũng giúp. Chép bài giúp, trực nhật giúp, làm bài nhóm giúp. Cô không bao giờ từ chối vì sợ mọi người ghét mình.',
@@ -394,7 +394,7 @@ export const STORIES = [
         readingTime: '8 phút',
         color: 'from-yellow-500 to-orange-500',
         icon: '🧭',
-        audioUrl: '/audio/stories/story-11.mp3',
+        audioUrl: '/audio/stories/bai11.wav',
         moral: 'Không biết mình muốn gì là bình thường. Quan trọng là bạn dám thử, dám sai, và tiếp tục tìm kiếm.',
         paragraphs: [
             '"Em muốn thi ngành gì?" – câu hỏi đó như một con dao đâm vào tim Khôi mỗi khi ai đó hỏi. Lớp 12 rồi, bạn bè ai cũng có mục tiêu rõ ràng. Chỉ có cậu là không biết mình muốn gì.',
@@ -432,7 +432,7 @@ export const STORIES = [
         readingTime: '7 phút',
         color: 'from-violet-500 to-purple-600',
         icon: '🔄',
-        audioUrl: '/audio/stories/story-12.mp3',
+        audioUrl: '/audio/stories/bai12.wav',
         moral: 'Tuổi teen là lúc được phép thất bại nhiều nhất. Mỗi vấp ngã là một bài học quý giá cho tương lai.',
         paragraphs: [
             'Thảo từng nghĩ mình sẽ thành công ngay từ khi còn trẻ. Nộp đơn vào CLB Tiếng Anh – rớt. Thi học sinh giỏi – không đạt. Bắt đầu kênh YouTube – không ai xem. Khởi nghiệp bán đồ handmade – lỗ vốn.',

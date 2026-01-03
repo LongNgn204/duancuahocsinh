@@ -669,14 +669,14 @@ export default function LandingPage() {
                             <ul className="space-y-2 text-sm text-[--text-secondary]">
                                 <li className="flex items-center gap-2">
                                     <Mail className="w-4 h-4" />
-                                    <a href="mailto:stu725114073@hnue.edu.vn" className="hover:text-[--brand] transition-colors">
-                                        Email: stu725114073@hnue.edu.vn
+                                    <a href="mailto:...." className="hover:text-[--brand] transition-colors">
+                                        Email: ...
                                     </a>
                                 </li>
                                 <li className="flex items-center gap-2">
                                     <Phone className="w-4 h-4" />
-                                    <a href="tel:0896636181" className="hover:text-[--brand] transition-colors">
-                                        Long Nguyễn 0896636181
+                                    <a href="tel:..." className="hover:text-[--brand] transition-colors">
+                                        ...
                                     </a>
                                 </li>
                                 <li className="flex items-center gap-2">

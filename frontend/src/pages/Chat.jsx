@@ -66,7 +66,7 @@ function Bubble({ role, children, ts, isUser, onRead }) {
             </ReactMarkdown>
           </div>
 
-          {/* TTS Button for Assistant */}
+          {/* TTS Button for Assistant - 🔧 ĐANG TẮT
           {!isUser && (
             <button
               onClick={() => onRead && onRead(children)}
@@ -76,6 +76,7 @@ function Bubble({ role, children, ts, isUser, onRead }) {
               <Volume2 size={14} />
             </button>
           )}
+          */}
         </div>
         <span className="text-[10px] text-slate-400 mt-1 px-1">
           {formatTime(ts)}

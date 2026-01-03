@@ -355,7 +355,7 @@ export default function GratitudeJar() {
 
                         {/* Các nút điều khiển */}
                         <div className="flex justify-center gap-3 mt-6">
-                            {/* Nút đọc */}
+                            {/* Nút đọc - 🔧 ĐANG TẮT
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
@@ -381,6 +381,7 @@ export default function GratitudeJar() {
                                 {isSpeaking ? <VolumeX size={18} /> : <Volume2 size={18} />}
                                 <span>{isSpeaking ? 'Dừng đọc' : 'Đọc cho tôi'}</span>
                             </motion.button>
+                            */}
 
                             {/* Nút đổi câu */}
                             <motion.button
@@ -388,15 +389,14 @@ export default function GratitudeJar() {
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => {
                                     playSound('click');
-                                    speechSynthesis.cancel();
-                                    setIsSpeaking(false);
                                     const newMsg = ENCOURAGEMENT_MESSAGES[Math.floor(Math.random() * ENCOURAGEMENT_MESSAGES.length)];
                                     setEncouragement(newMsg);
                                 }}
-                                className="p-2 bg-amber-200 text-amber-700 rounded-full hover:bg-amber-300 transition-all"
+                                className="flex items-center gap-2 px-4 py-2 bg-amber-200 text-amber-700 rounded-full hover:bg-amber-300 transition-all font-medium"
                                 title="Câu khác"
                             >
                                 <RefreshCw size={18} />
+                                <span>Câu khác</span>
                             </motion.button>
                         </div>
                     </motion.div>
