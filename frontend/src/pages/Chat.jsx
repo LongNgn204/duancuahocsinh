@@ -1,6 +1,6 @@
 // src/pages/Chat.jsx
 // Chú thích: Chat Unified - Gộp Text & Voice, Giao diện tối giản pastel
-import { useEffect, useState, useRef, useTransition } from 'react';
+import React, { useEffect, useState, useRef, useTransition, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAI } from '../hooks/useAI';
 import { useVoiceAgentCF } from '../hooks/useVoiceAgentCF';
@@ -20,22 +20,39 @@ import {
 
 function formatTime(ts) {
   try {
-    if (!ts) return ''; // Không có timestamp
+    if (!ts) return '';
     const d = new Date(ts);
-    // Check if date is valid
     if (isNaN(d.getTime())) return '';
     return d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
   } catch (_) { return ''; }
 }
 
-// Bong bóng chat - Màu sắc pastel nhẹ hơn, bubble to hơn
-function Bubble({ role, children, ts, isUser, onRead }) {
+// CSS Keyframe cho animation message mới
+const fadeInUpStyle = `
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+`;
+
+// Bong bóng chat - Memoized để tránh re-render không cần thiết
+// Chú thích: Chỉ animate message mới nhất (isNew=true), message cũ không animate
+const Bubble = React.memo(function Bubble({ role, children, ts, isUser, onRead, isNew = false }) {
   return (
-    <motion.div
+    <div
       className={`flex items-start gap-2 md:gap-3 ${isUser ? 'flex-row-reverse' : ''} mb-4`}
-      initial={{ opacity: 0, y: 10, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.2 }}
+      style={{
+        // Animate chỉ khi là message mới
+        opacity: 1,
+        transform: 'translateY(0)',
+        animation: isNew ? 'fadeInUp 0.2s ease-out' : 'none'
+      }}
     >
       {/* Avatar nhỏ gọn hơn */}
       <div className={`
@@ -65,26 +82,14 @@ function Bubble({ role, children, ts, isUser, onRead }) {
               {String(children).replace(/\n/g, '  \n')}
             </ReactMarkdown>
           </div>
-
-          {/* TTS Button for Assistant - 🔧 ĐANG TẮT
-          {!isUser && (
-            <button
-              onClick={() => onRead && onRead(children)}
-              className="absolute -right-7 top-1/2 -translate-y-1/2 p-1 text-slate-300 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-all rounded-full"
-              title="Đọc tin nhắn"
-            >
-              <Volume2 size={14} />
-            </button>
-          )}
-          */}
         </div>
         <span className="text-[10px] text-slate-400 mt-1 px-1">
           {formatTime(ts)}
         </span>
       </div>
-    </motion.div>
+    </div>
   );
-}
+});
 
 // Visualizer cho Voice Mode Overlay
 function VoiceVisualizer({ listening }) {
@@ -154,12 +159,17 @@ export default function Chat() {
 
   const isListening = voiceStatus === 'listening';
 
-  // --- Auto Scroll ---
+  // --- Auto Scroll (Optimized) ---
+  // Chú thích: Dùng requestAnimationFrame để tránh layout thrashing
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      requestAnimationFrame(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      });
     }
-  }, [messages, voiceStatus]);
+  }, [messages.length]); // Chỉ trigger khi số lượng message thay đổi
 
   // --- Auto Read New AI Messages ---
   const lastReadMsgRef = useRef(null);
@@ -213,6 +223,9 @@ export default function Chat() {
 
   return (
     <div className="relative h-screen w-full overflow-hidden flex">
+      {/* Inject CSS Keyframe Animation */}
+      <style dangerouslySetInnerHTML={{ __html: fadeInUpStyle }} />
+
       {/* NỀN PASTEL TỐI GIẢN - Gradient CSS thay vì hình ảnh */}
       <div className="absolute inset-0 bg-gradient-to-br from-rose-50 via-violet-50 to-indigo-50 z-0" />
 
@@ -358,10 +371,11 @@ export default function Chat() {
           ) : (
             messages.map((m, idx) => (
               <Bubble
-                key={idx}
+                key={m.ts || idx}
                 role={m.role}
                 ts={m.ts}
                 isUser={m.role === 'user'}
+                isNew={idx === messages.length - 1}
                 onRead={speak}
               >
                 {m.content}
