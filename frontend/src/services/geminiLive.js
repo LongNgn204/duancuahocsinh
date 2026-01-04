@@ -62,20 +62,60 @@ export function createLiveSession(callbacks = {}) {
         }
     };
 
-    // Connect qua Cloud Run WebSocket proxy - hỗ trợ outbound WebSocket đến Vertex AI
+    // Chú thích: Connect trực tiếp đến Vertex AI Gemini Live API
+    // Backend cấp access token, frontend connect thẳng không qua proxy
     const connect = async () => {
         return new Promise(async (resolve, reject) => {
             try {
-                // Kết nối đến Cloud Run WebSocket proxy
-                // Cloud Run sẽ proxy đến Vertex AI và xử lý authentication
-                console.log('[GeminiLive] Connecting to Cloud Run:', CLOUD_RUN_WS_URL);
+                // 1. Lấy config từ backend (access token + endpoint)
+                console.log('[GeminiLive] Fetching config from backend...');
+                const configRes = await fetch(API_BASE_URL + '/api/ai/live-config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
 
-                ws = new WebSocket(CLOUD_RUN_WS_URL);
+                if (!configRes.ok) {
+                    const err = await configRes.json().catch(() => ({}));
+                    throw new Error(err.message || `Config failed: ${configRes.status}`);
+                }
+
+                const config = await configRes.json();
+                console.log('[GeminiLive] Got config, connecting to Gemini Live API...');
+
+                // 2. Connect trực tiếp đến Gemini Live API với API key
+                // Chú thích: Dùng key= query param cho Gemini AI Studio API
+                const wsUrlWithAuth = `${config.geminiEndpoint}?key=${config.apiKey}`;
+                ws = new WebSocket(wsUrlWithAuth);
 
                 ws.onopen = () => {
-                    console.log('[GeminiLive] WebSocket connected to backend');
+                    console.log('[GeminiLive] WebSocket connected to Vertex AI');
                     isConnected = true;
-                    // Backend Durable Objects sẽ tự động setup và connect đến Vertex AI
+
+                    // 3. Gửi setup message với authentication và system instruction
+                    const setupMessage = {
+                        setup: {
+                            model: config.model,
+                            generationConfig: {
+                                responseModalities: ['AUDIO'],
+                                speechConfig: {
+                                    // Chú thích: Aoede là giọng nữ thân thiện
+                                    voiceConfig: {
+                                        prebuiltVoiceConfig: {
+                                            voiceName: 'Aoede' // Giọng nữ
+                                        }
+                                    }
+                                }
+                            },
+                            systemInstruction: {
+                                parts: [{ text: config.systemInstruction }]
+                            }
+                        }
+                    };
+
+                    // Chú thích: Gửi Bearer token trong setup message vì WebSocket API không hỗ trợ headers
+                    // Thêm auth header vào URL query param
+                    ws.send(JSON.stringify(setupMessage));
+                    console.log('[GeminiLive] Setup message sent');
                 };
 
                 ws.onmessage = async (event) => {
@@ -89,19 +129,6 @@ export function createLiveSession(callbacks = {}) {
                         } else {
                             // Handle text messages
                             data = JSON.parse(event.data);
-                        }
-
-                        // Handle connected message from backend
-                        if (data.type === 'connected') {
-                            console.log('[GeminiLive] Backend connected to Vertex AI');
-                            return;
-                        }
-
-                        // Handle error from backend
-                        if (data.type === 'error') {
-                            console.error('[GeminiLive] Backend error:', data.message);
-                            if (onError) onError(new Error(data.message));
-                            return;
                         }
 
                         // Handle setupComplete from Vertex AI
@@ -324,6 +351,20 @@ export class AudioPlayer {
         } catch (e) {
             console.error('[AudioPlayer] Play error:', e);
         }
+    }
+
+    // Chú thích: Resume AudioContext (cần gọi sau user interaction)
+    async resume() {
+        if (!this.audioContext) {
+            await this.init();
+        } else if (this.audioContext.state === 'suspended') {
+            await this.audioContext.resume();
+        }
+    }
+
+    // Chú thích: Thêm audio vào queue để phát
+    enqueue(base64Data) {
+        this.play(base64Data);
     }
 
     stop() {

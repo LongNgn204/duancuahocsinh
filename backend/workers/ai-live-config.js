@@ -5,7 +5,7 @@
 import { getVertexAccessToken } from './vertex-auth.js';
 
 // Vertex AI Live model
-const LIVE_MODEL = 'gemini-2.0-flash-live-001';
+const LIVE_MODEL = 'gemini-2.0-flash-exp';
 
 // System instruction cho voice assistant
 const SYSTEM_INSTRUCTION = `Bạn là "Bạn Đồng Hành", một người bạn AI thông minh dành cho học sinh Việt Nam. Bạn được cập nhật kiến thức mới nhất mỗi ngày.
@@ -89,26 +89,27 @@ export default {
         }
 
         try {
-            // Lấy access token
-            const accessToken = await getVertexAccessToken(env);
+            // Chú thích: Gemini Live API dùng API key, không dùng OAuth token
+            // API key được lấy từ env.GEMINI_API_KEY (Cloudflare secret)
+            const apiKey = env.GEMINI_API_KEY;
+            if (!apiKey) {
+                return json({
+                    error: 'missing_api_key',
+                    message: 'Missing GEMINI_API_KEY. Run: wrangler secret put GEMINI_API_KEY'
+                }, 500, origin);
+            }
 
-            // Build Vertex AI Live API URL
-            const location = env.VERTEX_LOCATION;
-            const projectId = env.VERTEX_PROJECT_ID;
+            // Gemini Live API WebSocket endpoint (không phải Vertex AI)
+            const geminiWsUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent`;
 
-            // Chú thích: Vertex AI Live WebSocket endpoint
-            const vertexWsUrl = `wss://${location}-aiplatform.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent`;
-
-            console.log('[AI Live Config] Generated config for project:', projectId);
+            console.log('[AI Live Config] Generated config with Gemini API');
 
             return json({
-                vertexEndpoint: vertexWsUrl,
-                accessToken: accessToken,
+                geminiEndpoint: geminiWsUrl,
+                apiKey: apiKey,
                 model: `models/${LIVE_MODEL}`,
                 systemInstruction: SYSTEM_INSTRUCTION,
-                expiresIn: 3600, // Token expires in 1 hour
-                location: location,
-                projectId: projectId
+                expiresIn: 3600
             }, 200, origin);
 
         } catch (err) {
