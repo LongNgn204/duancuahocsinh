@@ -4,7 +4,7 @@ import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import AppHeader from './components/layout/AppHeader';
 import Sidebar from './components/layout/Sidebar';
-import FocusModeToggle from './components/layout/FocusModeToggle';
+// FocusModeToggle removed
 import PrivacyNotice from './components/modals/PrivacyNotice';
 import OnboardingModal from './components/modals/OnboardingModal';
 import UpdateToast from './components/ui/UpdateToast';
@@ -82,8 +82,7 @@ function AppLayout({ children }) {
         </main>
       </div>
 
-      {/* Floating Controls */}
-      <FocusModeToggle />
+      {/* Floating Controls - FocusModeToggle removed */}
 
       {/* Floating AI Chat Button */}
       {/* Floating AI Chat Button removed */}
