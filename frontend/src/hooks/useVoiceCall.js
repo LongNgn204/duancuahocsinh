@@ -4,7 +4,7 @@
 // Giữ Gemini Live API cho TTS output (audio response từ AI)
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { createLiveSession, AudioPlayer, isLiveAPIAvailable } from '../services/geminiLive';
+import { OpenAIRealtimeService, AudioPlayer } from '../services/openaiRealtime';
 import { detectSOSLevel, sosMessage, getSuggestedAction } from '../utils/sosDetector';
 
 /**
@@ -239,12 +239,6 @@ export function useVoiceCall(options = {}) {
     // START VOICE CALL
     // ========================================================================
     const startCall = useCallback(async () => {
-        if (!isLiveAPIAvailable()) {
-            setError('Chưa cấu hình Gemini API Key');
-            setStatus('error');
-            return false;
-        }
-
         // Check Web Speech API support
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
@@ -278,15 +272,15 @@ export function useVoiceCall(options = {}) {
                 }
             };
 
-            // Create Gemini Live session - chỉ dùng cho TTS output
-            sessionRef.current = createLiveSession({
-                onAudioData: (base64Data, mimeType) => {
+            // Create OpenAI Realtime session
+            sessionRef.current = OpenAIRealtimeService({
+                onAudioDelta: (base64Data) => {
                     // Nhận audio từ AI và phát
                     if (audioPlayerRef.current) {
                         audioPlayerRef.current.enqueue(base64Data);
                     }
                 },
-                onTranscript: (text) => {
+                onTranscriptDelta: (text) => {
                     // AI response transcript (nếu có)
                     console.log('[VoiceCall] AI transcript:', text);
                     setAiResponse(prev => prev + ' ' + text);
@@ -302,7 +296,7 @@ export function useVoiceCall(options = {}) {
                     setStatus('idle');
                 },
                 onOpen: () => {
-                    console.log('[VoiceCall] Session ready - Starting STT');
+                    console.log('[VoiceCall] OpenAI Session ready');
                     setStatus('active');
 
                     // Start duration timer
@@ -385,8 +379,7 @@ export function useVoiceCall(options = {}) {
 
     // Check if supported
     const isSupported = typeof navigator !== 'undefined' &&
-        (window.SpeechRecognition || window.webkitSpeechRecognition) &&
-        isLiveAPIAvailable();
+        (window.SpeechRecognition || window.webkitSpeechRecognition);
 
     // Clear SOS state
     const clearSOS = useCallback(() => {

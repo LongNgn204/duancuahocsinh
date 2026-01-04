@@ -20,12 +20,16 @@ database_id = "a6a814eb-b5fb-4626-9258-f519060d8c89"
 # Chú thích: Durable Objects hỗ trợ outbound WebSocket để proxy đến Vertex AI
 [durable_objects]
 bindings = [
-  { name = "VOICE_CALL_SESSION", class_name = "VoiceCallSession" }
+  { name = "VOICE_CALL_SESSION", class_name = "VoiceCallSessionOpenAI" }
 ]
 
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["VoiceCallSession"]
+
+[[migrations]]
+tag = "v2"
+renamed_classes = [{ from = "VoiceCallSession", to = "VoiceCallSessionOpenAI" }]
 
 [vars]
 # CORS origin allow-list

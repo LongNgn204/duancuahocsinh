@@ -55,10 +55,10 @@ import aiLiveConfig from './ai-live-config.js';
 import debugVertex from './debug-vertex.js';
 
 // Durable Objects cho Voice Call WebSocket proxy
-import { VoiceCallSession, handleVoiceCall } from './voice-call-do.js';
+import { VoiceCallSessionOpenAI } from './voice-call-do.js';
 
 // Re-export Durable Object class để wrangler có thể tìm thấy
-export { VoiceCallSession };
+export { VoiceCallSessionOpenAI };
 
 // =============================================================================
 // CORS HELPERS
@@ -1132,3 +1132,4 @@ export default {
         }
     }
 };
+

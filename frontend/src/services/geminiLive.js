@@ -1,58 +1,29 @@
-// src/services/geminiLive.js
-// Chú thích: Voice Call với Gemini Live API qua Cloudflare Durable Objects proxy
+import { API_BASE_URL } from '../utils/api';
 
-// API Base URL - detect from environment
-const API_BASE_URL = import.meta.env.VITE_API_URL ||
-    (window.location.hostname === 'localhost'
-        ? 'http://localhost:8787'
-        : 'https://ban-dong-hanh-worker.hoanglong17.workers.dev');
-
-// WebSocket URL - chuyển từ https:// sang wss://
-const CLOUD_RUN_WS_URL = API_BASE_URL.replace('http://', 'ws://').replace('https://', 'wss://') + '/api/ai/live';
+// WebSocket endpoint (Direct Worker Proxy)
+// Tự động chuyển http -> ws, https -> wss
+const CLOUD_RUN_WS_URL = API_BASE_URL.replace(/^http/, 'ws') + '/api/ai/live';
 
 /**
- * Check if Voice Call is available
- * Chú thích: Đã bật với Cloudflare Durable Objects proxy
+ * GeminiLiveService - Secure Voice Call Service
+ * Kết nối qua Cloudflare Worker Durable Object Proxy
+ * Không lộ API Key ở frontend
  */
-export function isLiveAPIAvailable() {
-    return true; // ✓ Đã bật với Durable Objects proxy
-}
-
-export function getVoiceCallDisabledMessage() {
-    return '🔧 Tính năng Gọi điện AI đang được bảo trì nâng cấp. Vui lòng sử dụng Trò chuyện văn bản trong thời gian này!';
-}
-
-/**
- * Create Gemini Live session for voice chat
- * @param {Object} callbacks - Event callbacks
- * @param {Function} callbacks.onAudioData - Called when audio data received (base64)
- * @param {Function} callbacks.onTranscript - Called when transcript received
- * @param {Function} callbacks.onError - Called on error
- * @param {Function} callbacks.onClose - Called when connection closes
- * @param {Function} callbacks.onOpen - Called when connection opens
- * @returns {Object} Session controller
- */
-export function createLiveSession(callbacks = {}) {
-    const { onAudioData, onTranscript, onError, onClose, onOpen } = callbacks;
-
+export const GeminiLiveService = ({ onOpen, onClose, onAudioData, onTranscript, onError, onSetupComplete, onDisconnect }) => {
     let ws = null;
     let isConnected = false;
     let setupComplete = false;
     let keepaliveInterval = null;
 
-    // Start keepalive to prevent connection timeout
+    // Keepalive to prevent timeout
     const startKeepalive = () => {
-        stopKeepalive();
+        if (keepaliveInterval) clearInterval(keepaliveInterval);
         keepaliveInterval = setInterval(() => {
-            if (ws && isConnected) {
-                // Send empty message as keepalive
-                try {
-                    ws.send(JSON.stringify({ clientContent: { turnComplete: true } }));
-                } catch (e) {
-                    console.warn('[GeminiLive] Keepalive failed:', e);
-                }
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                // Send keepalive ping if needed
+                // ws.send(JSON.stringify({ clientContent: { turnComplete: true } }));
             }
-        }, 15000); // Every 15 seconds
+        }, 15000);
     };
 
     const stopKeepalive = () => {
@@ -62,118 +33,72 @@ export function createLiveSession(callbacks = {}) {
         }
     };
 
-    // Chú thích: Connect trực tiếp đến Vertex AI Gemini Live API
-    // Backend cấp access token, frontend connect thẳng không qua proxy
+    // Connect qua Worker Durable Object proxy
     const connect = async () => {
-        return new Promise(async (resolve, reject) => {
+        return new Promise((resolve, reject) => {
             try {
-                // 1. Lấy config từ backend (access token + endpoint)
-                console.log('[GeminiLive] Fetching config from backend...');
-                const configRes = await fetch(API_BASE_URL + '/api/ai/live-config', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
+                console.log('[GeminiLive] Connecting to Secure Worker Proxy:', CLOUD_RUN_WS_URL);
 
-                if (!configRes.ok) {
-                    const err = await configRes.json().catch(() => ({}));
-                    throw new Error(err.message || `Config failed: ${configRes.status}`);
-                }
-
-                const config = await configRes.json();
-                console.log('[GeminiLive] Got config, connecting to Gemini Live API...');
-
-                // 2. Connect trực tiếp đến Gemini Live API với API key
-                // Chú thích: Dùng key= query param cho Gemini AI Studio API
-                const wsUrlWithAuth = `${config.geminiEndpoint}?key=${config.apiKey}`;
-                ws = new WebSocket(wsUrlWithAuth);
+                ws = new WebSocket(CLOUD_RUN_WS_URL);
 
                 ws.onopen = () => {
-                    console.log('[GeminiLive] WebSocket connected to Vertex AI');
+                    console.log('[GeminiLive] WebSocket connected to Worker Proxy');
                     isConnected = true;
-
-                    // 3. Gửi setup message với authentication và system instruction
-                    const setupMessage = {
-                        setup: {
-                            model: config.model,
-                            generationConfig: {
-                                responseModalities: ['AUDIO'],
-                                speechConfig: {
-                                    // Chú thích: Aoede là giọng nữ thân thiện
-                                    voiceConfig: {
-                                        prebuiltVoiceConfig: {
-                                            voiceName: 'Aoede' // Giọng nữ
-                                        }
-                                    }
-                                }
-                            },
-                            systemInstruction: {
-                                parts: [{ text: config.systemInstruction }]
-                            }
-                        }
-                    };
-
-                    // Chú thích: Gửi Bearer token trong setup message vì WebSocket API không hỗ trợ headers
-                    // Thêm auth header vào URL query param
-                    ws.send(JSON.stringify(setupMessage));
-                    console.log('[GeminiLive] Setup message sent');
+                    // Worker sẽ tự động connect Gemini và gửi 'connected' signal
                 };
 
                 ws.onmessage = async (event) => {
                     try {
                         let data;
-
-                        // Handle Blob (binary) messages
                         if (event.data instanceof Blob) {
                             const text = await event.data.text();
                             data = JSON.parse(text);
                         } else {
-                            // Handle text messages
                             data = JSON.parse(event.data);
                         }
 
-                        // Handle setupComplete from Vertex AI
-                        if (data.setupComplete) {
-                            console.log('[GeminiLive] Setup complete');
-                            setupComplete = true;
-                            startKeepalive();
-                            if (onOpen) onOpen();
-                            resolve({ success: true });
+                        // DO gửi message này khi đã connect thành công tới Gemini
+                        if (data.type === 'connected') {
+                            console.log('[GeminiLive] Worker Proxy connected to Gemini AI');
                             return;
                         }
 
-                        // Handle server content (audio response from Vertex AI)
-                        if (data.serverContent) {
-                            const content = data.serverContent;
+                        if (data.type === 'error') {
+                            console.error('[GeminiLive] Proxy error:', data.message);
+                            if (onError) onError(data.message);
+                            return;
+                        }
 
-                            // Check for interruption
-                            if (content.interrupted) {
-                                console.log('[GeminiLive] Interrupted by user');
-                                return;
+                        // Nhận serverContent từ Gemini (qua Proxy)
+                        if (data.serverContent) {
+                            // Audio Response
+                            if (data.serverContent.modelTurn?.parts?.[0]?.inlineData) {
+                                // Direct binary data in base64
+                                const audioData = data.serverContent.modelTurn.parts[0].inlineData.data;
+                                if (onAudioData) onAudioData(audioData, 'audio/pcm;rate=24000');
+
+                                // Auto play if AudioPlayer ref provided via context (not passed here directly but managed by hook)
+                                // Hook will handle onAudioData
                             }
 
-                            // Handle model turn with audio
-                            if (content.modelTurn && content.modelTurn.parts) {
-                                for (const part of content.modelTurn.parts) {
-                                    // Audio data
-                                    if (part.inlineData && part.inlineData.data) {
-                                        if (onAudioData) {
-                                            onAudioData(part.inlineData.data, part.inlineData.mimeType);
-                                        }
-                                    }
-                                    // Text transcript
-                                    if (part.text) {
-                                        if (onTranscript) {
-                                            onTranscript(part.text);
-                                        }
-                                    }
+                            // Text transcript (user or model)
+                            if (data.serverContent.modelTurn?.parts?.[0]?.text) {
+                                if (onTranscript) onTranscript(data.serverContent.modelTurn.parts[0].text);
+                            }
+
+                            // Setup Complete signal
+                            if (data.serverContent.turnComplete) {
+                                if (!setupComplete) {
+                                    setupComplete = true;
+                                    console.log('[GeminiLive] Setup complete (Proxy)');
+                                    startKeepalive();
+                                    if (onSetupComplete) onSetupComplete();
+                                    if (onOpen) onOpen();
+                                    resolve({ success: true });
                                 }
                             }
-
-                            // Handle turn complete
-                            if (content.turnComplete) {
-                                console.log('[GeminiLive] Turn complete');
-                            }
                         }
+
                     } catch (e) {
                         console.error('[GeminiLive] Parse error:', e);
                     }
@@ -181,7 +106,7 @@ export function createLiveSession(callbacks = {}) {
 
                 ws.onerror = (error) => {
                     console.error('[GeminiLive] WebSocket error:', error);
-                    if (onError) onError(error);
+                    if (onError) onError('Connection failed');
                     reject(error);
                 };
 
@@ -190,28 +115,21 @@ export function createLiveSession(callbacks = {}) {
                     isConnected = false;
                     setupComplete = false;
                     stopKeepalive();
+                    if (onDisconnect) onDisconnect();
                     if (onClose) onClose(event);
                 };
 
-                // Timeout for setup
-                setTimeout(() => {
-                    if (!setupComplete) {
-                        console.warn('[GeminiLive] Setup timeout');
-                        reject(new Error('Setup timeout'));
-                    }
-                }, 15000);
-
             } catch (err) {
-                console.error('[GeminiLive] Connection error:', err);
+                console.error('[GeminiLive] Connect failed:', err);
                 reject(err);
             }
         });
     };
 
-    // Send audio data to Vertex AI (via backend proxy)
+    // Send audio data to backend proxy
     const sendAudio = (base64Data) => {
-        if (!ws || !isConnected || !setupComplete) {
-            console.warn('[GeminiLive] Not ready to send audio');
+        if (!ws || !isConnected) {
+            // console.warn('[GeminiLive] Not connected');
             return false;
         }
 
@@ -234,8 +152,8 @@ export function createLiveSession(callbacks = {}) {
 
     // Send text message
     const sendText = (text) => {
-        if (!ws || !isConnected || !setupComplete) {
-            console.warn('[GeminiLive] Not ready to send text');
+        if (!ws || !isConnected) {
+            console.warn('[GeminiLive] Not connected');
             return false;
         }
 
@@ -291,16 +209,39 @@ export class AudioPlayer {
         this.scheduledTime = 0;
         this.isPlaying = false;
         this.queue = [];
+        this.gainNode = null;
     }
 
     async init() {
         if (!this.audioContext) {
             this.audioContext = new AudioContext({ sampleRate: 24000 });
+            this.gainNode = this.audioContext.createGain();
+            this.gainNode.connect(this.audioContext.destination);
         }
         if (this.audioContext.state === 'suspended') {
             await this.audioContext.resume();
         }
         this.scheduledTime = this.audioContext.currentTime;
+    }
+
+    // Add audio data to queue
+    enqueue(base64Data) {
+        this.queue.push(base64Data);
+        this.processQueue();
+    }
+
+    // Process queue
+    async processQueue() {
+        if (this.isPlaying || this.queue.length === 0) return;
+
+        this.isPlaying = true;
+
+        while (this.queue.length > 0) {
+            const chunk = this.queue.shift();
+            await this.play(chunk);
+        }
+
+        this.isPlaying = false;
     }
 
     // Play base64 PCM audio
@@ -310,163 +251,68 @@ export class AudioPlayer {
         }
 
         try {
-            // Decode base64 to ArrayBuffer
             const binaryString = atob(base64Data);
-            const bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
                 bytes[i] = binaryString.charCodeAt(i);
             }
 
-            // Convert to Float32 (assuming 16-bit PCM)
-            const int16Array = new Int16Array(bytes.buffer);
-            const float32Array = new Float32Array(int16Array.length);
-            for (let i = 0; i < int16Array.length; i++) {
-                float32Array[i] = int16Array[i] / 32768.0;
+            // Convert 16-bit PCM to Float32
+            const float32Data = new Float32Array(bytes.length / 2);
+            const dataView = new DataView(bytes.buffer);
+
+            for (let i = 0; i < float32Data.length; i++) {
+                // Little Endian
+                const int16 = dataView.getInt16(i * 2, true);
+                float32Data[i] = int16 / 32768.0;
             }
 
-            // Create audio buffer
-            const audioBuffer = this.audioContext.createBuffer(
-                1, // mono
-                float32Array.length,
-                24000 // sample rate
-            );
-            audioBuffer.copyToChannel(float32Array, 0);
+            // Create AudioBuffer
+            const audioBuffer = this.audioContext.createBuffer(1, float32Data.length, 24000);
+            audioBuffer.getChannelData(0).set(float32Data);
 
-            // Schedule playback
+            // Create Source
             const source = this.audioContext.createBufferSource();
             source.buffer = audioBuffer;
-            source.connect(this.audioContext.destination);
+            source.connect(this.gainNode);
 
-            const startTime = Math.max(this.scheduledTime, this.audioContext.currentTime);
+            // Schedule playback
+            // Ensure we don't schedule in the past
+            const startTime = Math.max(this.audioContext.currentTime, this.scheduledTime);
             source.start(startTime);
+
+            // Update scheduled time for next chunk
             this.scheduledTime = startTime + audioBuffer.duration;
-            this.isPlaying = true;
 
-            source.onended = () => {
-                if (this.scheduledTime <= this.audioContext.currentTime) {
-                    this.isPlaying = false;
-                }
-            };
+            // Wait for playback to finish approx (optional, for flow control)
+            return new Promise(resolve => {
+                source.onended = resolve;
+                // Fallback timeout in case onended doesn't fire
+                setTimeout(resolve, audioBuffer.duration * 1000 + 100);
+            });
 
-        } catch (e) {
-            console.error('[AudioPlayer] Play error:', e);
+        } catch (error) {
+            console.error('Audio playback error:', error);
         }
     }
 
-    // Chú thích: Resume AudioContext (cần gọi sau user interaction)
+    // Resume audio context if suspended
     async resume() {
-        if (!this.audioContext) {
-            await this.init();
-        } else if (this.audioContext.state === 'suspended') {
+        if (this.audioContext && this.audioContext.state === 'suspended') {
             await this.audioContext.resume();
         }
     }
 
-    // Chú thích: Thêm audio vào queue để phát
-    enqueue(base64Data) {
-        this.play(base64Data);
-    }
-
     stop() {
         if (this.audioContext) {
-            this.audioContext.close();
+            try {
+                this.audioContext.close();
+            } catch (e) { }
             this.audioContext = null;
         }
         this.scheduledTime = 0;
         this.isPlaying = false;
-    }
-}
-
-/**
- * AudioRecorder - Record audio and convert to base64 PCM
- */
-export class AudioRecorder {
-    constructor(onData) {
-        this.onData = onData;
-        this.stream = null;
-        this.audioContext = null;
-        this.processor = null;
-        this.source = null;
-        this.isRecording = false;
-    }
-
-    async start() {
-        try {
-            this.stream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    sampleRate: 16000,
-                    channelCount: 1,
-                    echoCancellation: true,
-                    noiseSuppression: true
-                }
-            });
-
-            this.audioContext = new AudioContext({ sampleRate: 16000 });
-            this.source = this.audioContext.createMediaStreamSource(this.stream);
-
-            // Use ScriptProcessor for audio processing
-            this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
-
-            this.processor.onaudioprocess = (e) => {
-                if (!this.isRecording) return;
-
-                const inputData = e.inputBuffer.getChannelData(0);
-
-                // Convert to 16-bit PCM
-                const int16Array = new Int16Array(inputData.length);
-                for (let i = 0; i < inputData.length; i++) {
-                    const s = Math.max(-1, Math.min(1, inputData[i]));
-                    int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-                }
-
-                // Convert to base64
-                const uint8Array = new Uint8Array(int16Array.buffer);
-                let binary = '';
-                for (let i = 0; i < uint8Array.length; i++) {
-                    binary += String.fromCharCode(uint8Array[i]);
-                }
-                const base64 = btoa(binary);
-
-                if (this.onData) {
-                    this.onData(base64);
-                }
-            };
-
-            this.source.connect(this.processor);
-            this.processor.connect(this.audioContext.destination);
-            this.isRecording = true;
-
-            console.log('[AudioRecorder] Started recording');
-
-        } catch (e) {
-            console.error('[AudioRecorder] Start error:', e);
-            throw e;
-        }
-    }
-
-    stop() {
-        this.isRecording = false;
-
-        if (this.processor) {
-            this.processor.disconnect();
-            this.processor = null;
-        }
-
-        if (this.source) {
-            this.source.disconnect();
-            this.source = null;
-        }
-
-        if (this.audioContext) {
-            this.audioContext.close();
-            this.audioContext = null;
-        }
-
-        if (this.stream) {
-            this.stream.getTracks().forEach(track => track.stop());
-            this.stream = null;
-        }
-
-        console.log('[AudioRecorder] Stopped recording');
+        this.queue = [];
     }
 }

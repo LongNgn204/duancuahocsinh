@@ -4,7 +4,7 @@
 
 import { getCache, setCache } from '../services/cache.js';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://ban-dong-hanh-worker.stu725114073.workers.dev';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://ban-dong-hanh-worker.stu725114073.workers.dev';
 
 // =============================================================================
 // AUTH STATE
@@ -72,7 +72,7 @@ function getHeaders() {
  * Wrapper cho fetch với error handling, caching, và offline support
  */
 async function apiRequest(endpoint, options = {}) {
-    const url = `${API_BASE}${endpoint}`;
+    const url = `${API_BASE_URL}${endpoint}`;
     const cacheKey = `${options.method || 'GET'}:${endpoint}`;
 
     // GET requests: Check cache first

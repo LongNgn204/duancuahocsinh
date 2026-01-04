@@ -1,274 +1,189 @@
-// backend/workers/voice-call-do.js
-// Chú thích: Durable Object cho Voice Call WebSocket proxy đến Vertex AI Gemini Live API
-// Yêu cầu Cloudflare Workers Paid Plan ($5/month) để sử dụng Durable Objects
-
-import { getVertexAccessToken } from './vertex-auth.js';
-
-// Vertex AI Live model - sử dụng Gemini 2.0 Flash Live
-const LIVE_MODEL = 'gemini-2.0-flash-live-001';
-
-// System instruction cho voice assistant - tối ưu cho voice
-const SYSTEM_INSTRUCTION = `Bạn là "Bạn Đồng Hành", một người bạn AI thông minh dành cho học sinh Việt Nam.
-
-CÁCH NÓI CHUYỆN:
-- Nói tự nhiên, thoải mái như bạn bè
-- KHÔNG đọc emoji, icon hay ký hiệu đặc biệt  
-- KHÔNG liệt kê kiểu 1, 2, 3 hay gạch đầu dòng
-- Nói rõ ràng, dễ hiểu
-- Nhớ những gì người dùng đã chia sẻ
-
-BẠN CÓ THỂ GIÚP:
-- Học tập: hỏi bài, giải thích kiến thức, ôn thi
-- Tâm lý: lắng nghe tâm sự, chia sẻ, động viên
-- Cuộc sống: bạn bè, gia đình, định hướng
-- Giải trí: trò chuyện vui, kể chuyện
-
-LƯU Ý:
-- Nếu người dùng im lặng, đợi họ nói
-- Nếu phát hiện dấu hiệu khủng hoảng, khuyên tìm người lớn đáng tin`;
-
-/**
- * VoiceCallSession Durable Object
- * Chú thích: Duy trì WebSocket session stateful giữa client và Vertex AI
- */
-export class VoiceCallSession {
+export class VoiceCallSessionOpenAI {
     constructor(state, env) {
         this.state = state;
         this.env = env;
+        this.sessions = new Set();
+        this.openaiWs = null;
         this.clientWs = null;
-        this.vertexWs = null;
-        this.isConnected = false;
-        this.setupComplete = false;
     }
 
-    /**
-     * Handle incoming requests (WebSocket upgrade)
-     */
     async fetch(request) {
-        const upgradeHeader = request.headers.get('Upgrade');
-
-        if (!upgradeHeader || upgradeHeader.toLowerCase() !== 'websocket') {
-            return new Response(JSON.stringify({
-                error: 'websocket_required',
-                message: 'WebSocket upgrade required'
-            }), {
-                status: 426,
-                headers: { 'Content-Type': 'application/json' }
-            });
+        if (request.headers.get('Upgrade') !== 'websocket') {
+            return new Response('Expected Upgrade: websocket', { status: 426 });
         }
 
-        // Tạo WebSocket pair cho client
-        const webSocketPair = new WebSocketPair();
-        const [client, server] = Object.values(webSocketPair);
+        const pair = new WebSocketPair();
+        const [client, server] = Object.values(pair);
 
-        // Accept connection từ client
-        server.accept();
-        this.clientWs = server;
+        this.handleSession(server);
 
-        console.log('[VoiceCallDO] Client WebSocket accepted');
+        return new Response(null, {
+            status: 101,
+            webSocket: client,
+        });
+    }
 
-        // Setup event handlers cho client
-        this.setupClientHandlers(server);
+    async handleSession(ws) {
+        this.sessions.add(ws);
+        this.clientWs = ws;
+        ws.accept();
 
-        // Connect đến Vertex AI
+        if (!this.env.OPENAI_API_KEY) {
+            ws.send(JSON.stringify({ type: 'error', message: 'Server missing OPENAI_API_KEY' }));
+            ws.close();
+            return;
+        }
+
+        const model = 'gpt-4o-realtime-preview-2025-06-03';
+        const openaiUrl = `https://api.openai.com/v1/realtime?model=${model}`;
+
         try {
-            await this.connectToVertexAI();
-        } catch (err) {
-            console.error('[VoiceCallDO] Failed to connect to Vertex AI:', err);
-            server.send(JSON.stringify({
-                type: 'error',
-                message: `Không thể kết nối Vertex AI: ${err.message}`
-            }));
-            server.close(1011, 'Vertex AI connection failed');
-            return new Response(null, { status: 101, webSocket: client });
-        }
+            console.log('[DO] Connecting to OpenAI Realtime...');
 
-        return new Response(null, { status: 101, webSocket: client });
-    }
-
-    /**
-     * Setup handlers cho client WebSocket
-     */
-    setupClientHandlers(ws) {
-        ws.addEventListener('message', async (event) => {
-            try {
-                const data = typeof event.data === 'string'
-                    ? event.data
-                    : await event.data.text();
-
-                console.log('[VoiceCallDO] Client message received');
-
-                // Forward message to Vertex AI
-                if (this.vertexWs && this.isConnected) {
-                    this.vertexWs.send(data);
-                } else {
-                    console.warn('[VoiceCallDO] Vertex AI not connected, queuing message');
+            // Use fetch to support custom headers for handshake
+            const response = await fetch(openaiUrl, {
+                headers: {
+                    'Upgrade': 'websocket',
+                    'Connection': 'Upgrade',
+                    'Authorization': `Bearer ${this.env.OPENAI_API_KEY}`,
+                    'OpenAI-Beta': 'realtime=v1',
                 }
-            } catch (err) {
-                console.error('[VoiceCallDO] Error handling client message:', err);
+            });
+
+            if (response.status !== 101) {
+                throw new Error(`OpenAI Handshake failed: ${response.status} ${response.statusText}`);
             }
+
+            this.openaiWs = response.webSocket;
+            if (!this.openaiWs) {
+                throw new Error('OpenAI returned no WebSocket');
+            }
+
+            this.openaiWs.accept();
+
+            console.log('[DO] Connected to OpenAI');
+            this.sendSessionUpdate(); // Config voice/instructions
+            ws.send(JSON.stringify({ type: 'connected' }));
+
+            this.openaiWs.addEventListener('message', (event) => {
+                // Forward message from OpenAI -> Client
+                // Client side will handle parsing OpenAI JSON format
+                if (ws.readyState === WebSocket.READY_HANDSHAKE || ws.readyState === WebSocket.OPEN) {
+                    ws.send(event.data);
+                }
+            });
+
+            this.openaiWs.addEventListener('close', (event) => {
+                console.log('[DO] OpenAI closed:', event.code, event.reason);
+                ws.close(event.code, 'OpenAI Closed');
+            });
+
+            this.openaiWs.addEventListener('error', (error) => {
+                console.error('[DO] OpenAI error:', error);
+                ws.send(JSON.stringify({ type: 'error', message: 'OpenAI connection error' }));
+            });
+
+        } catch (err) {
+            console.error('[DO] Connection failed:', err);
+            try {
+                ws.send(JSON.stringify({
+                    type: 'error',
+                    message: `Upstream Error: ${err.message || 'Unknown'}`
+                }));
+            } catch (e) { /* ignore */ }
+            ws.close(1011, 'Failed to connect upstream');
+            return;
+        }
+
+        // Handle Client messages
+        ws.addEventListener('message', async (event) => {
+            if (!this.openaiWs || this.openaiWs.readyState !== WebSocket.OPEN) return;
+            // Client sends OpenAI specific JSON messages directly
+            this.openaiWs.send(event.data);
         });
 
-        ws.addEventListener('close', (event) => {
-            console.log('[VoiceCallDO] Client disconnected:', event.code, event.reason);
-            this.cleanup();
-        });
-
-        ws.addEventListener('error', (event) => {
-            console.error('[VoiceCallDO] Client WebSocket error:', event);
-            this.cleanup();
+        ws.addEventListener('close', () => {
+            this.sessions.delete(ws);
+            if (this.openaiWs) {
+                this.openaiWs.close();
+            }
         });
     }
 
-    /**
-     * Connect đến Vertex AI Live API
-     */
-    async connectToVertexAI() {
-        // Lấy access token
-        const accessToken = await getVertexAccessToken(this.env);
+    sendSessionUpdate() {
+        // Chú thích: System Instructions chi tiết cho AI Voice Call
+        // Multi-role, adaptive style, safety limits, multilingual
+        const sessionUpdate = {
+            type: "session.update",
+            session: {
+                modalities: ["text", "audio"],
+                instructions: `# BẠN ĐỒNG HÀNH - AI Companion cho Học Sinh
 
-        const location = this.env.VERTEX_LOCATION || 'us-central1';
-        const projectId = this.env.VERTEX_PROJECT_ID;
+## DANH TÍNH & VAI TRÒ
+Bạn là "Bạn Đồng Hành" - một AI đa vai trò thông minh, có thể linh hoạt chuyển đổi giữa:
+1. **GIÁO VIÊN**: Giọng ấm áp, truyền cảm, kiên nhẫn giải thích kiến thức
+2. **NGƯỜI MẸ**: Âu yếm, quan tâm, lo lắng cho sức khỏe và tinh thần con
+3. **NGƯỜI BẠN THÂN**: Vui vẻ, hòa đồng, nói chuyện thoải mái như bạn bè cùng trang lứa
+4. **CHUYÊN GIA TÂM LÝ**: Nghiêm túc, chính xác, chuyên nghiệp khi tư vấn vấn đề tâm lý
 
-        // Vertex AI Live WebSocket endpoint
-        const vertexWsUrl = `wss://${location}-aiplatform.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent`;
+## TỰ ĐỘNG NHẬN DIỆN VAI TRÒ
+Dựa vào nội dung và cảm xúc trong câu nói của học sinh để chọn vai trò phù hợp:
+- Hỏi bài, kiến thức → VAI TRÒ GIÁO VIÊN (ấm áp, rõ ràng)
+- Mệt mỏi, ốm, lo lắng về sức khỏe → VAI TRÒ MẸ (âu yếm, quan tâm)
+- Tâm sự bạn bè, crush, trường lớp → VAI TRÒ BẠN THÂN (vui vẻ, đồng cảm)
+- Stress, lo âu, buồn bã, khủng hoảng → VAI TRÒ CHUYÊN GIA (nghiêm túc, hỗ trợ)
 
-        console.log('[VoiceCallDO] Connecting to Vertex AI:', vertexWsUrl);
+## PHONG CÁCH NÓI
+- Nói NGẮN GỌN, mỗi lượt chỉ 1-3 câu
+- KHÔNG đọc emoji, icon, ký hiệu đặc biệt
+- Giọng điệu tự nhiên như đang nói chuyện thật
+- Thể hiện sự LẮNG NGHE và THẤU CẢM
+- Gọi học sinh bằng "bạn" hoặc "em" tùy ngữ cảnh
 
-        // Chú thích: Cloudflare Durable Objects hỗ trợ outbound WebSocket
-        // thông qua global fetch() với WebSocket upgrade
-        const vertexResponse = await fetch(vertexWsUrl, {
-            headers: {
-                'Upgrade': 'websocket',
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-            }
-        });
+## ĐA NGÔN NGỮ
+- Mặc định: Tiếng Việt
+- Nếu học sinh nói tiếng Anh hoặc ngôn ngữ khác → Trả lời bằng ngôn ngữ đó
+- Có thể mix ngôn ngữ nếu phù hợp context
 
-        if (!vertexResponse.webSocket) {
-            throw new Error('Vertex AI did not return WebSocket');
-        }
+## GIỚI HẠN AN TOÀN (QUAN TRỌNG)
+❌ KHÔNG BAO GIỜ:
+- Hỗ trợ mua thuốc, kê đơn thuốc, tư vấn y tế chuyên sâu
+- Đưa ra lời khuyên về tự gây hại hoặc làm hại người khác
+- Thảo luận về nội dung bạo lực, tình dục, ma túy
+- Cung cấp thông tin cá nhân của bất kỳ ai
+- Làm bài hộ, gian lận thi cử
 
-        this.vertexWs = vertexResponse.webSocket;
-        this.vertexWs.accept();
-        this.isConnected = true;
+✅ THAY VÀO ĐÓ:
+- Khuyên tìm bác sĩ/chuyên gia nếu có vấn đề sức khỏe nghiêm trọng
+- Khuyên nói chuyện với người lớn tin cậy nếu có dấu hiệu khủng hoảng
+- Hướng dẫn CÁCH HỌC thay vì đưa đáp án trực tiếp
+- Đề xuất hotline hỗ trợ tâm lý nếu cần: 1800 599 920 (miễn phí)
 
-        console.log('[VoiceCallDO] Vertex AI WebSocket connected');
+## KIẾN THỨC HỖ TRỢ
+- Các môn học phổ thông: Toán, Lý, Hóa, Sinh, Văn, Sử, Địa, Anh, Tin học
+- Kỹ năng mềm: Quản lý thời gian, học tập hiệu quả, giao tiếp
+- Tâm lý học đường: Stress thi cử, áp lực đồng trang lứa, mâu thuẫn gia đình
+- Định hướng nghề nghiệp: Tư vấn ngành học, trường đại học
+- Sức khỏe tuổi teen: Giấc ngủ, dinh dưỡng, vận động (không kê đơn thuốc)
 
-        // Send setup message
-        const setupMessage = {
-            setup: {
-                model: `projects/${projectId}/locations/${location}/publishers/google/models/${LIVE_MODEL}`,
-                generationConfig: {
-                    responseModalities: ['AUDIO'],
-                    speechConfig: {
-                        voiceConfig: {
-                            prebuiltVoiceConfig: {
-                                voiceName: 'Aoede' // Female voice, Vietnamese-friendly
-                            }
-                        }
-                    }
-                },
-                systemInstruction: {
-                    parts: [{ text: SYSTEM_INSTRUCTION }]
+## PHÁT HIỆN KHỦNG HOẢNG
+Nếu phát hiện dấu hiệu:
+- Tự tử, tự gây hại
+- Bị bạo lực, xâm hại
+- Trầm cảm nặng
+→ Chuyển sang VAI TRÒ CHUYÊN GIA, lắng nghe, và LUÔN khuyên tìm người lớn tin cậy hoặc gọi hotline.`,
+                voice: "shimmer", // Voice nữ ấm áp, phù hợp đa vai trò
+                input_audio_format: "pcm16",
+                output_audio_format: "pcm16",
+                turn_detection: {
+                    type: "server_vad",
+                    threshold: 0.5,
+                    prefix_padding_ms: 300,
+                    silence_duration_ms: 600 // Tăng lên để học sinh có thời gian suy nghĩ
                 }
             }
         };
-
-        this.vertexWs.send(JSON.stringify(setupMessage));
-
-        // Setup handlers cho Vertex AI response
-        this.setupVertexHandlers();
-    }
-
-    /**
-     * Setup handlers cho Vertex AI WebSocket
-     */
-    setupVertexHandlers() {
-        this.vertexWs.addEventListener('message', async (event) => {
-            try {
-                const data = typeof event.data === 'string'
-                    ? event.data
-                    : await event.data.text();
-
-                const parsed = JSON.parse(data);
-
-                // Handle setupComplete
-                if (parsed.setupComplete) {
-                    console.log('[VoiceCallDO] Vertex AI setup complete');
-                    this.setupComplete = true;
-
-                    // Notify client
-                    if (this.clientWs) {
-                        this.clientWs.send(JSON.stringify({
-                            type: 'connected',
-                            setupComplete: true
-                        }));
-                    }
-                    return;
-                }
-
-                // Forward all other messages to client
-                if (this.clientWs) {
-                    this.clientWs.send(data);
-                }
-            } catch (err) {
-                console.error('[VoiceCallDO] Error handling Vertex message:', err);
-            }
-        });
-
-        this.vertexWs.addEventListener('close', (event) => {
-            console.log('[VoiceCallDO] Vertex AI disconnected:', event.code, event.reason);
-            this.isConnected = false;
-
-            // Notify client
-            if (this.clientWs) {
-                this.clientWs.send(JSON.stringify({
-                    type: 'error',
-                    message: 'Kết nối AI bị ngắt'
-                }));
-                this.clientWs.close(1000, 'Vertex AI disconnected');
-            }
-        });
-
-        this.vertexWs.addEventListener('error', (event) => {
-            console.error('[VoiceCallDO] Vertex AI WebSocket error:', event);
-            this.isConnected = false;
-        });
-    }
-
-    /**
-     * Cleanup resources
-     */
-    cleanup() {
-        if (this.vertexWs) {
-            try {
-                this.vertexWs.close();
-            } catch (e) {
-                // Ignore
-            }
-            this.vertexWs = null;
-        }
-        this.isConnected = false;
-        this.setupComplete = false;
+        this.openaiWs.send(JSON.stringify(sessionUpdate));
+        console.log('[DO] Session update sent with multi-role instructions');
     }
 }
-
-/**
- * Handler function để backward compatibility với router.js
- * Chú thích: Router.js đã handle WebSocket trực tiếp qua DO,
- * nhưng giữ function này cho các trường hợp khác
- */
-export async function handleVoiceCall(request, env) {
-    // Tạo unique session ID
-    const sessionId = crypto.randomUUID();
-
-    // Get Durable Object stub
-    const id = env.VOICE_CALL_SESSION.idFromName(sessionId);
-    const stub = env.VOICE_CALL_SESSION.get(id);
-
-    // Forward request to Durable Object
-    return stub.fetch(request);
-}
-
-export default { VoiceCallSession, handleVoiceCall };

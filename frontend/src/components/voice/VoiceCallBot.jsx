@@ -6,7 +6,8 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Phone, PhoneOff, Mic, MicOff, Volume2 } from 'lucide-react';
 import { useVoiceCall, formatDuration } from '../../hooks/useVoiceCall';
-import { isLiveAPIAvailable, getVoiceCallDisabledMessage } from '../../services/geminiLive';
+// import { isLiveAPIAvailable, getVoiceCallDisabledMessage } from '../../services/geminiLive'; // Deprecated
+
 import SOSOverlay from '../sos/SOSOverlay';
 
 /**
@@ -102,22 +103,9 @@ export default function VoiceCallBot({ onClose }) {
         error: error || 'Có lỗi xảy ra'
     };
 
-    // Chú thích: Check riêng Live API và browser support để hiển thị đúng thông báo
-    const isAPIAvailable = isLiveAPIAvailable();
+    // Chú thích: Backend handles auth, assume always available or handle connection error dynamically
+    // const isAPIAvailable = isLiveAPIAvailable(); // Removed logic
 
-    // Nếu Voice Call bị disable (backend maintenance)
-    if (!isAPIAvailable) {
-        return (
-            <div className="text-center p-8">
-                <p className="text-amber-600 mb-4 font-medium">
-                    🔧 {getVoiceCallDisabledMessage()}
-                </p>
-                <p className="text-slate-500 text-sm">
-                    Bạn vẫn có thể sử dụng Chat text bình thường.
-                </p>
-            </div>
-        );
-    }
 
     // Nếu browser không hỗ trợ Web Speech API
     if (!isSupported) {
