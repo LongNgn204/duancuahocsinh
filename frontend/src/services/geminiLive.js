@@ -1,11 +1,21 @@
 // src/services/geminiLive.js
-// Chú thích: Voice Call - 🔧 ĐANG BẢO TRÌ
+// Chú thích: Voice Call với Gemini Live API qua Cloudflare Durable Objects proxy
+
+// API Base URL - detect from environment
+const API_BASE_URL = import.meta.env.VITE_API_URL ||
+    (window.location.hostname === 'localhost'
+        ? 'http://localhost:8787'
+        : 'https://ban-dong-hanh-worker.hoanglong17.workers.dev');
+
+// WebSocket URL - chuyển từ https:// sang wss://
+const CLOUD_RUN_WS_URL = API_BASE_URL.replace('http://', 'ws://').replace('https://', 'wss://') + '/api/ai/live';
 
 /**
  * Check if Voice Call is available
+ * Chú thích: Đã bật với Cloudflare Durable Objects proxy
  */
 export function isLiveAPIAvailable() {
-    return false; // 🔧 ĐANG BẢO TRÌ
+    return true; // ✓ Đã bật với Durable Objects proxy
 }
 
 export function getVoiceCallDisabledMessage() {

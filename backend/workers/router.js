@@ -638,10 +638,7 @@ export default {
                 case 'admin:comprehensive-stats':
                 case 'admin:activity-data':
                 case 'admin:chat-analytics':
-                case 'admin:chat-analytics':
                 case 'admin:reports':
-                case 'admin:users:reset-password':
-                case 'admin:sync-logs':
                 case 'admin:users:reset-password':
                 case 'admin:sync-logs':
                     // Verify JWT token for all admin routes
