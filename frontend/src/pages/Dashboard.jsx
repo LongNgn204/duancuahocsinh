@@ -176,19 +176,22 @@ export default function Dashboard() {
 
     // Record login and calculate progress on mount
     useEffect(() => {
-        // Ghi nhận hoạt động hôm nay (từ streakService)
-        recordActivity('dashboard_visit');
+        // Chú thích: GHI NHẬN HOẠT ĐỘNG TRƯỚC, sau đó mới lấy dữ liệu
+        // recordActivity trả về lịch sử đã cập nhật, đảm bảo hôm nay được tính
+        const updatedHistory = recordActivity('dashboard_visit');
+        setLoginHistory(updatedHistory);
 
-        // Lấy lịch sử và tính streak từ service
-        const history = getLoginHistory();
-        setLoginHistory(history);
-
+        // Tính streak từ lịch sử đã cập nhật
         const currentStreak = getStreak();
         setStreak(currentStreak);
 
-        // Generate weekly progress từ service
+        // Generate weekly progress từ lịch sử đã cập nhật
         const progress = generateWeeklyProgress();
         setWeeklyProgress(progress);
+
+        // Debug: Log để verify
+        console.info('[Dashboard] Activity recorded, streak:', currentStreak,
+            'progress:', progress.filter(d => d.completed).length + '/7');
 
         // Load today's mood if any
         try {

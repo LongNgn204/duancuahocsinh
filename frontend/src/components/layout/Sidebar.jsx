@@ -79,7 +79,7 @@ export default function Sidebar() {
       <aside
         className={`
           flex flex-col
-          ${collapsed ? 'w-16' : 'w-64 md:w-52 lg:w-60'}
+          w-72 sm:w-64 ${collapsed ? 'md:w-16' : 'md:w-52 lg:w-60'}
         shrink-0 
         glass-strong
         border-r border-[--surface-border]
@@ -99,16 +99,17 @@ export default function Sidebar() {
           {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
         </button>
 
-        {/* Mobile Close Button */}
+        {/* Mobile Close Button - Larger touch target */}
         <button
           onClick={() => setMobileOpen(false)}
-          className="md:hidden absolute top-2 right-2 p-2 rounded-xl hover:bg-[--surface-border] transition-colors"
+          className="md:hidden absolute top-3 right-3 p-3 min-w-[44px] min-h-[44px] rounded-xl bg-[--surface-border]/50 hover:bg-[--surface-border] transition-colors flex items-center justify-center"
           aria-label="Đóng sidebar"
         >
-          <X size={18} />
+          <X size={20} />
         </button>
 
-        <div className="flex-1 overflow-y-auto py-4 px-3">
+        {/* Scrollable content area with mobile-optimized padding */}
+        <div className="flex-1 overflow-y-auto py-4 px-3 sm:px-3 pt-14 md:pt-4">
           {/* Brand - Only show when not collapsed */}
           {!collapsed && (
             <div className="px-2 mb-4 md:mb-6">
@@ -137,14 +138,15 @@ export default function Sidebar() {
                     title={collapsed ? label : undefined}
                     onClick={() => setMobileOpen(false)}
                     className={({ isActive }) => `
-                    flex items-center gap-2 md:gap-3 
-                    ${collapsed ? 'justify-center px-2' : 'px-2 md:px-3'} 
-                    py-2 md:py-2.5 rounded-lg md:rounded-xl
+                    flex items-center gap-3 
+                    ${collapsed ? 'md:justify-center md:px-2' : 'px-3 sm:px-3'} 
+                    py-3 sm:py-2.5 md:py-2.5 rounded-xl
+                    min-h-[44px]
                     transition-all duration-200
                     group
                     ${isActive
                         ? 'bg-gradient-to-r from-[--brand]/15 to-[--brand]/5 text-[--brand] shadow-sm'
-                        : 'text-[--text-secondary] hover:bg-[--surface-border] hover:text-[--text]'
+                        : 'text-[--text-secondary] hover:bg-[--surface-border] hover:text-[--text] active:scale-[0.98]'
                       }
                   `}
                     end={path === '/'}
@@ -157,22 +159,21 @@ export default function Sidebar() {
                         group-hover:scale-110
                         ${isActive ? 'text-[--brand]' : ''}
                       `}>
-                          <Icon size={18} className="md:w-5 md:h-5" />
+                          <Icon size={20} className="sm:w-[18px] sm:h-[18px] md:w-5 md:h-5" />
                         </div>
-                        {!collapsed && (
-                          <span className={`truncate text-sm md:text-base font-medium ${isActive ? 'font-semibold text-[--brand]' : 'text-[--text]'}`}>
-                            {label}
-                          </span>
-                        )}
+                        {/* Chú thích: Trên mobile luôn hiện label, trên desktop ẩn khi collapsed */}
+                        <span className={`truncate text-base sm:text-sm md:text-base font-medium ${isActive ? 'font-semibold text-[--brand]' : 'text-[--text]'} ${collapsed ? 'md:hidden' : ''}`}>
+                          {label}
+                        </span>
                         {/* Badge for new items */}
-                        {badge && !collapsed && (
-                          <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-[--accent] text-white font-semibold">
+                        {badge && (
+                          <span className={`ml-auto text-xs px-2 py-0.5 rounded-full bg-[--accent] text-white font-semibold ${collapsed ? 'md:hidden' : ''}`}>
                             {badge}
                           </span>
                         )}
                         {/* Active indicator */}
-                        {isActive && !collapsed && !badge && (
-                          <div className="ml-auto w-1.5 h-1.5 rounded-full bg-[--brand] animate-pulse" />
+                        {isActive && !badge && (
+                          <div className={`ml-auto w-1.5 h-1.5 rounded-full bg-[--brand] animate-pulse ${collapsed ? 'md:hidden' : ''}`} />
                         )}
                       </>
                     )}
@@ -185,26 +186,27 @@ export default function Sidebar() {
         </div>
 
         {/* Footer - SOS + Settings */}
-        <div className="p-3 border-t border-[--surface-border] space-y-2">
+        <div className="p-3 sm:p-3 border-t border-[--surface-border] space-y-2">
           {/* Chú thích: Nút Hỗ trợ khẩn cấp - Màu đỏ nổi bật */}
           <button
             onClick={() => setSosOpen(true)}
             title={collapsed ? 'Hỗ trợ khẩn cấp' : undefined}
             className={`
               w-full flex items-center gap-3 
-              ${collapsed ? 'justify-center' : ''} 
-              px-3 py-2.5 rounded-xl
+              ${collapsed ? 'md:justify-center' : ''} 
+              px-3 py-3 sm:py-2.5 rounded-xl
+              min-h-[48px]
               bg-gradient-to-r from-red-500 to-rose-500
               text-white font-semibold
               hover:from-red-600 hover:to-rose-600
               transition-all duration-200
               shadow-lg shadow-red-500/20
               hover:shadow-red-500/30
-              hover:scale-[1.02]
+              active:scale-[0.98]
             `}
           >
-            <AlertTriangle size={20} />
-            {!collapsed && <span className="text-base">Hỗ trợ khẩn cấp</span>}
+            <AlertTriangle size={22} className="sm:w-5 sm:h-5 shrink-0" />
+            <span className={`text-base sm:text-base ${collapsed ? 'md:hidden' : ''}`}>Hỗ trợ khẩn cấp</span>
           </button>
 
           <NavLink
@@ -213,17 +215,19 @@ export default function Sidebar() {
             onClick={() => setMobileOpen(false)}
             className={({ isActive }) => `
             flex items-center gap-3 
-            ${collapsed ? 'justify-center' : ''} 
-            px-3 py-2.5 rounded-xl
+            ${collapsed ? 'md:justify-center' : ''} 
+            px-3 py-3 sm:py-2.5 rounded-xl
+            min-h-[44px]
             transition-all duration-200
+            active:scale-[0.98]
             ${isActive
                 ? 'bg-[--brand]/10 text-[--brand]'
                 : 'text-[--text-secondary] hover:bg-[--surface-border] hover:text-[--text]'
               }
           `}
           >
-            <Settings size={20} />
-            {!collapsed && <span className="text-base font-medium text-[--text]">Cài đặt</span>}
+            <Settings size={22} className="sm:w-5 sm:h-5 shrink-0" />
+            <span className={`text-base sm:text-base font-medium text-[--text] ${collapsed ? 'md:hidden' : ''}`}>Cài đặt</span>
           </NavLink>
         </div>
       </aside>
