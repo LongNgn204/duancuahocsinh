@@ -66,14 +66,15 @@ const variants = {
 };
 
 const sizes = {
-  xs: 'h-8 px-3 text-xs gap-1.5', // Touch target might be small, handled by parent
-  sm: 'h-10 px-4 text-sm gap-2',
-  md: 'h-12 px-6 text-base gap-2.5', // Increased height
-  lg: 'h-14 px-8 text-lg gap-3',   // Increased height
-  xl: 'h-16 px-10 text-xl gap-4', // Increased height
-  icon: 'h-12 w-12 p-0',
-  'icon-sm': 'h-10 w-10 p-0',
-  'icon-lg': 'h-14 w-14 p-0',
+  // Chú thích: Tất cả sizes đảm bảo minimum 44px touch target trên mobile
+  xs: 'min-h-[44px] h-9 px-3 text-xs gap-1.5 sm:min-h-0', // 44px mobile, 36px desktop
+  sm: 'min-h-[44px] h-10 px-4 text-sm gap-2',     // 44px minimum
+  md: 'min-h-[44px] h-12 px-5 sm:px-6 text-base gap-2.5', // 48px, responsive padding
+  lg: 'min-h-[48px] h-14 px-6 sm:px-8 text-lg gap-3',     // 56px, responsive padding
+  xl: 'min-h-[48px] h-16 px-8 sm:px-10 text-xl gap-4',    // 64px, responsive padding
+  icon: 'min-h-[44px] h-12 w-12 p-0',           // Square icon button
+  'icon-sm': 'min-h-[44px] h-10 w-10 p-0',      // Ensure 44px
+  'icon-lg': 'min-h-[48px] h-14 w-14 p-0',      // Larger icon
 };
 
 

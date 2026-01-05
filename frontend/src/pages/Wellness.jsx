@@ -20,7 +20,7 @@ export default function Wellness() {
     };
 
     return (
-        <div className="space-y-6 pb-8">
+        <div className="space-y-6 pb-8 px-4 sm:px-6 max-w-6xl mx-auto">
             {/* Header */}
             <div className="text-center space-y-1 px-4">
                 <h1 className="text-xl md:text-3xl font-bold text-slate-800">

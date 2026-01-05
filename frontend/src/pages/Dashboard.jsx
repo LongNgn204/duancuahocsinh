@@ -176,19 +176,22 @@ export default function Dashboard() {
 
     // Record login and calculate progress on mount
     useEffect(() => {
-        // Ghi nhận hoạt động hôm nay (từ streakService)
-        recordActivity('dashboard_visit');
+        // Chú thích: GHI NHẬN HOẠT ĐỘNG TRƯỚC, sau đó mới lấy dữ liệu
+        // recordActivity trả về lịch sử đã cập nhật, đảm bảo hôm nay được tính
+        const updatedHistory = recordActivity('dashboard_visit');
+        setLoginHistory(updatedHistory);
 
-        // Lấy lịch sử và tính streak từ service
-        const history = getLoginHistory();
-        setLoginHistory(history);
-
+        // Tính streak từ lịch sử đã cập nhật
         const currentStreak = getStreak();
         setStreak(currentStreak);
 
-        // Generate weekly progress từ service
+        // Generate weekly progress từ lịch sử đã cập nhật
         const progress = generateWeeklyProgress();
         setWeeklyProgress(progress);
+
+        // Debug: Log để verify
+        console.info('[Dashboard] Activity recorded, streak:', currentStreak,
+            'progress:', progress.filter(d => d.completed).length + '/7');
 
         // Load today's mood if any
         try {
@@ -210,7 +213,8 @@ export default function Dashboard() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-pink-50/50 to-white pb-10">
             {/* --- HERO SECTION --- */}
-            <div className="bg-gradient-to-r from-pink-100/80 via-rose-50 to-pink-100/80 border-b border-pink-100 p-6 md:p-10">
+            {/* Chú thích: Mobile-first padding và responsive layout */}
+            <div className="bg-gradient-to-r from-pink-100/80 via-rose-50 to-pink-100/80 border-b border-pink-100 p-4 sm:p-6 lg:p-10">
                 <div className="max-w-5xl mx-auto">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -218,64 +222,66 @@ export default function Dashboard() {
                         transition={{ duration: 0.4 }}
                     >
                         {/* Date Badge & Stats Row */}
-                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
+                        {/* Chú thích: Stack trên mobile nhỏ, horizontal trên mobile lớn */}
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
                             {/* Date Badge */}
-                            <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-pink-200 shadow-sm w-fit">
+                            <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 sm:px-4 py-2 rounded-full border border-pink-200 shadow-sm w-fit">
                                 <Calendar size={16} className="text-pink-500" />
-                                <span className="text-sm font-medium text-slate-700">{vietnameseDate}</span>
+                                <span className="text-xs sm:text-sm font-medium text-slate-700">{vietnameseDate}</span>
                             </div>
 
-                            {/* Stats Cards */}
-                            <div className="flex items-center gap-4 md:gap-6">
-                                <div className="text-center">
+                            {/* Stats Cards - horizontal scroll trên mobile nhỏ */}
+                            <div className="flex items-center gap-3 sm:gap-4 lg:gap-6 overflow-x-auto pb-1 -mx-1 px-1">
+                                <div className="text-center flex-shrink-0">
                                     <div className="flex items-center justify-center gap-1">
-                                        <Flame size={18} className="text-orange-500" />
-                                        <span className="text-2xl font-bold text-slate-800">{userStats.streak}</span>
+                                        <Flame size={16} className="text-orange-500 sm:w-[18px] sm:h-[18px]" />
+                                        <span className="text-xl sm:text-2xl font-bold text-slate-800">{userStats.streak}</span>
                                     </div>
-                                    <p className="text-xs text-slate-500">Ngày streak</p>
+                                    <p className="text-[10px] sm:text-xs text-slate-500">Ngày streak</p>
                                 </div>
-                                <div className="w-px h-8 bg-pink-200" />
-                                <div className="text-center">
+                                <div className="w-px h-6 sm:h-8 bg-pink-200 flex-shrink-0" />
+                                <div className="text-center flex-shrink-0">
                                     <div className="flex items-center justify-center gap-1">
-                                        <MessageSquare size={18} className="text-blue-500" />
-                                        <span className="text-2xl font-bold text-slate-800">{userStats.chatCount}</span>
+                                        <MessageSquare size={16} className="text-blue-500 sm:w-[18px] sm:h-[18px]" />
+                                        <span className="text-xl sm:text-2xl font-bold text-slate-800">{userStats.chatCount}</span>
                                     </div>
-                                    <p className="text-xs text-slate-500">Cuộc chat</p>
+                                    <p className="text-[10px] sm:text-xs text-slate-500">Cuộc chat</p>
                                 </div>
-                                <div className="w-px h-8 bg-pink-200" />
-                                <div className="text-center">
+                                <div className="w-px h-6 sm:h-8 bg-pink-200 flex-shrink-0" />
+                                <div className="text-center flex-shrink-0">
                                     <div className="flex items-center justify-center gap-1">
-                                        <Star size={18} className="text-yellow-500" />
-                                        <span className="text-2xl font-bold text-slate-800">{userStats.xp}</span>
+                                        <Star size={16} className="text-yellow-500 sm:w-[18px] sm:h-[18px]" />
+                                        <span className="text-xl sm:text-2xl font-bold text-slate-800">{userStats.xp}</span>
                                     </div>
-                                    <p className="text-xs text-slate-500">XP (Lv.{userStats.level})</p>
+                                    <p className="text-[10px] sm:text-xs text-slate-500">XP (Lv.{userStats.level})</p>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Greeting */}
-                        <h1 className="text-3xl md:text-5xl font-bold text-pink-600 mb-2">
+                        {/* Greeting - Fluid typography */}
+                        <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold text-pink-600 mb-2">
                             {greeting.text} <span className="text-slate-800">{displayName}!</span> 👋
                         </h1>
-                        <p className="text-slate-600 text-lg mb-1">
+                        <p className="text-slate-600 text-base sm:text-lg mb-1">
                             {greeting.wish} {greeting.emoji}
                         </p>
-                        <p className="text-slate-500">
+                        <p className="text-sm sm:text-base text-slate-500">
                             Hôm nay bạn cảm thấy thế nào? Hãy chọn tâm trạng của bạn bên dưới.
                         </p>
 
-                        {/* Mood Tracker */}
-                        <div className="mt-6 flex items-center gap-3 flex-wrap">
+                        {/* Mood Tracker - Touch-friendly với 44px min target */}
+                        <div className="mt-4 sm:mt-6 flex items-center gap-2 sm:gap-3 flex-wrap">
                             {moodMapping.map((mood, idx) => (
                                 <motion.button
                                     key={idx}
                                     onClick={() => handleMoodSelect(mood)}
-                                    className={`text-3xl p-2 rounded-full transition-all cursor-pointer ${selectedMood === mood.key
-                                        ? 'bg-white shadow-lg scale-110 ring-2 ring-pink-300'
-                                        : 'hover:bg-white/50 hover:scale-110'
+                                    className={`text-2xl sm:text-3xl p-2.5 sm:p-2 min-w-[44px] min-h-[44px] rounded-full transition-all cursor-pointer ${selectedMood === mood.key
+                                        ? 'bg-white shadow-lg scale-105 sm:scale-110 ring-2 ring-pink-300'
+                                        : 'hover:bg-white/50 hover:scale-105 active:scale-95'
                                         }`}
                                     whileTap={{ scale: 0.95 }}
                                     title={mood.label}
+                                    aria-label={mood.label}
                                 >
                                     {mood.emoji}
                                 </motion.button>
@@ -284,7 +290,7 @@ export default function Dashboard() {
                                 <motion.span
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
-                                    className="text-sm text-pink-600 font-medium ml-2"
+                                    className="text-xs sm:text-sm text-pink-600 font-medium ml-1 sm:ml-2"
                                 >
                                     Bạn đang cảm thấy {moodMapping.find(m => m.key === selectedMood)?.label.toLowerCase()}
                                 </motion.span>
@@ -295,29 +301,30 @@ export default function Dashboard() {
             </div>
 
             {/* --- QUICK ACTIONS GRID --- */}
-            <div className="max-w-5xl mx-auto px-4 md:px-8 py-8">
-                <div className="flex items-center gap-3 mb-6">
-                    <Zap size={20} className="text-pink-600" />
-                    <h2 className="text-xl font-bold text-slate-900">Khám Phá</h2>
+            {/* Chú thích: Mobile-first grid với 2 cột trên mobile, responsive gap */}
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                    <Zap size={18} className="text-pink-600 sm:w-5 sm:h-5" />
+                    <h2 className="text-lg sm:text-xl font-bold text-slate-900">Khám Phá</h2>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                     {quickActions.map((act, index) => (
                         <motion.div
                             key={act.path}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05 }}
+                            transition={{ delay: index * 0.03 }}
                         >
                             <Link to={act.path} onClick={() => playSound('click')}>
-                                <div className={`${act.bgColor} border border-slate-100 rounded-2xl p-4 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 group`}>
-                                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${act.color} flex items-center justify-center text-white shadow-md mb-3`}>
-                                        <act.icon size={24} />
+                                <div className={`${act.bgColor} border border-slate-100 rounded-xl sm:rounded-2xl p-3 sm:p-4 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 group min-h-[100px]`}>
+                                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br ${act.color} flex items-center justify-center text-white shadow-md mb-2 sm:mb-3`}>
+                                        <act.icon size={20} className="sm:w-6 sm:h-6" />
                                     </div>
-                                    <h3 className="font-bold text-slate-900 group-hover:text-slate-700 text-sm">
+                                    <h3 className="font-bold text-slate-900 group-hover:text-slate-700 text-xs sm:text-sm">
                                         {act.title}
                                     </h3>
-                                    <p className="text-xs text-slate-500 mt-1">
+                                    <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5 sm:mt-1 line-clamp-2">
                                         {act.description}
                                     </p>
                                 </div>

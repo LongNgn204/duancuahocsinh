@@ -55,6 +55,56 @@
 
 /* ===== DEFAULT THEME ===== */
 :root {
+  /* ===== MOBILE-FIRST SPACING SYSTEM ===== */
+  /* Chú thích: Hệ thống spacing dựa trên 8px grid */
+  --spacing-unit: 8px;
+  --spacing-xs: 4px;
+  /* 0.5 unit - khoảng cách rất nhỏ */
+  --spacing-sm: 8px;
+  /* 1 unit - khoảng cách nhỏ */
+  --spacing-md: 16px;
+  /* 2 units - khoảng cách trung bình */
+  --spacing-lg: 24px;
+  /* 3 units - khoảng cách lớn */
+  --spacing-xl: 32px;
+  /* 4 units - khoảng cách rất lớn */
+  --spacing-2xl: 48px;
+  /* 6 units - khoảng cách section */
+  --spacing-3xl: 64px;
+  /* 8 units - khoảng cách hero */
+
+  /* ===== MOBILE-FIRST TYPOGRAPHY SCALE ===== */
+  /* Chú thích: Fluid typography tối ưu cho 375px-430px */
+  --font-xs: clamp(0.75rem, 2vw, 0.875rem);
+  /* 12-14px */
+  --font-sm: clamp(0.875rem, 2.5vw, 1rem);
+  /* 14-16px */
+  --font-base: clamp(1rem, 3vw, 1.125rem);
+  /* 16-18px */
+  --font-lg: clamp(1.125rem, 3.5vw, 1.25rem);
+  /* 18-20px */
+  --font-xl: clamp(1.25rem, 4vw, 1.5rem);
+  /* 20-24px */
+  --font-2xl: clamp(1.5rem, 5vw, 2rem);
+  /* 24-32px */
+  --font-3xl: clamp(1.875rem, 6vw, 2.5rem);
+  /* 30-40px */
+  --font-4xl: clamp(2.25rem, 7vw, 3rem);
+  /* 36-48px */
+
+  /* ===== TOUCH TARGET ===== */
+  /* Chú thích: Minimum 44px cho touch targets theo WCAG */
+  --touch-min: 44px;
+  --touch-comfortable: 48px;
+
+  /* ===== BORDER RADIUS ===== */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
   /* Brand colors - Rose Pink (nhẹ nhàng, thân thiện) */
   --brand: #ec4899;
   --brand-light: #f472b6;
@@ -101,6 +151,13 @@
 
   /* Font scale */
   --fs-scale: 1;
+
+  /* ===== SHADOWS - Soft & Modern ===== */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-brand: 0 4px 14px 0 rgba(236, 72, 153, 0.25);
 }
 
 
@@ -118,18 +175,52 @@ html {
   /* Base tăng từ 16px lên 18px */
 }
 
-/* ===== GLOBAL SMOOTHNESS ===== */
-* {
-  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 300ms;
+/* ===== GLOBAL SMOOTHNESS & UX POLISH ===== */
+/* Chú thích: Premium easing curves cho cảm giác mượt mà, tự nhiên */
+
+/* Spring-like easing - tự nhiên hơn linear/ease */
+:root {
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Transition durations */
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+  --duration-slower: 600ms;
 }
 
-/* Exclude layout shifts from transition to prevent jank */
+* {
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+  transition-timing-function: var(--ease-smooth);
+  transition-duration: var(--duration-normal);
+}
+
+/* Exclude layout-affecting properties from transitions to prevent jank */
 html,
 body,
 #root {
   transition: none;
+}
+
+/* GPU acceleration hints for animated elements */
+.will-animate {
+  will-change: transform, opacity;
+}
+
+/* Smooth page transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all var(--duration-slow) var(--ease-out-expo);
 }
 
 /* ===== RESPONSIVE DESIGN - Phase 5 ===== */
@@ -703,4 +794,416 @@ a:focus-visible {
     background: white;
     backdrop-filter: none;
   }
+}
+
+/* ===== MOBILE-FIRST UTILITIES ===== */
+/* Chú thích: Các class tiện ích để đảm bảo trải nghiệm mobile tốt nhất */
+
+/* Button mobile - đảm bảo 44px minimum touch target */
+.btn-mobile {
+  min-height: var(--touch-min);
+  min-width: var(--touch-min);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-base);
+  border-radius: var(--radius-lg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  transition: all 0.2s ease-out;
+}
+
+.btn-mobile:active {
+  transform: scale(0.98);
+}
+
+/* Container mobile - responsive padding */
+.container-mobile {
+  width: 100%;
+  max-width: 100%;
+  padding-left: var(--spacing-md);
+  padding-right: var(--spacing-md);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 640px) {
+  .container-mobile {
+    padding-left: var(--spacing-lg);
+    padding-right: var(--spacing-lg);
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-mobile {
+    max-width: 1024px;
+    padding-left: var(--spacing-xl);
+    padding-right: var(--spacing-xl);
+  }
+}
+
+@media (min-width: 1280px) {
+  .container-mobile {
+    max-width: 1200px;
+  }
+}
+
+/* Fluid Typography utilities */
+.text-fluid-xs {
+  font-size: var(--font-xs);
+}
+
+.text-fluid-sm {
+  font-size: var(--font-sm);
+}
+
+.text-fluid-base {
+  font-size: var(--font-base);
+}
+
+.text-fluid-lg {
+  font-size: var(--font-lg);
+}
+
+.text-fluid-xl {
+  font-size: var(--font-xl);
+}
+
+.text-fluid-2xl {
+  font-size: var(--font-2xl);
+}
+
+.text-fluid-3xl {
+  font-size: var(--font-3xl);
+}
+
+.text-fluid-4xl {
+  font-size: var(--font-4xl);
+}
+
+/* Spacing utilities using CSS variables */
+.gap-mobile {
+  gap: var(--spacing-md);
+}
+
+.gap-mobile-sm {
+  gap: var(--spacing-sm);
+}
+
+.gap-mobile-lg {
+  gap: var(--spacing-lg);
+}
+
+.p-mobile {
+  padding: var(--spacing-md);
+}
+
+.px-mobile {
+  padding-left: var(--spacing-md);
+  padding-right: var(--spacing-md);
+}
+
+.py-mobile {
+  padding-top: var(--spacing-md);
+  padding-bottom: var(--spacing-md);
+}
+
+.m-mobile {
+  margin: var(--spacing-md);
+}
+
+.mx-mobile {
+  margin-left: var(--spacing-md);
+  margin-right: var(--spacing-md);
+}
+
+.my-mobile {
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+/* Section spacing for mobile */
+.section-mobile {
+  padding-top: var(--spacing-2xl);
+  padding-bottom: var(--spacing-2xl);
+}
+
+@media (min-width: 768px) {
+  .section-mobile {
+    padding-top: var(--spacing-3xl);
+    padding-bottom: var(--spacing-3xl);
+  }
+}
+
+/* Card mobile - consistent styling */
+.card-mobile {
+  background: var(--surface-elevated);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease-out;
+}
+
+@media (min-width: 640px) {
+  .card-mobile {
+    padding: var(--spacing-lg);
+  }
+}
+
+.card-mobile:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* Grid mobile-first */
+.grid-mobile {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+}
+
+@media (min-width: 640px) {
+  .grid-mobile-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-mobile-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-mobile-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .grid-mobile-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Stack mobile - vertical layout with consistent spacing */
+.stack-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.stack-mobile-sm {
+  gap: var(--spacing-sm);
+}
+
+.stack-mobile-lg {
+  gap: var(--spacing-lg);
+}
+
+/* Horizontal scrolling container for mobile */
+.scroll-mobile {
+  display: flex;
+  gap: var(--spacing-md);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: var(--spacing-sm);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scroll-mobile::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-mobile>* {
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+
+/* ===== ENHANCED UX SMOOTHNESS ===== */
+/* Chú thích: Premium micro-interactions cho trải nghiệm mượt mà nhất */
+
+/* Interactive button effects */
+.btn-smooth {
+  position: relative;
+  overflow: hidden;
+  transition: all var(--duration-normal) var(--ease-out-quart);
+}
+
+.btn-smooth::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 50%);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-smooth);
+}
+
+.btn-smooth:hover::before {
+  opacity: 1;
+}
+
+.btn-smooth:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-smooth:active {
+  transform: translateY(0) scale(0.98);
+  transition-duration: var(--duration-fast);
+}
+
+/* Card hover lift effect */
+.card-lift {
+  transition: all var(--duration-normal) var(--ease-out-quart);
+}
+
+.card-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+}
+
+.card-lift:active {
+  transform: translateY(-2px) scale(0.99);
+}
+
+/* Subtle pulse on focus for accessibility */
+.focus-ring {
+  transition: box-shadow var(--duration-fast) var(--ease-smooth);
+}
+
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring-offset), 0 0 0 5px var(--ring);
+}
+
+/* Link underline animation */
+.link-smooth {
+  position: relative;
+  text-decoration: none;
+}
+
+.link-smooth::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 0;
+  height: 2px;
+  background: currentColor;
+  transition: width var(--duration-normal) var(--ease-out-expo);
+}
+
+.link-smooth:hover::after {
+  width: 100%;
+}
+
+/* Icon button interaction */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  border-radius: var(--radius-lg);
+  transition: all var(--duration-fast) var(--ease-out-quart);
+}
+
+.icon-btn:hover {
+  background: var(--surface-border);
+  transform: scale(1.05);
+}
+
+.icon-btn:active {
+  transform: scale(0.95);
+}
+
+/* Smooth modal/overlay backdrop */
+.backdrop-smooth {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all var(--duration-slow) var(--ease-out-expo);
+}
+
+/* Slide in from bottom (for mobile sheets) */
+@keyframes slide-up-smooth {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-up-smooth {
+  animation: slide-up-smooth var(--duration-slower) var(--ease-out-expo);
+}
+
+/* Fade scale in (for modals) */
+@keyframes fade-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.fade-scale-in {
+  animation: fade-scale-in var(--duration-slow) var(--ease-out-expo);
+}
+
+/* Skeleton loading shimmer */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg,
+      var(--surface-border) 0%,
+      var(--surface-elevated) 50%,
+      var(--surface-border) 100%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-md);
+}
+
+/* Hide scrollbar but keep scroll functionality */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Custom scrollbar for desktop */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--muted);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--brand);
 }
