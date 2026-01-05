@@ -40,6 +40,9 @@ export function useVoiceCall(options = {}) {
     const isListeningRef = useRef(false);
     const silenceTimeoutRef = useRef(null);
     const endCallRef = useRef(null); // Ref to avoid circular dependency
+    const statusRef = useRef('idle'); // Chú thích: Ref để check status chính xác, tránh closure cũ
+    const restartPendingRef = useRef(false); // Chú thích: Guard flag tránh restart STT quá nhanh
+    const lastRestartTimeRef = useRef(0); // Chú thích: Timestamp lần restart cuối
 
     // Reset silence timer - call this whenever user speaks
     const resetSilenceTimer = useCallback((endCallFn) => {
@@ -94,6 +97,11 @@ export function useVoiceCall(options = {}) {
             sessionRef.current = null;
         }
     }, []);
+
+    // Chú thích: Sync statusRef với status state để dùng trong callbacks
+    useEffect(() => {
+        statusRef.current = status;
+    }, [status]);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -203,14 +211,41 @@ export function useVoiceCall(options = {}) {
             console.log('[VoiceCall] STT ended');
             isListeningRef.current = false;
 
-            // Chú thích: Auto-restart nhanh hơn (50ms) nếu vẫn đang trong cuộc gọi
-            if (sessionRef.current?.isReady() && !isMutedRef.current && status !== 'error') {
-                console.log('[VoiceCall] Restarting STT nhanh...');
+            // Chú thích: Guard để tránh restart quá nhanh gây nhảy liên tục
+            const now = Date.now();
+            const timeSinceLastRestart = now - lastRestartTimeRef.current;
+            const MIN_RESTART_INTERVAL = 800; // Tối thiểu 800ms giữa các lần restart
+
+            // Chú thích: Dùng statusRef thay vì closure status để check chính xác
+            const currentStatus = statusRef.current;
+            const shouldRestart = sessionRef.current?.isReady() &&
+                !isMutedRef.current &&
+                currentStatus !== 'error' &&
+                currentStatus !== 'speaking' && // Không restart khi AI đang nói
+                !restartPendingRef.current && // Không có pending restart
+                timeSinceLastRestart >= MIN_RESTART_INTERVAL;
+
+            if (shouldRestart) {
+                restartPendingRef.current = true;
+                console.log('[VoiceCall] Scheduling STT restart (debounced)...');
+
                 setTimeout(() => {
-                    if (sessionRef.current?.isReady() && !isMutedRef.current) {
+                    restartPendingRef.current = false;
+                    // Double-check điều kiện trước khi restart
+                    if (sessionRef.current?.isReady() &&
+                        !isMutedRef.current &&
+                        statusRef.current !== 'error' &&
+                        statusRef.current !== 'speaking') {
+                        lastRestartTimeRef.current = Date.now();
                         startListening();
                     }
-                }, 50); // Giảm từ 100ms xuống 50ms để nhạy hơn
+                }, 500); // Tăng delay lên 500ms để ổn định hơn
+            } else {
+                console.log('[VoiceCall] Skipping STT restart:', {
+                    currentStatus,
+                    timeSinceLastRestart,
+                    restartPending: restartPendingRef.current
+                });
             }
         };
 
@@ -266,8 +301,9 @@ export function useVoiceCall(options = {}) {
             audioPlayerRef.current.onPlaybackEnd = () => {
                 console.log('[VoiceCall] AI done speaking');
                 setStatus('active');
-                // Restart STT sau khi AI nói xong
-                if (!isMutedRef.current) {
+                // Chú thích: Restart STT sau khi AI nói xong, có check tránh conflict
+                if (!isMutedRef.current && !isListeningRef.current && !restartPendingRef.current) {
+                    lastRestartTimeRef.current = Date.now();
                     startListening();
                 }
             };
