@@ -118,7 +118,7 @@ export default function Corner() {
     : 0;
 
   return (
-    <div className="min-h-screen p-4 md:p-8 space-y-8 max-w-5xl mx-auto relative">
+    <div className="min-h-screen px-4 sm:px-6 py-6 md:py-8 space-y-6 max-w-3xl mx-auto relative">
       <Confetti active={showConfetti} />
 
       {/* Header */}
