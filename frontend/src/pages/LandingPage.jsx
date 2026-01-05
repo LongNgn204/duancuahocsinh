@@ -360,9 +360,10 @@ export default function LandingPage() {
             </section>
 
             {/* ===== STATS SECTION ===== */}
-            <section className="py-12 px-4 bg-gradient-to-b from-white dark:from-slate-950 to-pink-50/30 dark:to-gray-900/50 relative z-10">
+            {/* Chú thích: Mobile-first grid - 1 col trên mobile nhỏ, 2 col trên mobile lớn, 3 col desktop */}
+            <section className="py-8 sm:py-12 px-4 sm:px-6 bg-gradient-to-b from-white dark:from-slate-950 to-pink-50/30 dark:to-gray-900/50 relative z-10">
                 <div className="max-w-5xl mx-auto">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                         {stats.map((stat, idx) => (
                             <motion.div
                                 key={stat.label}
@@ -372,14 +373,14 @@ export default function LandingPage() {
                                 viewport={{ once: true }}
                                 className="text-center"
                             >
-                                <Card className="p-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300 group">
-                                    <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                        <stat.icon className="w-7 h-7 text-white" />
+                                <Card className="p-4 sm:p-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300 group">
+                                    <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 sm:mb-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                        <stat.icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                                     </div>
-                                    <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                                    <div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-1 sm:mb-2">
                                         <AnimatedCounter value={stat.value} duration={2 + idx * 0.3} />
                                     </div>
-                                    <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">
+                                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium">
                                         {stat.label}
                                     </div>
                                 </Card>
@@ -391,19 +392,20 @@ export default function LandingPage() {
 
 
             {/* ===== FEATURES SECTION ===== */}
-            <section id="features" className="py-20 px-4 bg-gradient-to-b from-transparent to-pink-50/30 dark:to-gray-900/50">
+            {/* Chú thích: Mobile-first - 1 cột trên mobile, dần lên 3 cột trên desktop */}
+            <section id="features" className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 bg-gradient-to-b from-transparent to-pink-50/30 dark:to-gray-900/50">
                 <div className="max-w-6xl mx-auto">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
                         {features.map((feature, idx) => (
                             <motion.div
                                 key={feature.title}
                                 initial={{ opacity: 0, y: 20 }}
                                 whileInView={{ opacity: 1, y: 0 }}
-                                transition={{ delay: idx * 0.1 }}
-                                viewport={{ once: true }}
+                                transition={{ delay: idx * 0.05 }}
+                                viewport={{ once: true, margin: "-50px" }}
                             >
                                 <Link to={feature.route}>
-                                    <Card className="h-full bg-white dark:bg-gray-800 rounded-2xl p-6 hover:shadow-lg transition-all cursor-pointer">
+                                    <Card className="h-full bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 lg:p-6 hover:shadow-lg transition-all cursor-pointer active:scale-[0.98]">
                                         <div className="flex items-start gap-4 mb-4">
                                             <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center shadow-lg shrink-0`}>
                                                 <feature.icon className="w-6 h-6 text-white" />
@@ -633,10 +635,12 @@ export default function LandingPage() {
             </section>
 
             {/* ===== FOOTER ===== */}
-            <footer className="py-12 px-4 border-t border-[--surface-border]">
+            {/* Chú thích: Mobile-first footer - stack on mobile, 3 cols on tablet+ */}
+            <footer className="py-8 sm:py-12 px-4 sm:px-6 border-t border-[--surface-border]">
                 <div className="max-w-6xl mx-auto">
-                    <div className="grid md:grid-cols-3 gap-8 mb-8">
-                        <div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+                        {/* Logo & Description */}
+                        <div className="sm:col-span-2 lg:col-span-1">
                             <div className="flex items-center gap-3 mb-4">
                                 <img
                                     src="/logo.png"
@@ -648,40 +652,41 @@ export default function LandingPage() {
                                     <div className="text-sm text-[--text-secondary] font-medium">Trường học Hạnh phúc</div>
                                 </div>
                             </div>
-                            <p className="text-sm text-[--text-secondary]">
-                                Nền tảng hỗ trợ phát triể
-                                n toàn diện cho cộng đồng giáo dục Việt Nam.
+                            <p className="text-sm text-[--text-secondary] leading-relaxed">
+                                Nền tảng hỗ trợ phát triển toàn diện cho cộng đồng giáo dục Việt Nam.
                             </p>
                         </div>
 
+                        {/* Features Links */}
                         <div>
-                            <h4 className="font-semibold text-[--text] mb-4">Tính năng</h4>
+                            <h4 className="font-semibold text-[--text] mb-3 sm:mb-4">Tính năng</h4>
                             <ul className="space-y-2 text-sm text-[--text-secondary]">
-                                <li><Link to="/chat" className="hover:text-[--brand] transition-colors">Trò chuyện</Link></li>
-                                <li><Link to="/breathing" className="hover:text-[--brand] transition-colors">Góc An Yên</Link></li>
-                                <li><Link to="/gratitude" className="hover:text-[--brand] transition-colors">Lọ Biết Ơn</Link></li>
-                                <li><Link to="/games" className="hover:text-[--brand] transition-colors">Mini Games</Link></li>
+                                <li><Link to="/chat" className="hover:text-[--brand] transition-colors inline-block py-1">Trò chuyện</Link></li>
+                                <li><Link to="/breathing" className="hover:text-[--brand] transition-colors inline-block py-1">Góc An Yên</Link></li>
+                                <li><Link to="/gratitude" className="hover:text-[--brand] transition-colors inline-block py-1">Lọ Biết Ơn</Link></li>
+                                <li><Link to="/games" className="hover:text-[--brand] transition-colors inline-block py-1">Mini Games</Link></li>
                             </ul>
                         </div>
 
+                        {/* Contact Links */}
                         <div>
-                            <h4 className="font-semibold text-[--text] mb-4">Liên hệ & Hỗ trợ</h4>
-                            <ul className="space-y-2 text-sm text-[--text-secondary]">
+                            <h4 className="font-semibold text-[--text] mb-3 sm:mb-4">Liên hệ & Hỗ trợ</h4>
+                            <ul className="space-y-3 text-sm text-[--text-secondary]">
                                 <li className="flex items-center gap-2">
-                                    <Mail className="w-4 h-4" />
-                                    <a href="mailto:...." className="hover:text-[--brand] transition-colors">
+                                    <Mail className="w-4 h-4 shrink-0" />
+                                    <a href="mailto:...." className="hover:text-[--brand] transition-colors py-1">
                                         Email: ...
                                     </a>
                                 </li>
                                 <li className="flex items-center gap-2">
-                                    <Phone className="w-4 h-4" />
-                                    <a href="tel:..." className="hover:text-[--brand] transition-colors">
+                                    <Phone className="w-4 h-4 shrink-0" />
+                                    <a href="tel:..." className="hover:text-[--brand] transition-colors py-1">
                                         ...
                                     </a>
                                 </li>
-                                <li className="flex items-center gap-2">
-                                    <Shield className="w-4 h-4" />
-                                    <a href="tel:1800599920" className="hover:text-[--brand] transition-colors">
+                                <li className="flex items-start gap-2">
+                                    <Shield className="w-4 h-4 shrink-0 mt-0.5" />
+                                    <a href="tel:1800599920" className="hover:text-[--brand] transition-colors py-1">
                                         Đường dây nóng Ngày Mai 096 306 1414
                                     </a>
                                 </li>
@@ -689,7 +694,7 @@ export default function LandingPage() {
                         </div>
                     </div>
 
-                    <div className="pt-8 border-t border-[--surface-border] text-center text-sm text-[--muted]">
+                    <div className="pt-6 sm:pt-8 border-t border-[--surface-border] text-center text-xs sm:text-sm text-[--muted]">
                         © 2025 Bạn Đồng Hành. Được phát triển với tình yêu quý dành cho cộng đồng giáo dục Việt Nam.
                     </div>
                 </div>
