@@ -34,7 +34,7 @@ export class VoiceCallSessionOpenAI {
             return;
         }
 
-        const model = 'gpt-4o-realtime-preview-2025-06-03';
+        const model = 'gpt-realtime-mini-2025-10-06';
         const openaiUrl = `https://api.openai.com/v1/realtime?model=${model}`;
 
         try {

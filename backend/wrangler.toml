@@ -43,7 +43,7 @@ MONTHLY_TOKEN_LIMIT = "500000"
 MAX_TOKEN_BUDGET = "50000"
 
 # OpenAI API Key cho Chat và Voice Call (set via: wrangler secret put OPENAI_API_KEY)
-# Chat: gpt-4o-mini | Voice Call: gpt-4o-realtime-preview
+# Chat: gpt-4o-mini | Voice Call: gpt-realtime-mini-2025-10-06
 # OPENAI_API_KEY = "sk-xxxx" (required)
 
 # Admin Authentication (standalone - không cần database)
