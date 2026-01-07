@@ -1,12 +1,11 @@
 // src/components/voice/VoiceCallBot.jsx
-// Voice Call Bot component - UI for real-time voice chat with Gemini AI
-// Includes SOS detection for emergency support
+// Voice Call Bot component - UI for real-time voice chat with OpenAI ChatGPT
+// Web Speech API (STT) + ChatGPT backend - TTS disabled
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Phone, PhoneOff, Mic, MicOff, Volume2 } from 'lucide-react';
 import { useVoiceCall, formatDuration } from '../../hooks/useVoiceCall';
-// import { isLiveAPIAvailable, getVoiceCallDisabledMessage } from '../../services/geminiLive'; // Deprecated
 
 import SOSOverlay from '../sos/SOSOverlay';
 

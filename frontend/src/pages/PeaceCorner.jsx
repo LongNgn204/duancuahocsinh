@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSound } from '../contexts/SoundContext';
-import { speak as geminiSpeak, stopSpeaking as geminiStop } from '../services/geminiTTS';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Wind, Play, Pause, RotateCcw, Volume2, VolumeX, ArrowLeft, Sparkles, Music, Music4, Eye, Hand, Ear, TreePine as Nose, Cherry } from 'lucide-react';
@@ -118,7 +117,6 @@ export default function PeaceCorner() {
             clearInterval(timerRef.current);
             clearTimeout(phaseTimeoutRef.current);
             clearTimeout(stepTimeoutRef.current);
-            geminiStop();
             stopBgm();
         };
     }, [stopBgm]);
@@ -209,12 +207,12 @@ export default function PeaceCorner() {
         return () => clearTimeout(stepTimeoutRef.current);
     }, [isRunning, currentMode, phase, stepDuration]);
 
-    // TTS Helper - using Gemini TTS with fallback
+    // TTS Helper - DISABLED (sẽ thêm audio sau)
     const speak = (text) => {
-        if (isMuted) return;
-        geminiSpeak(text, { fallbackToBrowser: true }).catch(err => {
-            console.error('[PeaceCorner] TTS error:', err);
-        });
+        // TTS disabled - chỉ log
+        if (!isMuted) {
+            console.log('[PeaceCorner] TTS disabled, text:', text?.substring(0, 50));
+        }
     };
 
     const startSession = () => {
@@ -229,7 +227,6 @@ export default function PeaceCorner() {
         clearTimeout(phaseTimeoutRef.current);
         clearTimeout(stepTimeoutRef.current);
         setPhase('idle');
-        geminiStop();
     };
 
     const resetSession = () => {
@@ -240,7 +237,6 @@ export default function PeaceCorner() {
         setTimeLeft(duration);
         setCurrentStep(0);
         setShowEncouragement(false);
-        geminiStop();
     };
 
     const finishSession = () => {
@@ -248,7 +244,6 @@ export default function PeaceCorner() {
         setPhase('finished');
         clearTimeout(phaseTimeoutRef.current);
         clearTimeout(stepTimeoutRef.current);
-        geminiStop();
         setTimeout(() => setShowEncouragement(true), 1000);
     };
 

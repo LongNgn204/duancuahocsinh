@@ -1,19 +1,22 @@
 // src/hooks/useVoiceCall.js
-// Hook for managing voice call with Gemini Live API
-// v2.0: Dùng Web Speech API (vi-VN) cho STT thay vì native audio
-// Giữ Gemini Live API cho TTS output (audio response từ AI)
+// Chú thích: Voice Call Hook - Sử dụng Web Speech API cho STT và OpenAI ChatGPT qua backend
+// TTS: DISABLED - sẽ thêm audio sau
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { OpenAIRealtimeService, AudioPlayer } from '../services/openaiRealtime';
 import { detectSOSLevel, sosMessage, getSuggestedAction } from '../utils/sosDetector';
+import { streamChat } from '../services/chatApi';
 
 /**
- * Hook for voice call with Gemini Live API
- * STT: Web Speech API (vi-VN) - chính xác hơn cho tiếng Việt
- * TTS: Gemini Live API - audio response từ AI
- * @param {Object} options - Configuration options
- * @param {Function} options.onSOS - Callback when SOS detected (level, message)
- * @returns {Object} Voice call state and controls
+ * Format duration từ seconds sang mm:ss
+ */
+export function formatDuration(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+/**
+ * Hook Voice Call với Web Speech API (STT) + OpenAI ChatGPT
  */
 export function useVoiceCall(options = {}) {
     const { onSOS } = options;
@@ -22,116 +25,98 @@ export function useVoiceCall(options = {}) {
     const [status, setStatus] = useState('idle'); // idle | connecting | active | listening | speaking | error
     const [error, setError] = useState(null);
     const [duration, setDuration] = useState(0);
-    const [transcript, setTranscript] = useState(''); // User đang nói (interim)
-    const [lastUserMessage, setLastUserMessage] = useState(''); // User nói xong (final)
-    const [aiResponse, setAiResponse] = useState(''); // AI trả lời
+    const [transcript, setTranscript] = useState('');
+    const [lastUserMessage, setLastUserMessage] = useState('');
     const [isMuted, setIsMuted] = useState(false);
-    const [sosDetected, setSosDetected] = useState(null); // { level, message }
-
-    // Silence timeout - auto end call after 30s of silence
-    const SILENCE_TIMEOUT = 30000; // 30 seconds
+    const [isSupported, setIsSupported] = useState(true);
+    const [sosDetected, setSosDetected] = useState(null);
 
     // Refs
-    const sessionRef = useRef(null);
-    const audioPlayerRef = useRef(null);
-    const recognitionRef = useRef(null); // Web Speech API
+    const recognitionRef = useRef(null);
     const durationTimerRef = useRef(null);
-    const isMutedRef = useRef(false);
-    const isListeningRef = useRef(false);
-    const silenceTimeoutRef = useRef(null);
-    const endCallRef = useRef(null); // Ref to avoid circular dependency
-    const statusRef = useRef('idle'); // Chú thích: Ref để check status chính xác, tránh closure cũ
-    const restartPendingRef = useRef(false); // Chú thích: Guard flag tránh restart STT quá nhanh
-    const lastRestartTimeRef = useRef(0); // Chú thích: Timestamp lần restart cuối
 
-    // Reset silence timer - call this whenever user speaks
-    const resetSilenceTimer = useCallback((endCallFn) => {
-        if (silenceTimeoutRef.current) {
-            clearTimeout(silenceTimeoutRef.current);
-        }
-        silenceTimeoutRef.current = setTimeout(() => {
-            console.log('[VoiceCall] Silence timeout - auto ending call');
-            if (endCallFn) endCallFn();
-        }, SILENCE_TIMEOUT);
-    }, []);
-
-    // Clear silence timer
-    const clearSilenceTimer = useCallback(() => {
-        if (silenceTimeoutRef.current) {
-            clearTimeout(silenceTimeoutRef.current);
-            silenceTimeoutRef.current = null;
-        }
-    }, []);
-
-    // Cleanup function
-    const cleanup = useCallback(() => {
-        // Stop silence timer
-        clearSilenceTimer();
-
-        // Stop duration timer
-        if (durationTimerRef.current) {
-            clearInterval(durationTimerRef.current);
-            durationTimerRef.current = null;
-        }
-
-        // Stop speech recognition
-        if (recognitionRef.current) {
-            try {
-                recognitionRef.current.stop();
-            } catch (e) {
-                // Ignore errors when stopping
-            }
-            recognitionRef.current = null;
-        }
-        isListeningRef.current = false;
-
-        // Stop audio player
-        if (audioPlayerRef.current) {
-            audioPlayerRef.current.stop();
-            audioPlayerRef.current = null;
-        }
-
-        // Close session
-        if (sessionRef.current) {
-            sessionRef.current.disconnect();
-            sessionRef.current = null;
-        }
-    }, []);
-
-    // Chú thích: Sync statusRef với status state để dùng trong callbacks
+    // Check browser support
     useEffect(() => {
-        statusRef.current = status;
-    }, [status]);
-
-    // Cleanup on unmount
-    useEffect(() => {
-        return cleanup;
-    }, [cleanup, clearSilenceTimer]);
-
-    // ========================================================================
-    // SPEECH RECOGNITION (STT) - Web Speech API
-    // ========================================================================
-    const startListening = useCallback(() => {
-        if (isMutedRef.current || isListeningRef.current) return;
-
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
+            setIsSupported(false);
             console.error('[VoiceCall] SpeechRecognition not supported');
-            return;
+        }
+    }, []);
+
+    // Duration timer
+    useEffect(() => {
+        if (status === 'active' || status === 'listening' || status === 'speaking') {
+            durationTimerRef.current = setInterval(() => {
+                setDuration(prev => prev + 1);
+            }, 1000);
+        } else {
+            clearInterval(durationTimerRef.current);
         }
 
+        return () => clearInterval(durationTimerRef.current);
+    }, [status]);
+
+    // Process message with AI
+    const processMessage = useCallback(async (text) => {
+        // SOS Detection
+        const sosLevel = detectSOSLevel(text);
+        const sosAction = getSuggestedAction(sosLevel);
+
+        if (sosAction.showOverlay) {
+            const msg = sosMessage(sosLevel);
+            setSosDetected({ level: sosLevel, message: msg });
+
+            if (onSOS) {
+                onSOS(sosLevel, msg);
+            }
+
+            if (sosAction.blockNormalResponse) {
+                console.log('[VoiceCall] SOS CRITICAL detected, blocking');
+                return;
+            }
+        }
+
+        // Call AI
+        setStatus('speaking');
+
+        try {
+            let fullResponse = '';
+            await streamChat(
+                text,
+                [],
+                (chunk) => {
+                    fullResponse += chunk;
+                }
+            );
+
+            console.log('[VoiceCall] AI Response:', fullResponse?.substring(0, 100));
+            // TTS disabled - chỉ log response
+            console.log('[VoiceCall] TTS disabled, would speak:', fullResponse?.substring(0, 50));
+
+        } catch (err) {
+            console.error('[VoiceCall] AI error:', err);
+            setError('Không thể kết nối với AI');
+        }
+
+        setStatus('active');
+    }, [onSOS]);
+
+    // Start listening with STT
+    const startListening = useCallback(() => {
+        if (!isSupported || isMuted) return;
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
 
-        // Chú thích: Cấu hình STT cho tiếng Việt - tăng độ nhạy
         recognition.lang = 'vi-VN';
-        recognition.continuous = true;        // Tiếp tục nghe
-        recognition.interimResults = true;    // Hiển thị kết quả tạm (độ nhạy cao)
+        recognition.continuous = false;
+        recognition.interimResults = true;
         recognition.maxAlternatives = 1;
 
         recognition.onstart = () => {
-            console.log('[VoiceCall] STT started (vi-VN)');
-            isListeningRef.current = true;
             setStatus('listening');
+            setTranscript('');
         };
 
         recognition.onresult = (event) => {
@@ -147,307 +132,110 @@ export function useVoiceCall(options = {}) {
                 }
             }
 
-            // Hiển thị transcript tạm thời
-            if (interimTranscript) {
-                setTranscript(interimTranscript);
-            }
+            setTranscript(finalTranscript || interimTranscript);
 
-            // Khi có final transcript, gửi đến AI
-            if (finalTranscript && finalTranscript.trim()) {
-                console.log('[VoiceCall] User said:', finalTranscript);
+            if (finalTranscript) {
                 setLastUserMessage(finalTranscript);
-                setTranscript('');
-
-                // Reset silence timer - user đang nói
-                resetSilenceTimer(endCallRef.current);
-
-                // SOS Detection
-                const sosLevel = detectSOSLevel(finalTranscript);
-                const sosAction = getSuggestedAction(sosLevel);
-
-                if (sosAction.showOverlay) {
-                    const msg = sosMessage(sosLevel);
-                    console.log('[VoiceCall] SOS detected:', sosLevel);
-                    setSosDetected({ level: sosLevel, message: msg });
-
-                    if (onSOS) {
-                        onSOS(sosLevel, msg);
-                    }
-
-                    // Nếu critical, không gửi đến AI
-                    if (sosAction.blockNormalResponse) {
-                        return;
-                    }
-                }
-
-                // Gửi text đến Gemini Live API
-                if (sessionRef.current?.isReady()) {
-                    console.log('[VoiceCall] Sending to Gemini:', finalTranscript);
-                    sessionRef.current.sendText(finalTranscript);
-                    setStatus('speaking'); // AI sẽ trả lời
-                }
+                processMessage(finalTranscript);
             }
         };
 
         recognition.onerror = (event) => {
             console.error('[VoiceCall] STT error:', event.error);
-
             if (event.error === 'no-speech') {
-                // Không có gì để làm, tiếp tục nghe
-                console.log('[VoiceCall] No speech detected, continuing...');
-            } else if (event.error === 'not-allowed') {
-                setError('Vui lòng cho phép Microphone');
+                // Restart nếu không nghe thấy gì
+                setTimeout(startListening, 500);
+            } else if (event.error !== 'aborted') {
+                setError(`Lỗi mic: ${event.error}`);
                 setStatus('error');
-            } else if (event.error === 'aborted') {
-                // Bị abort, có thể restart
-                console.log('[VoiceCall] STT aborted');
-            } else {
-                setError(`Lỗi STT: ${event.error}`);
             }
-            isListeningRef.current = false;
         };
 
         recognition.onend = () => {
-            console.log('[VoiceCall] STT ended');
-            isListeningRef.current = false;
-
-            // Chú thích: Guard để tránh restart quá nhanh gây nhảy liên tục
-            const now = Date.now();
-            const timeSinceLastRestart = now - lastRestartTimeRef.current;
-            const MIN_RESTART_INTERVAL = 800; // Tối thiểu 800ms giữa các lần restart
-
-            // Chú thích: Dùng statusRef thay vì closure status để check chính xác
-            const currentStatus = statusRef.current;
-            const shouldRestart = sessionRef.current?.isReady() &&
-                !isMutedRef.current &&
-                currentStatus !== 'error' &&
-                currentStatus !== 'speaking' && // Không restart khi AI đang nói
-                !restartPendingRef.current && // Không có pending restart
-                timeSinceLastRestart >= MIN_RESTART_INTERVAL;
-
-            if (shouldRestart) {
-                restartPendingRef.current = true;
-                console.log('[VoiceCall] Scheduling STT restart (debounced)...');
-
-                setTimeout(() => {
-                    restartPendingRef.current = false;
-                    // Double-check điều kiện trước khi restart
-                    if (sessionRef.current?.isReady() &&
-                        !isMutedRef.current &&
-                        statusRef.current !== 'error' &&
-                        statusRef.current !== 'speaking') {
-                        lastRestartTimeRef.current = Date.now();
-                        startListening();
-                    }
-                }, 500); // Tăng delay lên 500ms để ổn định hơn
-            } else {
-                console.log('[VoiceCall] Skipping STT restart:', {
-                    currentStatus,
-                    timeSinceLastRestart,
-                    restartPending: restartPendingRef.current
-                });
+            recognitionRef.current = null;
+            // Auto restart nếu vẫn đang active
+            if (status === 'listening' || status === 'active') {
+                setTimeout(startListening, 500);
             }
         };
 
         recognitionRef.current = recognition;
+        recognition.start();
+    }, [isSupported, isMuted, processMessage, status]);
 
-        try {
-            recognition.start();
-        } catch (e) {
-            console.error('[VoiceCall] Failed to start STT:', e);
-        }
-    }, [onSOS, status, resetSilenceTimer]);
-
-    const stopListening = useCallback(() => {
-        if (recognitionRef.current) {
-            try {
-                recognitionRef.current.stop();
-            } catch (e) {
-                // Ignore
-            }
-            recognitionRef.current = null;
-        }
-        isListeningRef.current = false;
-    }, []);
-
-    // ========================================================================
-    // START VOICE CALL
-    // ========================================================================
-    const startCall = useCallback(async () => {
-        // Check Web Speech API support
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            setError('Trình duyệt không hỗ trợ nhận diện giọng nói. Vui lòng dùng Chrome hoặc Edge.');
-            setStatus('error');
-            return false;
-        }
-
-        try {
-            setStatus('connecting');
-            setError(null);
-            setDuration(0);
-            setTranscript('');
-            setLastUserMessage('');
-            setAiResponse('');
-
-            // Initialize audio player cho TTS output
-            audioPlayerRef.current = new AudioPlayer();
-            audioPlayerRef.current.onPlaybackStart = () => {
-                console.log('[VoiceCall] AI speaking...');
-                setStatus('speaking');
-                // Tạm dừng STT khi AI đang nói
-                stopListening();
-            };
-            audioPlayerRef.current.onPlaybackEnd = () => {
-                console.log('[VoiceCall] AI done speaking');
-                setStatus('active');
-                // Chú thích: Restart STT sau khi AI nói xong, có check tránh conflict
-                if (!isMutedRef.current && !isListeningRef.current && !restartPendingRef.current) {
-                    lastRestartTimeRef.current = Date.now();
-                    startListening();
-                }
-            };
-
-            // Create OpenAI Realtime session
-            sessionRef.current = OpenAIRealtimeService({
-                onAudioDelta: (base64Data) => {
-                    // Nhận audio từ AI và phát
-                    if (audioPlayerRef.current) {
-                        audioPlayerRef.current.enqueue(base64Data);
-                    }
-                },
-                onTranscriptDelta: (text) => {
-                    // AI response transcript (nếu có)
-                    console.log('[VoiceCall] AI transcript:', text);
-                    setAiResponse(prev => prev + ' ' + text);
-                },
-                onError: (err) => {
-                    console.error('[VoiceCall] Session error:', err);
-                    setError('Lỗi kết nối với AI');
-                    setStatus('error');
-                },
-                onClose: () => {
-                    console.log('[VoiceCall] Session closed');
-                    cleanup();
-                    setStatus('idle');
-                },
-                onOpen: () => {
-                    console.log('[VoiceCall] OpenAI Session ready');
-                    setStatus('active');
-
-                    // Start duration timer
-                    durationTimerRef.current = setInterval(() => {
-                        setDuration(d => d + 1);
-                    }, 1000);
-
-                    // Start Web Speech API STT
-                    startListening();
-
-                    // Start silence timer
-                    resetSilenceTimer(endCallRef.current);
-                }
-            });
-
-            // Connect to Gemini Live
-            await sessionRef.current.connect();
-
-            // Resume audio player
-            audioPlayerRef.current.resume();
-
-            return true;
-
-        } catch (err) {
-            console.error('[VoiceCall] Start error:', err);
-            setError('Không thể bắt đầu cuộc gọi: ' + err.message);
-            setStatus('error');
-            cleanup();
-            return false;
-        }
-    }, [cleanup, startListening, stopListening]);
-
-    // ========================================================================
-    // END VOICE CALL
-    // ========================================================================
-    const endCall = useCallback(() => {
-        cleanup();
-        setStatus('idle');
+    // Start call
+    const startCall = useCallback(() => {
+        setError(null);
+        setDuration(0);
         setTranscript('');
         setLastUserMessage('');
-        setAiResponse('');
-    }, [cleanup]);
+        setStatus('connecting');
 
-    // Keep endCallRef updated
-    useEffect(() => {
-        endCallRef.current = endCall;
-    }, [endCall]);
+        // Simulate connection delay
+        setTimeout(() => {
+            setStatus('active');
+            startListening();
+        }, 500);
+    }, [startListening]);
 
-    // ========================================================================
-    // TOGGLE MUTE
-    // ========================================================================
+    // End call
+    const endCall = useCallback(() => {
+        if (recognitionRef.current) {
+            recognitionRef.current.stop();
+            recognitionRef.current = null;
+        }
+
+        setStatus('idle');
+        setTranscript('');
+        clearInterval(durationTimerRef.current);
+    }, []);
+
+    // Toggle mute
     const toggleMute = useCallback(() => {
         setIsMuted(prev => {
             const newMuted = !prev;
-            isMutedRef.current = newMuted;
 
             if (newMuted) {
-                // Mute: dừng STT
-                stopListening();
-            } else {
-                // Unmute: bắt đầu STT lại
-                if (sessionRef.current?.isReady() && status !== 'speaking') {
-                    startListening();
+                // Stop listening
+                if (recognitionRef.current) {
+                    recognitionRef.current.stop();
                 }
+            } else {
+                // Start listening
+                startListening();
             }
 
             return newMuted;
         });
-    }, [startListening, stopListening, status]);
+    }, [startListening]);
 
-    // Send text message directly (for testing or manual input)
-    const sendText = useCallback((text) => {
-        if (sessionRef.current?.isReady()) {
-            sessionRef.current.sendText(text);
-            setLastUserMessage(text);
-            return true;
-        }
-        return false;
-    }, []);
-
-    // Check if supported
-    const isSupported = typeof navigator !== 'undefined' &&
-        (window.SpeechRecognition || window.webkitSpeechRecognition);
-
-    // Clear SOS state
+    // Clear SOS
     const clearSOS = useCallback(() => {
         setSosDetected(null);
     }, []);
 
+    // Cleanup
+    useEffect(() => {
+        return () => {
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+            }
+            clearInterval(durationTimerRef.current);
+        };
+    }, []);
+
     return {
-        // State
-        status,           // idle | connecting | active | listening | speaking | error
+        status,
         error,
         duration,
-        transcript,       // User đang nói (interim)
-        lastUserMessage,  // User nói xong (final)
-        aiResponse,       // AI response transcript
+        transcript,
+        lastUserMessage,
         isMuted,
         isSupported,
         sosDetected,
-
-        // Controls
         startCall,
         endCall,
         toggleMute,
-        sendText,
-        clearSOS
+        clearSOS,
     };
-}
-
-/**
- * Format duration in seconds to MM:SS
- */
-export function formatDuration(seconds) {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }

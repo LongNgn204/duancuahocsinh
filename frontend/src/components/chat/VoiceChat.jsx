@@ -1,8 +1,8 @@
 // src/components/chat/VoiceChat.jsx
-// Chú thích: VoiceChat v3.0 - Sử dụng Web Speech API (browser-native)
+// Chú thích: VoiceChat v4.0 - Sử dụng Web Speech API (browser-native)
 // STT: SpeechRecognition (vi-VN)
-// TTS: SpeechSynthesis (vi-VN) với Play/Stop - KHÔNG ĐỌC EMOJI
-// LLM: Workers AI qua backend SSE streaming
+// TTS: DISABLED - sẽ thêm audio sau
+// LLM: OpenAI ChatGPT qua backend
 // SOS: Phát hiện từ khóa tiêu cực và hiện cảnh báo khẩn cấp
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
