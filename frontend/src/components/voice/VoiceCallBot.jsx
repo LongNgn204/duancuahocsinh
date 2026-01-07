@@ -125,10 +125,18 @@ export default function VoiceCallBot({ onClose }) {
             },
             onError: (err) => {
                 console.error("Realtime Error:", err);
-                setError("Mất kết nối với AI");
+                // Chú thích: Hiển thị lỗi cụ thể nếu có
+                const errMsg = err?.message || err?.error?.message || "Mất kết nối với AI";
+                setError(errMsg);
                 setStatus('error');
                 isConnectingRef.current = false;
                 stopRecording();
+            },
+            onIdleTimeout: (message) => {
+                // Chú thích: 20s không hoạt động -> tự động kết thúc
+                console.log("Idle timeout:", message);
+                setError("Cuộc gọi kết thúc do 20s không hoạt động");
+                endCallInternal();
             },
             onAudioDelta: (delta) => {
                 if (audioPlayerRef.current) {
@@ -162,7 +170,8 @@ export default function VoiceCallBot({ onClose }) {
         }
     };
 
-    const endCall = () => {
+    // Chú thích: Internal endCall không reset error (để hiển thị message timeout)
+    const endCallInternal = useCallback(() => {
         if (realtimeServiceRef.current) {
             realtimeServiceRef.current.disconnect();
             realtimeServiceRef.current = null;
@@ -174,6 +183,11 @@ export default function VoiceCallBot({ onClose }) {
         stopRecording();
         setStatus('idle');
         isConnectingRef.current = false;
+    }, [stopRecording]);
+
+    const endCall = () => {
+        setError(null);
+        endCallInternal();
     };
 
     const toggleMute = () => {

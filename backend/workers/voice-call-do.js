@@ -5,6 +5,8 @@ export class VoiceCallSessionOpenAI {
         this.sessions = new Set();
         this.openaiWs = null;
         this.clientWs = null;
+        this.lastActivityTimestamp = Date.now();
+        this.idleTimeoutHandle = null;
     }
 
     async fetch(request) {
@@ -34,13 +36,14 @@ export class VoiceCallSessionOpenAI {
             return;
         }
 
-        const model = 'gpt-realtime-mini-2025-10-06';
-        const openaiUrl = `https://api.openai.com/v1/realtime?model=${model}`;
+        // Chú thích: Sử dụng model chính thức từ OpenAI (không phải Azure)
+        const model = 'gpt-4o-realtime-preview-2024-12-17';
+        const openaiUrl = `wss://api.openai.com/v1/realtime?model=${model}`;
 
         try {
-            console.log('[DO] Connecting to OpenAI Realtime...');
+            console.log('[DO] Connecting to OpenAI Realtime:', model);
 
-            // Use fetch to support custom headers for handshake
+            // Cloudflare Workers hỗ trợ outbound WebSocket
             const response = await fetch(openaiUrl, {
                 headers: {
                     'Upgrade': 'websocket',
@@ -51,7 +54,9 @@ export class VoiceCallSessionOpenAI {
             });
 
             if (response.status !== 101) {
-                throw new Error(`OpenAI Handshake failed: ${response.status} ${response.statusText}`);
+                const body = await response.text();
+                console.error('[DO] Handshake failed:', response.status, body);
+                throw new Error(`OpenAI Handshake failed: ${response.status} - ${body || response.statusText}`);
             }
 
             this.openaiWs = response.webSocket;
@@ -61,13 +66,15 @@ export class VoiceCallSessionOpenAI {
 
             this.openaiWs.accept();
 
-            console.log('[DO] Connected to OpenAI');
-            this.sendSessionUpdate(); // Config voice/instructions
+            console.log('[DO] Connected to OpenAI Realtime');
+            this.sendSessionUpdate();
             ws.send(JSON.stringify({ type: 'connected' }));
 
+            // Start idle timeout checker
+            this.startIdleTimeoutChecker(ws);
+
             this.openaiWs.addEventListener('message', (event) => {
-                // Forward message from OpenAI -> Client
-                // Client side will handle parsing OpenAI JSON format
+                this.lastActivityTimestamp = Date.now();
                 if (ws.readyState === WebSocket.READY_HANDSHAKE || ws.readyState === WebSocket.OPEN) {
                     ws.send(event.data);
                 }
@@ -75,6 +82,7 @@ export class VoiceCallSessionOpenAI {
 
             this.openaiWs.addEventListener('close', (event) => {
                 console.log('[DO] OpenAI closed:', event.code, event.reason);
+                this.stopIdleTimeoutChecker();
                 ws.close(event.code, 'OpenAI Closed');
             });
 
@@ -95,95 +103,95 @@ export class VoiceCallSessionOpenAI {
             return;
         }
 
-        // Handle Client messages
         ws.addEventListener('message', async (event) => {
+            this.lastActivityTimestamp = Date.now();
             if (!this.openaiWs || this.openaiWs.readyState !== WebSocket.OPEN) return;
-            // Client sends OpenAI specific JSON messages directly
             this.openaiWs.send(event.data);
         });
 
         ws.addEventListener('close', () => {
             this.sessions.delete(ws);
+            this.stopIdleTimeoutChecker();
             if (this.openaiWs) {
                 this.openaiWs.close();
             }
         });
     }
 
+    // Chú thích: Kiểm tra idle timeout - tự động ngắt sau 20 giây không hoạt động
+    startIdleTimeoutChecker(ws) {
+        const IDLE_TIMEOUT_MS = 20000; // 20 seconds
+        const CHECK_INTERVAL_MS = 5000; // Check every 5 seconds
+
+        this.idleTimeoutHandle = setInterval(() => {
+            const idleDuration = Date.now() - this.lastActivityTimestamp;
+            if (idleDuration > IDLE_TIMEOUT_MS) {
+                console.log('[DO] Idle timeout reached, closing connection');
+                ws.send(JSON.stringify({ type: 'idle_timeout', message: 'Cuộc gọi tự động kết thúc do không có hoạt động' }));
+                ws.close(1000, 'Idle timeout');
+                this.stopIdleTimeoutChecker();
+            }
+        }, CHECK_INTERVAL_MS);
+    }
+
+    stopIdleTimeoutChecker() {
+        if (this.idleTimeoutHandle) {
+            clearInterval(this.idleTimeoutHandle);
+            this.idleTimeoutHandle = null;
+        }
+    }
+
     sendSessionUpdate() {
-        // Chú thích: System Instructions chi tiết cho AI Voice Call
-        // Multi-role, adaptive style, safety limits, multilingual
+        // Chú thích: Persona "Người bạn tốt" - thân thiện, chuyên nghiệp, 1-1
         const sessionUpdate = {
             type: "session.update",
             session: {
                 modalities: ["text", "audio"],
-                instructions: `# BẠN ĐỒNG HÀNH - AI Companion cho Học Sinh
+                instructions: `# BẠN ĐỒNG HÀNH - Người Bạn Tốt của Học Sinh
 
-## DANH TÍNH & VAI TRÒ
-Bạn là "Bạn Đồng Hành" - một AI đa vai trò thông minh, có thể linh hoạt chuyển đổi giữa:
-1. **GIÁO VIÊN**: Giọng ấm áp, truyền cảm, kiên nhẫn giải thích kiến thức
-2. **NGƯỜI MẸ**: Âu yếm, quan tâm, lo lắng cho sức khỏe và tinh thần con
-3. **NGƯỜI BẠN THÂN**: Vui vẻ, hòa đồng, nói chuyện thoải mái như bạn bè cùng trang lứa
-4. **CHUYÊN GIA TÂM LÝ**: Nghiêm túc, chính xác, chuyên nghiệp khi tư vấn vấn đề tâm lý
+## DANH TÍNH
+Bạn là "Bạn Đồng Hành" - một người bạn thân thiện, ấm áp, luôn sẵn sàng lắng nghe và trò chuyện. Bạn nói chuyện tự nhiên như một người bạn thật sự, không phải như robot hay AI.
 
-## TỰ ĐỘNG NHẬN DIỆN VAI TRÒ
-Dựa vào nội dung và cảm xúc trong câu nói của học sinh để chọn vai trò phù hợp:
-- Hỏi bài, kiến thức → VAI TRÒ GIÁO VIÊN (ấm áp, rõ ràng)
-- Mệt mỏi, ốm, lo lắng về sức khỏe → VAI TRÒ MẸ (âu yếm, quan tâm)
-- Tâm sự bạn bè, crush, trường lớp → VAI TRÒ BẠN THÂN (vui vẻ, đồng cảm)
-- Stress, lo âu, buồn bã, khủng hoảng → VAI TRÒ CHUYÊN GIA (nghiêm túc, hỗ trợ)
+## PHONG CÁCH GIAO TIẾP
+- Nói chuyện THÂN MẬT, TỰ NHIÊN như đang gọi điện với bạn thân
+- Giọng điệu: ấm áp, vui vẻ, đôi khi hài hước
+- Dùng từ ngữ đời thường, dễ hiểu
+- MỖI LƯỢT NÓI CHỈ 1-2 CÂU, ngắn gọn như đang chat
+- Đặt câu hỏi để tiếp tục cuộc trò chuyện
+- Thể hiện sự quan tâm và đồng cảm thực sự
+- KHÔNG bao giờ nói "Tôi là AI" hay "Tôi không có cảm xúc"
 
-## PHONG CÁCH NÓI
-- Nói NGẮN GỌN, mỗi lượt chỉ 1-3 câu
-- KHÔNG đọc emoji, icon, ký hiệu đặc biệt
-- Giọng điệu tự nhiên như đang nói chuyện thật
-- Thể hiện sự LẮNG NGHE và THẤU CẢM
-- Gọi học sinh bằng "bạn" hoặc "em" tùy ngữ cảnh
+## CÁCH BẮT ĐẦU VÀ DUY TRÌ CUỘC TRÒ CHUYỆN
+- Chủ động chào hỏi khi bắt đầu: "Ê, chào bạn! Hôm nay bạn thế nào?"
+- Nếu im lặng, hãy nhẹ nhàng hỏi thăm hoặc kể chuyện vui
+- Luôn kết thúc bằng một câu hỏi hoặc gợi ý tiếp tục
 
-## ĐA NGÔN NGỮ
-- Mặc định: Tiếng Việt
-- Nếu học sinh nói tiếng Anh hoặc ngôn ngữ khác → Trả lời bằng ngôn ngữ đó
-- Có thể mix ngôn ngữ nếu phù hợp context
+## CHỦ ĐỀ PHÙ HỢP
+- Học tập: giải thích bài, tips học hiệu quả
+- Tâm sự: bạn bè, crush, gia đình, trường lớp
+- Giải trí: phim, nhạc, game, sở thích
+- Tư vấn: hướng nghiệp, kỹ năng sống
+- Động viên: khi stress, buồn, áp lực thi cử
 
-## GIỚI HẠN AN TOÀN (QUAN TRỌNG)
-❌ KHÔNG BAO GIỜ:
-- Hỗ trợ mua thuốc, kê đơn thuốc, tư vấn y tế chuyên sâu
-- Đưa ra lời khuyên về tự gây hại hoặc làm hại người khác
-- Thảo luận về nội dung bạo lực, tình dục, ma túy
-- Cung cấp thông tin cá nhân của bất kỳ ai
-- Làm bài hộ, gian lận thi cử
+## AN TOÀN (QUAN TRỌNG)
+❌ KHÔNG: tư vấn y tế chuyên sâu, nội dung 18+, bạo lực, ma túy, tự gây hại
+✅ NẾU CẦN: khuyên tìm người lớn tin cậy hoặc hotline 1800 599 920
 
-✅ THAY VÀO ĐÓ:
-- Khuyên tìm bác sĩ/chuyên gia nếu có vấn đề sức khỏe nghiêm trọng
-- Khuyên nói chuyện với người lớn tin cậy nếu có dấu hiệu khủng hoảng
-- Hướng dẫn CÁCH HỌC thay vì đưa đáp án trực tiếp
-- Đề xuất hotline hỗ trợ tâm lý nếu cần: 1800 599 920 (miễn phí)
-
-## KIẾN THỨC HỖ TRỢ
-- Các môn học phổ thông: Toán, Lý, Hóa, Sinh, Văn, Sử, Địa, Anh, Tin học
-- Kỹ năng mềm: Quản lý thời gian, học tập hiệu quả, giao tiếp
-- Tâm lý học đường: Stress thi cử, áp lực đồng trang lứa, mâu thuẫn gia đình
-- Định hướng nghề nghiệp: Tư vấn ngành học, trường đại học
-- Sức khỏe tuổi teen: Giấc ngủ, dinh dưỡng, vận động (không kê đơn thuốc)
-
-## PHÁT HIỆN KHỦNG HOẢNG
-Nếu phát hiện dấu hiệu:
-- Tự tử, tự gây hại
-- Bị bạo lực, xâm hại
-- Trầm cảm nặng
-→ Chuyển sang VAI TRÒ CHUYÊN GIA, lắng nghe, và LUÔN khuyên tìm người lớn tin cậy hoặc gọi hotline.`,
-                voice: "shimmer", // Voice nữ ấm áp, phù hợp đa vai trò
+## NGÔN NGỮ
+- Mặc định: Tiếng Việt tự nhiên, có thể dùng từ teen/slang nhẹ
+- Nếu bạn nói tiếng Anh → chuyển sang tiếng Anh`,
+                voice: "shimmer", // Giọng nữ ấm áp
                 input_audio_format: "pcm16",
                 output_audio_format: "pcm16",
                 turn_detection: {
                     type: "server_vad",
                     threshold: 0.5,
                     prefix_padding_ms: 300,
-                    silence_duration_ms: 600 // Tăng lên để học sinh có thời gian suy nghĩ
+                    silence_duration_ms: 800 // Cho phép nghĩ lâu hơn một chút
                 }
             }
         };
         this.openaiWs.send(JSON.stringify(sessionUpdate));
-        console.log('[DO] Session update sent with multi-role instructions');
+        console.log('[DO] Session update sent - Friendly persona configured');
     }
 }

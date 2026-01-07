@@ -157,15 +157,25 @@ export function OpenAIRealtimeService(config) {
                 try {
                     const msg = JSON.parse(event.data);
 
-                    // Handle OpenAI Events
+                    // Handle OpenAI Events and custom backend events
                     switch (msg.type) {
                         case 'error':
                             console.error('[OpenAI] Server Error:', msg.error || msg.message);
                             if (onError) onError(msg);
                             break;
 
+                        case 'idle_timeout':
+                            // Chú thích: Custom event từ backend khi 20s không hoạt động
+                            console.log('[OpenAI] Idle timeout:', msg.message);
+                            if (config.onIdleTimeout) config.onIdleTimeout(msg.message);
+                            break;
+
                         case 'session.updated':
                             console.log('[OpenAI] Session Updated');
+                            break;
+
+                        case 'session.created':
+                            console.log('[OpenAI] Session Created');
                             break;
 
                         case 'response.audio.delta':
