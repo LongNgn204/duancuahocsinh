@@ -110,7 +110,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }) {
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0.9, opacity: 0 }}
-                    className="bg-white dark:bg-[#1e293b] rounded-2xl shadow-2xl max-w-md w-full p-6 border border-[--surface-border]"
+                    className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-[--surface-border]"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}

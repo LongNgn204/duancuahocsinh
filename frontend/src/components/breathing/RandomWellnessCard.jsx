@@ -324,7 +324,7 @@ export default function RandomWellnessCard({ onActionTaken }) {
                     className="relative"
                 >
                     <motion.div
-                        className={`bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-200/50 dark:border-gray-700/50 relative overflow-hidden bg-gradient-to-br ${selectedSpecialCard.color}`}
+                        className={`bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-200/50 relative overflow-hidden bg-gradient-to-br ${selectedSpecialCard.color}`}
                     >
                         <button
                             onClick={handleDismiss}
@@ -390,8 +390,8 @@ export default function RandomWellnessCard({ onActionTaken }) {
     return (
         <div className="space-y-4">
             {/* Special Cards Selector */}
-            <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-gray-200/50 dark:border-gray-700/50">
-                <h3 className="font-semibold text-sm text-gray-800 dark:text-white mb-3 flex items-center gap-2">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg border border-gray-200/50">
+                <h3 className="font-semibold text-sm text-gray-800 mb-3 flex items-center gap-2">
                     <Sparkles className="w-4 h-4" />
                     Bộ thẻ An Yên
                 </h3>
@@ -409,7 +409,7 @@ export default function RandomWellnessCard({ onActionTaken }) {
                                 <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${specialCard.color} flex items-center justify-center mx-auto mb-2`}>
                                     <Icon className="w-5 h-5 text-white" />
                                 </div>
-                                <div className="text-xs font-medium text-gray-800 dark:text-white">
+                                <div className="text-xs font-medium text-gray-800">
                                     {specialCard.title}
                                 </div>
                             </motion.button>
@@ -429,7 +429,7 @@ export default function RandomWellnessCard({ onActionTaken }) {
                             className="relative"
                         >
                             <motion.div
-                                className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-200/50 dark:border-gray-700/50 relative overflow-hidden"
+                                className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-200/50 relative overflow-hidden"
                                 onViewportEnter={handleView}
                             >
                                 {/* Background gradient */}
@@ -438,7 +438,7 @@ export default function RandomWellnessCard({ onActionTaken }) {
                                 {/* Close button */}
                                 <button
                                     onClick={handleDismiss}
-                                    className="absolute top-4 right-4 p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors z-10"
+                                    className="absolute top-4 right-4 p-1.5 hover:bg-gray-100 rounded-lg transition-colors z-10"
                                     aria-label="Đóng thẻ"
                                 >
                                     <X className="w-4 h-4 text-gray-500" />
@@ -451,10 +451,10 @@ export default function RandomWellnessCard({ onActionTaken }) {
                                             <card.icon className="w-6 h-6 text-white" />
                                         </div>
                                         <div className="flex-1">
-                                            <h3 className="font-semibold text-lg text-gray-800 dark:text-white mb-1">
+                                            <h3 className="font-semibold text-lg text-gray-800 mb-1">
                                                 {card.title}
                                             </h3>
-                                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                                            <p className="text-sm text-gray-600">
                                                 {card.description}
                                             </p>
                                         </div>
@@ -469,7 +469,7 @@ export default function RandomWellnessCard({ onActionTaken }) {
                                         className={`
                                             w-full py-3 rounded-xl font-medium transition-all relative
                                             ${actionTaken
-                                                ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                                                ? 'bg-green-100 text-green-600'
                                                 : `bg-gradient-to-r ${card.color} text-white hover:shadow-lg`
                                             }
                                         `}
@@ -528,7 +528,7 @@ export default function RandomWellnessCard({ onActionTaken }) {
                     className="relative"
                 >
                     <motion.div
-                        className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-200/50 dark:border-gray-700/50 relative overflow-hidden"
+                        className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-gray-200/50 relative overflow-hidden"
                         onViewportEnter={handleView}
                     >
                         {/* Background gradient */}
@@ -537,7 +537,7 @@ export default function RandomWellnessCard({ onActionTaken }) {
                         {/* Close button */}
                         <button
                             onClick={handleDismiss}
-                            className="absolute top-4 right-4 p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors z-10"
+                            className="absolute top-4 right-4 p-1.5 hover:bg-gray-100 rounded-lg transition-colors z-10"
                             aria-label="Đóng thẻ"
                         >
                             <X className="w-4 h-4 text-gray-500" />
@@ -550,10 +550,10 @@ export default function RandomWellnessCard({ onActionTaken }) {
                                     <Icon className="w-6 h-6 text-white" />
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="font-semibold text-lg text-gray-800 dark:text-white mb-1">
+                                    <h3 className="font-semibold text-lg text-gray-800 mb-1">
                                         {card.title}
                                     </h3>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                                    <p className="text-sm text-gray-600">
                                         {card.description}
                                     </p>
                                 </div>
@@ -568,7 +568,7 @@ export default function RandomWellnessCard({ onActionTaken }) {
                                 className={`
                                     w-full py-3 rounded-xl font-medium transition-all relative
                                     ${actionTaken
-                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+                                        ? 'bg-green-100 text-green-600'
                                         : `bg-gradient-to-r ${card.color} text-white hover:shadow-lg`
                                     }
                                 `}

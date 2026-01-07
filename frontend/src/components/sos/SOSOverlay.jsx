@@ -171,8 +171,8 @@ export default function SOSOverlay({
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0.9, opacity: 0 }}
                     className={`
-            relative w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden
-            ${isCritical ? 'border-2 border-red-500' : 'border border-gray-200 dark:border-gray-700'}
+            relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden
+            ${isCritical ? 'border-2 border-red-500' : 'border border-gray-200'}
           `}
                 >
                     {/* Critical Warning Banner */}
@@ -184,20 +184,20 @@ export default function SOSOverlay({
                     )}
 
                     {/* Header */}
-                    <div className="p-6 text-center border-b border-gray-100 dark:border-gray-800">
+                    <div className="p-6 text-center border-b border-gray-100">
                         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                             <Heart className="w-8 h-8 text-white" />
                         </div>
-                        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+                        <h2 className="text-xl font-bold text-gray-800">
                             Bạn không đơn độc
                         </h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                        <p className="text-sm text-gray-500 mt-2">
                             Mình luôn ở đây và sẵn sàng lắng nghe bạn
                         </p>
                     </div>
 
                     {/* Tabs */}
-                    <div className="flex border-b border-gray-100 dark:border-gray-800">
+                    <div className="flex border-b border-gray-100">
                         <TabButton
                             active={activeTab === 'hotline'}
                             onClick={() => setActiveTab('hotline')}
@@ -227,17 +227,17 @@ export default function SOSOverlay({
                                     <button
                                         key={hotline.id}
                                         onClick={() => callHotline(hotline)}
-                                        className="w-full p-4 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-95 transition-all text-left flex items-center justify-between group touch-target"
+                                        className="w-full p-4 rounded-xl bg-gray-50 hover:bg-gray-100 active:scale-95 transition-all text-left flex items-center justify-between group touch-target"
                                         style={{ minHeight: '80px' }} // Đảm bảo vùng chạm đủ lớn
                                     >
                                         <div className="flex-1">
-                                            <p className="font-medium text-gray-800 dark:text-gray-100 text-base">
+                                            <p className="font-medium text-gray-800 text-base">
                                                 {hotline.name}
                                             </p>
-                                            <p className="text-xl font-bold text-purple-600 dark:text-purple-400 mt-1">
+                                            <p className="text-xl font-bold text-purple-600 mt-1">
                                                 {hotline.number}
                                             </p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                            <p className="text-xs text-gray-500 mt-1">
                                                 {hotline.description}
                                             </p>
                                         </div>
@@ -255,14 +255,14 @@ export default function SOSOverlay({
                                 {/* GPS Permission Prompt */}
                                 {!userLocation && !locationLoading && !locationError && (
                                     <div className="text-center py-6 space-y-4">
-                                        <div className="w-16 h-16 mx-auto rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                        <div className="w-16 h-16 mx-auto rounded-full bg-blue-100 flex items-center justify-center">
                                             <MapPin className="w-8 h-8 text-blue-500" />
                                         </div>
                                         <div>
-                                            <h3 className="font-medium text-gray-800 dark:text-gray-100 mb-2">
+                                            <h3 className="font-medium text-gray-800 mb-2">
                                                 Bật định vị để tìm hỗ trợ gần bạn
                                             </h3>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                            <p className="text-sm text-gray-500 mb-4">
                                                 Chúng mình cần quyền truy cập vị trí để tìm bệnh viện và cơ sở hỗ trợ tâm lý gần nhất
                                             </p>
                                         </div>
@@ -283,7 +283,7 @@ export default function SOSOverlay({
                                 {locationLoading && (
                                     <div className="flex flex-col items-center justify-center py-8 space-y-3">
                                         <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
-                                        <span className="text-gray-600 dark:text-gray-300">Đang xác định vị trí...</span>
+                                        <span className="text-gray-600">Đang xác định vị trí...</span>
                                         <p className="text-xs text-gray-400">Vui lòng cho phép truy cập GPS</p>
                                     </div>
                                 )}
@@ -291,14 +291,14 @@ export default function SOSOverlay({
                                 {/* Error State */}
                                 {locationError && (
                                     <div className="text-center py-6 space-y-4">
-                                        <div className="w-16 h-16 mx-auto rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                                        <div className="w-16 h-16 mx-auto rounded-full bg-amber-100 flex items-center justify-center">
                                             <AlertTriangle className="w-8 h-8 text-amber-500" />
                                         </div>
                                         <div>
-                                            <p className="font-medium text-amber-600 dark:text-amber-400 mb-2">
+                                            <p className="font-medium text-amber-600 mb-2">
                                                 {locationError}
                                             </p>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                            <p className="text-sm text-gray-500">
                                                 Để bật GPS: Vào Cài đặt trình duyệt → Quyền riêng tư → Vị trí → Cho phép
                                             </p>
                                         </div>
@@ -313,7 +313,7 @@ export default function SOSOverlay({
                                                 href="https://www.google.com/maps/search/bệnh+viện+tâm+thần"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="flex-1 py-3 min-h-[48px] bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-medium text-center transition-all touch-target flex items-center justify-center"
+                                                className="flex-1 py-3 min-h-[48px] bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-700 rounded-xl text-sm font-medium text-center transition-all touch-target flex items-center justify-center"
                                             >
                                                 Tìm thủ công
                                             </a>
@@ -325,7 +325,7 @@ export default function SOSOverlay({
                                 {userLocation && !locationLoading && (
                                     <>
                                         <div className="text-center space-y-1">
-                                            <p className="text-sm text-green-600 dark:text-green-400 flex items-center justify-center gap-1">
+                                            <p className="text-sm text-green-600 flex items-center justify-center gap-1">
                                                 <MapPin className="w-4 h-4" />
                                                 Đã xác định vị trí của bạn
                                             </p>
@@ -346,7 +346,7 @@ export default function SOSOverlay({
                                         </div>
 
                                         {/* OpenStreetMap Preview (FREE) */}
-                                        <div className="w-full h-48 rounded-xl overflow-hidden relative border border-gray-200 dark:border-gray-700 group">
+                                        <div className="w-full h-48 rounded-xl overflow-hidden relative border border-gray-200 group">
                                             <iframe
                                                 src={`https://www.openstreetmap.org/export/embed.html?bbox=${userLocation.lng - 0.03}%2C${userLocation.lat - 0.03}%2C${userLocation.lng + 0.03}%2C${userLocation.lat + 0.03}&layer=mapnik&marker=${userLocation.lat}%2C${userLocation.lng}`}
                                                 className="w-full h-full border-0"
@@ -354,7 +354,7 @@ export default function SOSOverlay({
                                                 loading="lazy"
                                             />
                                             {/* OSM Attribution */}
-                                            <div className="absolute bottom-1 left-1 text-xs bg-white/80 dark:bg-gray-900/80 px-1 rounded">
+                                            <div className="absolute bottom-1 left-1 text-xs bg-white/80 px-1 rounded">
                                                 © OpenStreetMap
                                             </div>
                                             {/* Fullscreen button */}
@@ -363,10 +363,10 @@ export default function SOSOverlay({
                                                     const url = `https://www.openstreetmap.org/?mlat=${userLocation.lat}&mlon=${userLocation.lng}&zoom=14`;
                                                     window.open(url, '_blank', 'noopener,noreferrer');
                                                 }}
-                                                className="absolute top-2 right-2 w-10 h-10 min-w-[48px] min-h-[48px] bg-white/90 dark:bg-gray-900/90 hover:bg-white dark:hover:bg-gray-800 rounded-lg shadow-md flex items-center justify-center transition-colors touch-target"
+                                                className="absolute top-2 right-2 w-10 h-10 min-w-[48px] min-h-[48px] bg-white/90 hover:bg-white rounded-lg shadow-md flex items-center justify-center transition-colors touch-target"
                                                 title="Xem bản đồ toàn màn hình"
                                             >
-                                                <ExternalLink className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                                                <ExternalLink className="w-5 h-5 text-gray-700" />
                                             </button>
                                         </div>
 
@@ -387,7 +387,7 @@ export default function SOSOverlay({
                                                 href={`https://www.google.com/maps/search/phòng+khám+tâm+lý/@${userLocation.lat},${userLocation.lng},14z`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="flex-1 py-3 min-h-[48px] bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95 text-gray-700 dark:text-gray-300 rounded-xl text-center font-medium transition-all touch-target flex items-center justify-center"
+                                                className="flex-1 py-3 min-h-[48px] bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-700 rounded-xl text-center font-medium transition-all touch-target flex items-center justify-center"
                                             >
                                                 Phòng khám tâm lý
                                             </a>
@@ -395,7 +395,7 @@ export default function SOSOverlay({
                                                 href={`https://www.google.com/maps/search/bệnh+viện/@${userLocation.lat},${userLocation.lng},14z`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="flex-1 py-3 min-h-[48px] bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95 text-gray-700 dark:text-gray-300 rounded-xl text-center font-medium transition-all touch-target flex items-center justify-center"
+                                                className="flex-1 py-3 min-h-[48px] bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-700 rounded-xl text-center font-medium transition-all touch-target flex items-center justify-center"
                                             >
                                                 Bệnh viện chung
                                             </a>
@@ -408,7 +408,7 @@ export default function SOSOverlay({
                         {/* Chat Tab */}
                         {activeTab === 'chat' && (
                             <div className="text-center py-6 space-y-4">
-                                <p className="text-gray-600 dark:text-gray-300">
+                                <p className="text-gray-600">
                                     Bạn có thể chia sẻ với AI của chúng mình bất cứ điều gì.
                                     Mình sẽ lắng nghe và không phán xét.
                                 </p>
@@ -426,14 +426,14 @@ export default function SOSOverlay({
                     {/* Close Button - Touch-friendly */}
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 w-12 h-12 min-w-[48px] min-h-[48px] rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-90 transition-all flex items-center justify-center touch-target"
+                        className="absolute top-4 right-4 w-12 h-12 min-w-[48px] min-h-[48px] rounded-full hover:bg-gray-100 active:scale-90 transition-all flex items-center justify-center touch-target"
                         aria-label="Đóng"
                     >
                         <X className="w-6 h-6 text-gray-500" />
                     </button>
 
                     {/* Footer */}
-                    <div className="p-4 bg-gray-50 dark:bg-gray-800 text-center">
+                    <div className="p-4 bg-gray-50 text-center">
                         <p className="text-xs text-gray-400">
                             Cuộc sống của bạn rất có giá trị 💜
                         </p>
@@ -452,8 +452,8 @@ function TabButton({ active, onClick, icon, label }) {
         <button
             onClick={onClick}
             className={`flex-1 py-4 min-h-[48px] flex items-center justify-center gap-2 text-sm font-medium transition-all active:scale-95 touch-target ${active
-                ? 'text-purple-600 dark:text-purple-400 border-b-2 border-purple-500'
-                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'text-purple-600 border-b-2 border-purple-500'
+                : 'text-gray-500 hover:text-gray-700'
                 }`}
         >
             {icon}

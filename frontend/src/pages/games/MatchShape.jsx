@@ -412,13 +412,13 @@ export default function MatchShape() {
 
               {/* Final Stats */}
               <div className="grid grid-cols-2 gap-3 sm:gap-4 max-w-md mx-auto">
-                <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800">
-                  <div className="text-2xl sm:text-3xl font-bold text-yellow-600 dark:text-yellow-400">{score}</div>
-                  <div className="text-[10px] sm:text-xs text-yellow-700 dark:text-yellow-500 mt-1">Điểm số</div>
+                <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200">
+                  <div className="text-2xl sm:text-3xl font-bold text-yellow-600">{score}</div>
+                  <div className="text-[10px] sm:text-xs text-yellow-700 mt-1">Điểm số</div>
                 </div>
-                <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border border-blue-200 dark:border-blue-800">
-                  <div className="text-2xl sm:text-3xl font-bold text-blue-600 dark:text-blue-400">{accuracy}%</div>
-                  <div className="text-[10px] sm:text-xs text-blue-700 dark:text-blue-500 mt-1">Độ chính xác</div>
+                <div className="p-3 sm:p-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200">
+                  <div className="text-2xl sm:text-3xl font-bold text-blue-600">{accuracy}%</div>
+                  <div className="text-[10px] sm:text-xs text-blue-700 mt-1">Độ chính xác</div>
                 </div>
               </div>
 

@@ -176,7 +176,7 @@ export default function RandomCards() {
                     <Sparkles className="w-6 h-6 text-purple-500" />
                     Thẻ Wellness
                 </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-sm text-gray-500 mt-1">
                     Rút một thẻ để nhận gợi ý chăm sóc bản thân
                 </p>
             </div>
@@ -193,14 +193,14 @@ export default function RandomCards() {
                         className={`
               relative w-72 h-96 rounded-3xl p-6
               bg-gradient-to-br from-white to-gray-50 
-              dark:from-gray-800 dark:to-gray-900
-              border-2 ${actionTaken ? 'border-green-400' : 'border-purple-200 dark:border-purple-800'}
+             
+              border-2 ${actionTaken ? 'border-green-400' : 'border-purple-200'}
               shadow-xl hover:shadow-2xl transition-shadow
               flex flex-col items-center justify-center text-center
             `}
                     >
                         {/* Category Badge */}
-                        <span className="absolute top-4 left-4 text-xs px-2 py-1 rounded-full bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300">
+                        <span className="absolute top-4 left-4 text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-600">
                             {getCategoryLabel(currentCard.category)}
                         </span>
 
@@ -208,7 +208,7 @@ export default function RandomCards() {
                         <span className="text-7xl mb-4">{currentCard.emoji}</span>
 
                         {/* Text */}
-                        <p className="text-xl font-medium text-gray-800 dark:text-gray-100 leading-relaxed">
+                        <p className="text-xl font-medium text-gray-800 leading-relaxed">
                             {currentCard.text}
                         </p>
 
@@ -269,9 +269,9 @@ export default function RandomCards() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setShowHistory(!showHistory)}
-                    className="p-3 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    className="p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
                 >
-                    <History className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                    <History className="w-5 h-5 text-gray-600" />
                 </motion.button>
             </div>
 
@@ -282,9 +282,9 @@ export default function RandomCards() {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="w-full max-w-md bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 overflow-hidden"
+                        className="w-full max-w-md bg-gray-50 rounded-2xl p-4 overflow-hidden"
                     >
-                        <h3 className="font-medium text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+                        <h3 className="font-medium text-gray-700 mb-3 flex items-center gap-2">
                             <History className="w-4 h-4" />
                             Thẻ đã rút gần đây
                         </h3>
@@ -295,7 +295,7 @@ export default function RandomCards() {
                                 return (
                                     <span
                                         key={idx}
-                                        className="text-2xl p-2 bg-white dark:bg-gray-700 rounded-lg shadow-sm"
+                                        className="text-2xl p-2 bg-white rounded-lg shadow-sm"
                                         title={card.text}
                                     >
                                         {card.emoji}
@@ -309,7 +309,7 @@ export default function RandomCards() {
 
             {/* XP Hint */}
             {isLoggedIn() && (
-                <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
+                <p className="text-xs text-gray-400 flex items-center gap-1">
                     <Heart className="w-3 h-3" />
                     Nhấn "Đã làm!" để nhận +10 XP
                 </p>

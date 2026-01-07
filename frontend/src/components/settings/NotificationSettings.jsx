@@ -187,25 +187,25 @@ export default function NotificationSettings() {
         <div className="max-w-md mx-auto p-4 space-y-6">
             {/* Header */}
             <div className="text-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+                <h2 className="text-xl font-bold text-gray-800">
                     Cài đặt thông báo
                 </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-sm text-gray-500 mt-1">
                     Nhận nhắc nhở để duy trì thói quen tốt
                 </p>
             </div>
 
             {/* Permission Warning */}
             {permissionStatus !== 'granted' && (
-                <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
+                <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
                     <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
                     <div>
-                        <p className="text-sm text-amber-800 dark:text-amber-200">
+                        <p className="text-sm text-amber-800">
                             Bạn cần cho phép thông báo để nhận nhắc nhở
                         </p>
                         <button
                             onClick={requestPermission}
-                            className="text-sm text-amber-600 dark:text-amber-400 font-medium hover:underline mt-1"
+                            className="text-sm text-amber-600 font-medium hover:underline mt-1"
                         >
                             Bật thông báo ngay →
                         </button>
@@ -216,8 +216,8 @@ export default function NotificationSettings() {
             {/* Message */}
             {message && (
                 <div className={`flex items-center gap-2 p-3 rounded-lg ${message.type === 'success'
-                        ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300'
-                        : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'
+                        ? 'bg-green-50 text-green-700'
+                        : 'bg-red-50 text-red-700'
                     }`}>
                     {message.type === 'success' ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
                     <span className="text-sm">{message.text}</span>
@@ -241,7 +241,7 @@ export default function NotificationSettings() {
                                 type="time"
                                 value={settings.reminder_time}
                                 onChange={(e) => updateReminderTime(e.target.value)}
-                                className="px-2 py-1 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                                className="px-2 py-1 text-sm rounded-lg border border-gray-200 bg-white"
                             />
                         </div>
                     )}
@@ -279,7 +279,7 @@ export default function NotificationSettings() {
                                         localStorage.setItem('notification_settings', JSON.stringify(newSettings));
                                     }
                                 }}
-                                className="px-2 py-1 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
+                                className="px-2 py-1 text-sm rounded-lg border border-gray-200 bg-white"
                             />
                         </div>
                     )}
@@ -318,15 +318,15 @@ export default function NotificationSettings() {
             {/* Test Button */}
             <button
                 onClick={sendTestNotification}
-                className="w-full py-3 text-center text-sm text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-xl transition-colors"
+                className="w-full py-3 text-center text-sm text-purple-600 hover:bg-purple-50 rounded-xl transition-colors"
             >
                 Gửi thông báo test
             </button>
 
             {/* Info */}
-            <div className="flex items-start gap-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+            <div className="flex items-start gap-2 p-3 bg-gray-50 rounded-xl">
                 <Info className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-xs text-gray-500">
                     Thông báo sẽ được gửi qua trình duyệt. Hãy đảm bảo bạn không tắt thông báo trong cài đặt trình duyệt.
                 </p>
             </div>
@@ -347,22 +347,22 @@ export default function NotificationSettings() {
 // =============================================================================
 function SettingItem({ icon, title, description, enabled, onToggle, children }) {
     return (
-        <div className="p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
+        <div className="p-4 bg-white rounded-xl border border-gray-100">
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-lg ${enabled ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-400'}`}>
+                    <div className={`p-2 rounded-lg ${enabled ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-400'}`}>
                         {icon}
                     </div>
                     <div>
-                        <h3 className="font-medium text-gray-800 dark:text-gray-100">{title}</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{description}</p>
+                        <h3 className="font-medium text-gray-800">{title}</h3>
+                        <p className="text-sm text-gray-500">{description}</p>
                     </div>
                 </div>
 
                 {/* Toggle Switch */}
                 <button
                     onClick={onToggle}
-                    className={`relative w-12 h-6 rounded-full transition-colors ${enabled ? 'bg-purple-500' : 'bg-gray-300 dark:bg-gray-600'
+                    className={`relative w-12 h-6 rounded-full transition-colors ${enabled ? 'bg-purple-500' : 'bg-gray-300'
                         }`}
                 >
                     <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${enabled ? 'left-7' : 'left-1'

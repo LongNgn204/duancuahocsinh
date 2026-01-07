@@ -644,7 +644,7 @@ export default function ReflexGame() {
                         <p className="text-xs sm:text-sm text-[--muted]">
                             <strong className="text-[--text]">Hướng dẫn:</strong>{' '}
                             <span className="hidden sm:inline">
-                                Nhấn <kbd className="px-1.5 py-0.5 bg-white dark:bg-gray-800 rounded border text-xs">Space</kbd> hoặc chạm màn hình để né chướng ngại vật.
+                                Nhấn <kbd className="px-1.5 py-0.5 bg-white rounded border text-xs">Space</kbd> hoặc chạm màn hình để né chướng ngại vật.
                             </span>
                             <span className="sm:hidden">
                                 Chạm màn hình để né chướng ngại vật.

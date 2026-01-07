@@ -408,7 +408,7 @@ export default function BeeFlying() {
         {/* Game Canvas */}
         <Card size="lg" className="!p-0 overflow-hidden relative">
           {showIntro && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm">
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/95 backdrop-blur-sm">
               <div className="text-center space-y-4 sm:space-y-6 p-4 sm:p-8">
                 <div className="text-5xl sm:text-6xl mb-4">🐝</div>
                 <h2 className="text-xl sm:text-2xl font-bold text-[--text] mb-2">
@@ -431,7 +431,7 @@ export default function BeeFlying() {
           )}
 
           {gameOver && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm">
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/95 backdrop-blur-sm">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}

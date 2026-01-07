@@ -261,14 +261,14 @@ export default function VoiceChat() {
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-4"
                 >
-                    <Card className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                    <Card className="bg-amber-50 border border-amber-200">
                         <div className="flex items-center gap-3">
                             <AlertCircle size={20} className="text-amber-600 shrink-0" />
                             <div className="flex-1">
-                                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                                <p className="text-sm font-medium text-amber-800">
                                     Trình duyệt không hỗ trợ Web Speech API
                                 </p>
-                                <p className="text-xs text-amber-600 dark:text-amber-400">
+                                <p className="text-xs text-amber-600">
                                     Vui lòng sử dụng Chrome hoặc Edge để dùng tính năng Voice Chat.
                                 </p>
                             </div>
@@ -286,9 +286,9 @@ export default function VoiceChat() {
                         exit={{ opacity: 0, y: -20 }}
                         className="mb-4"
                     >
-                        <Card className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                        <Card className="bg-red-50 border border-red-200">
                             <div className="flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
+                                <div className="flex items-center gap-3 text-red-600">
                                     <AlertCircle size={20} />
                                     <span className="text-sm font-medium">{error}</span>
                                 </div>
@@ -456,7 +456,7 @@ export default function VoiceChat() {
                             size="sm"
                             onClick={stop}
                             icon={<X size={16} />}
-                            className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            className="text-red-500 hover:bg-red-50"
                         >
                             Dừng tất cả
                         </Button>
@@ -503,7 +503,7 @@ export default function VoiceChat() {
                                         {isSpeaking ? (
                                             <button
                                                 onClick={handleStopSpeaking}
-                                                className="p-2 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 hover:bg-red-200"
+                                                className="p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200"
                                                 title="Dừng đọc"
                                             >
                                                 <VolumeX size={16} />

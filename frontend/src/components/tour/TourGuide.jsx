@@ -180,10 +180,10 @@ export default function TourGuide({ onComplete }) {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: -20 }}
                     transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                    className="relative z-10 w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden"
+                    className="relative z-10 w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
                 >
                     {/* Progress Bar */}
-                    <div className="h-1.5 bg-gray-200 dark:bg-gray-700">
+                    <div className="h-1.5 bg-gray-200">
                         <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${progress}%` }}
@@ -196,12 +196,12 @@ export default function TourGuide({ onComplete }) {
                     <div className="p-6">
                         {/* Step Counter */}
                         <div className="flex items-center justify-between mb-4">
-                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                            <span className="text-xs font-medium text-gray-500">
                                 Bước {currentStep + 1}/{totalSteps}
                             </span>
                             <button
                                 onClick={skipTour}
-                                className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center gap-1"
+                                className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
                             >
                                 Bỏ qua <X className="w-3 h-3" />
                             </button>
@@ -224,7 +224,7 @@ export default function TourGuide({ onComplete }) {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.15 }}
-                            className="text-xl font-bold text-center text-gray-800 dark:text-white mb-2"
+                            className="text-xl font-bold text-center text-gray-800 mb-2"
                         >
                             {step.title}
                         </motion.h2>
@@ -233,7 +233,7 @@ export default function TourGuide({ onComplete }) {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
-                            className="text-center text-gray-600 dark:text-gray-300 text-sm mb-4"
+                            className="text-center text-gray-600 text-sm mb-4"
                         >
                             {step.description}
                         </motion.p>
@@ -244,11 +244,11 @@ export default function TourGuide({ onComplete }) {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.25 }}
-                                className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-3 mb-4"
+                                className="bg-purple-50 border border-purple-200 rounded-xl p-3 mb-4"
                             >
                                 <div className="flex items-start gap-2">
                                     <HelpCircle className="w-4 h-4 text-purple-500 flex-shrink-0 mt-0.5" />
-                                    <p className="text-sm text-purple-700 dark:text-purple-300">
+                                    <p className="text-sm text-purple-700">
                                         {step.tip}
                                     </p>
                                 </div>
@@ -261,7 +261,7 @@ export default function TourGuide({ onComplete }) {
                             {currentStep > 0 && (
                                 <button
                                     onClick={prevStep}
-                                    className="flex-1 py-3 px-4 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+                                    className="flex-1 py-3 px-4 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
                                 >
                                     <ChevronLeft className="w-5 h-5" />
                                     Quay lại

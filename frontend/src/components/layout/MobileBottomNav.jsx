@@ -29,7 +29,7 @@ function NavItem({ item, isActive }) {
             <motion.div
                 className={`p-2 rounded-2xl transition-colors ${isActive
                     ? 'bg-gradient-to-br from-pink-500 to-purple-600 text-white shadow-lg'
-                    : 'text-gray-500 dark:text-gray-400'
+                    : 'text-gray-500'
                     }`}
                 whileTap={{ scale: 0.9 }}
                 animate={isActive ? { scale: [1, 1.1, 1] } : {}}
@@ -40,8 +40,8 @@ function NavItem({ item, isActive }) {
 
             <motion.span
                 className={`text-[10px] mt-1 font-medium transition-colors ${isActive
-                    ? 'text-pink-600 dark:text-pink-400'
-                    : 'text-gray-500 dark:text-gray-400'
+                    ? 'text-pink-600'
+                    : 'text-gray-500'
                     }`}
                 initial={false}
                 animate={{
@@ -89,7 +89,7 @@ export default function MobileBottomNav() {
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
                 {/* Gradient blur background */}
-                <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/90 backdrop-blur-xl border-t border-pink-100 dark:border-slate-800" />
+                <div className="absolute inset-0 bg-white/80 backdrop-blur-xl border-t border-pink-100" />
 
                 {/* Nav items */}
                 <div className="relative flex items-center justify-around px-2 py-1 max-w-lg mx-auto">

@@ -144,15 +144,15 @@ function StatCard({ icon: Icon, label, value, color, trend }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             whileHover={{ y: -2, scale: 1.01 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 relative overflow-hidden group"
+            className="bg-white rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 relative overflow-hidden group"
         >
             {/* Background decoration */}
             <div className={`absolute -right-4 -top-4 w-24 h-24 rounded-full ${color} opacity-10 group-hover:opacity-20 transition-opacity blur-xl`} />
 
             <div className="flex items-center justify-between relative">
                 <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-1 font-medium">{label}</p>
-                    <p className="text-3xl font-bold text-gray-800 dark:text-white">{value}</p>
+                    <p className="text-sm text-gray-500 mb-1 font-medium">{label}</p>
+                    <p className="text-3xl font-bold text-gray-800">{value}</p>
                     {trend && (
                         <p className={`text-xs mt-1 ${trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                             {trend > 0 ? '↑' : '↓'} {Math.abs(trend)}%
@@ -238,7 +238,7 @@ function OverviewTab({ stats, logs, sosStats }) {
 
             {/* SOS Stats */}
             {sosStats && (
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <div className="bg-white rounded-2xl p-6 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="font-semibold text-lg flex items-center gap-2">
                             <AlertTriangle className="w-5 h-5 text-red-500" />
@@ -277,7 +277,7 @@ function OverviewTab({ stats, logs, sosStats }) {
             )}
 
             {/* Recent Activity */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="font-semibold text-lg flex items-center gap-2">
                         <Activity className="w-5 h-5 text-blue-500" />
@@ -361,7 +361,7 @@ function DatabaseStatsTab() {
 
     if (error) {
         return (
-            <div className="p-6 bg-red-50 dark:bg-red-900/20 rounded-2xl text-red-600 dark:text-red-400">
+            <div className="p-6 bg-red-50 rounded-2xl text-red-600">
                 Lỗi: {error}
             </div>
         );
@@ -370,7 +370,7 @@ function DatabaseStatsTab() {
     return (
         <div className="space-y-6">
             {/* Users Stats */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
                 <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                     <Users className="w-5 h-5 text-blue-500" />
                     Người dùng
@@ -383,7 +383,7 @@ function DatabaseStatsTab() {
             </div>
 
             {/* Content Stats */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
                 <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                     <FileText className="w-5 h-5 text-purple-500" />
                     Nội dung người dùng tạo
@@ -396,30 +396,30 @@ function DatabaseStatsTab() {
             </div>
 
             {/* Activities Stats */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
                 <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                     <Activity className="w-5 h-5 text-green-500" />
                     Hoạt động
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Focus Sessions</p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.activities?.focus?.sessions || 0}</p>
+                    <div className="bg-gray-50 rounded-xl p-4">
+                        <p className="text-sm text-gray-500">Focus Sessions</p>
+                        <p className="text-2xl font-bold text-gray-900">{stats?.activities?.focus?.sessions || 0}</p>
                         <p className="text-xs text-gray-400">{stats?.activities?.focus?.totalMinutes || 0} phút tổng</p>
                     </div>
-                    <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Breathing Sessions</p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.activities?.breathing?.sessions || 0}</p>
+                    <div className="bg-gray-50 rounded-xl p-4">
+                        <p className="text-sm text-gray-500">Breathing Sessions</p>
+                        <p className="text-2xl font-bold text-gray-900">{stats?.activities?.breathing?.sessions || 0}</p>
                         <p className="text-xs text-gray-400">{Math.round((stats?.activities?.breathing?.totalSeconds || 0) / 60)} phút tổng</p>
                     </div>
-                    <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Sleep Logs</p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.activities?.sleep?.logs || 0}</p>
+                    <div className="bg-gray-50 rounded-xl p-4">
+                        <p className="text-sm text-gray-500">Sleep Logs</p>
+                        <p className="text-2xl font-bold text-gray-900">{stats?.activities?.sleep?.logs || 0}</p>
                         <p className="text-xs text-gray-400">TB: {stats?.activities?.sleep?.avgDuration || 0} phút</p>
                     </div>
-                    <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Games played</p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.activities?.games?.plays || 0}</p>
+                    <div className="bg-gray-50 rounded-xl p-4">
+                        <p className="text-sm text-gray-500">Games played</p>
+                        <p className="text-2xl font-bold text-gray-900">{stats?.activities?.games?.plays || 0}</p>
                         <p className="text-xs text-gray-400">High score: {stats?.activities?.games?.maxScore || 0}</p>
                     </div>
                 </div>
@@ -427,7 +427,7 @@ function DatabaseStatsTab() {
 
             {/* Gamification & Community */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <div className="bg-white rounded-2xl p-6 shadow-sm">
                     <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                         🏆 Gamification
                     </h3>
@@ -443,18 +443,18 @@ function DatabaseStatsTab() {
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <div className="bg-white rounded-2xl p-6 shadow-sm">
                     <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                         👥 Cộng đồng Forum
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Bài viết</p>
-                            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.community?.forumPosts || 0}</p>
+                        <div className="bg-gray-50 rounded-xl p-4">
+                            <p className="text-sm text-gray-500">Bài viết</p>
+                            <p className="text-2xl font-bold text-gray-900">{stats?.community?.forumPosts || 0}</p>
                         </div>
-                        <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
-                            <p className="text-sm text-gray-500 dark:text-gray-400">Bình luận</p>
-                            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats?.community?.forumComments || 0}</p>
+                        <div className="bg-gray-50 rounded-xl p-4">
+                            <p className="text-sm text-gray-500">Bình luận</p>
+                            <p className="text-2xl font-bold text-gray-900">{stats?.community?.forumComments || 0}</p>
                         </div>
                     </div>
                 </div>
@@ -462,62 +462,62 @@ function DatabaseStatsTab() {
 
             {/* AI & Safety */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <div className="bg-white rounded-2xl p-6 shadow-sm">
                     <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                         🤖 AI Chat
                     </h3>
                     <div className="space-y-3">
-                        <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                            <span className="text-sm text-gray-600 dark:text-gray-300">Tổng responses</span>
+                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span className="text-sm text-gray-600">Tổng responses</span>
                             <span className="font-semibold">{stats?.ai?.chatResponses || 0}</span>
                         </div>
-                        <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                            <span className="text-sm text-gray-600 dark:text-gray-300">Feedback count</span>
+                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span className="text-sm text-gray-600">Feedback count</span>
                             <span className="font-semibold">{stats?.ai?.feedbackCount || 0}</span>
                         </div>
-                        <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                            <span className="text-sm text-gray-600 dark:text-gray-300">Avg quality</span>
+                        <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span className="text-sm text-gray-600">Avg quality</span>
                             <span className="font-semibold">{stats?.ai?.avgQuality || 0}/5</span>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <div className="bg-white rounded-2xl p-6 shadow-sm">
                     <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                         <AlertTriangle className="w-5 h-5 text-red-500" />
                         An toàn
                     </h3>
-                    <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-6 text-center">
-                        <p className="text-sm text-red-600 dark:text-red-400 mb-2">SOS Events</p>
-                        <p className="text-4xl font-bold text-red-600 dark:text-red-400">{stats?.safety?.sosEvents || 0}</p>
+                    <div className="bg-red-50 rounded-xl p-6 text-center">
+                        <p className="text-sm text-red-600 mb-2">SOS Events</p>
+                        <p className="text-4xl font-bold text-red-600">{stats?.safety?.sosEvents || 0}</p>
                     </div>
                 </div>
             </div>
 
             {/* Activity Chart Preview */}
             {activityData && (
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <div className="bg-white rounded-2xl p-6 shadow-sm">
                     <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                         📈 Hoạt động 30 ngày gần đây
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                        <div className="text-center p-4 bg-pink-50 dark:bg-pink-900/20 rounded-xl">
+                        <div className="text-center p-4 bg-pink-50 rounded-xl">
                             <p className="text-2xl font-bold text-pink-600">{activityData.gratitude?.length || 0}</p>
                             <p className="text-xs text-gray-500">Ngày có gratitude</p>
                         </div>
-                        <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+                        <div className="text-center p-4 bg-purple-50 rounded-xl">
                             <p className="text-2xl font-bold text-purple-600">{activityData.journal?.length || 0}</p>
                             <p className="text-xs text-gray-500">Ngày có journal</p>
                         </div>
-                        <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl">
+                        <div className="text-center p-4 bg-green-50 rounded-xl">
                             <p className="text-2xl font-bold text-green-600">{activityData.breathing?.length || 0}</p>
                             <p className="text-xs text-gray-500">Ngày có breathing</p>
                         </div>
-                        <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                        <div className="text-center p-4 bg-blue-50 rounded-xl">
                             <p className="text-2xl font-bold text-blue-600">{activityData.focus?.length || 0}</p>
                             <p className="text-xs text-gray-500">Ngày có focus</p>
                         </div>
-                        <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
+                        <div className="text-center p-4 bg-orange-50 rounded-xl">
                             <p className="text-2xl font-bold text-orange-600">{activityData.games?.length || 0}</p>
                             <p className="text-xs text-gray-500">Ngày có games</p>
                         </div>
@@ -585,7 +585,7 @@ function ChatMetricsTab({ onRefresh }) {
 
     if (error) {
         return (
-            <div className="p-6 bg-red-50 dark:bg-red-900/20 rounded-2xl text-red-600 dark:text-red-400">
+            <div className="p-6 bg-red-50 rounded-2xl text-red-600">
                 Lỗi: {error}
             </div>
         );
@@ -629,24 +629,24 @@ function ChatMetricsTab({ onRefresh }) {
             </div>
 
             {/* Feedback Stats */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
                 <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                     👍 Phản hồi người dùng
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Tổng feedback</p>
-                        <p className="text-3xl font-bold text-gray-900 dark:text-white">{data?.feedback?.total || 0}</p>
+                    <div className="bg-gray-50 rounded-xl p-4 text-center">
+                        <p className="text-sm text-gray-500">Tổng feedback</p>
+                        <p className="text-3xl font-bold text-gray-900">{data?.feedback?.total || 0}</p>
                     </div>
-                    <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 text-center">
-                        <p className="text-sm text-green-600 dark:text-green-400">Tỷ lệ hữu ích</p>
-                        <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+                    <div className="bg-green-50 rounded-xl p-4 text-center">
+                        <p className="text-sm text-green-600">Tỷ lệ hữu ích</p>
+                        <p className="text-3xl font-bold text-green-600">
                             {((data?.feedback?.helpfulRate || 0) * 100).toFixed(1)}%
                         </p>
                     </div>
-                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 text-center">
-                        <p className="text-sm text-blue-600 dark:text-blue-400">Avg Quality</p>
-                        <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                    <div className="bg-blue-50 rounded-xl p-4 text-center">
+                        <p className="text-sm text-blue-600">Avg Quality</p>
+                        <p className="text-3xl font-bold text-blue-600">
                             {data?.feedback?.avgQuality || 0}/5
                         </p>
                     </div>
@@ -655,7 +655,7 @@ function ChatMetricsTab({ onRefresh }) {
 
             {/* Risk Distribution */}
             {data?.riskDistribution && data.riskDistribution.length > 0 && (
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <div className="bg-white rounded-2xl p-6 shadow-sm">
                     <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                         <AlertTriangle className="w-5 h-5 text-yellow-500" />
                         Phân bố mức độ rủi ro
@@ -664,11 +664,11 @@ function ChatMetricsTab({ onRefresh }) {
                         {data.riskDistribution.map((item) => (
                             <div
                                 key={item.risk_level}
-                                className="text-center p-4 rounded-xl bg-gray-50 dark:bg-gray-700"
+                                className="text-center p-4 rounded-xl bg-gray-50"
                             >
                                 <div className={`w-4 h-4 rounded-full mx-auto mb-2 ${riskColors[item.risk_level] || 'bg-gray-500'}`}></div>
-                                <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{item.risk_level}</p>
-                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{item.count}</p>
+                                <p className="text-sm text-gray-500 capitalize">{item.risk_level}</p>
+                                <p className="text-2xl font-bold text-gray-900">{item.count}</p>
                             </div>
                         ))}
                     </div>
@@ -677,14 +677,14 @@ function ChatMetricsTab({ onRefresh }) {
 
             {/* Recent Responses */}
             {data?.recentResponses && data.recentResponses.length > 0 && (
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+                <div className="bg-white rounded-2xl p-6 shadow-sm">
                     <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                         <MessageSquare className="w-5 h-5 text-blue-500" />
                         Các responses gần đây
                     </h3>
                     <div className="space-y-3 max-h-[400px] overflow-y-auto">
                         {data.recentResponses.slice(0, 10).map((response, idx) => (
-                            <div key={idx} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                            <div key={idx} className="p-4 bg-gray-50 rounded-xl">
                                 <div className="flex justify-between items-start mb-2">
                                     <span className="text-xs text-gray-400">
                                         {formatDate(response.created_at)}
@@ -695,10 +695,10 @@ function ChatMetricsTab({ onRefresh }) {
                                         </span>
                                     )}
                                 </div>
-                                <p className="text-sm font-medium text-gray-900 dark:text-white mb-1 line-clamp-2">
+                                <p className="text-sm font-medium text-gray-900 mb-1 line-clamp-2">
                                     <strong>User:</strong> {response.user_message || '(empty)'}
                                 </p>
-                                <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+                                <p className="text-sm text-gray-600 line-clamp-2">
                                     <strong>AI:</strong> {response.ai_response?.substring(0, 150) || '(no response)'}...
                                 </p>
                                 {response.confidence !== null && (
@@ -773,8 +773,8 @@ function PostsTab({ onRefresh }) {
     };
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
                 <h3 className="font-semibold text-lg flex items-center gap-2">
                     <FileText className="w-5 h-5 text-blue-500" />
                     Quản lý bài viết ({posts.length})
@@ -782,7 +782,7 @@ function PostsTab({ onRefresh }) {
                 <button
                     onClick={loadPosts}
                     disabled={loading}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                    className="p-2 hover:bg-gray-100 rounded-lg"
                 >
                     <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 </button>
@@ -790,7 +790,7 @@ function PostsTab({ onRefresh }) {
 
             <div className="overflow-x-auto">
                 <table className="w-full">
-                    <thead className="bg-gray-50 dark:bg-gray-700">
+                    <thead className="bg-gray-50">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tiêu đề</th>
@@ -800,12 +800,12 @@ function PostsTab({ onRefresh }) {
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Hành động</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                    <tbody className="divide-y divide-gray-100">
                         {posts.map(post => (
-                            <tr key={post.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            <tr key={post.id} className="hover:bg-gray-50">
                                 <td className="px-6 py-4 text-sm text-gray-500">#{post.id}</td>
                                 <td className="px-6 py-4">
-                                    <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
+                                    <p className="text-sm font-medium text-gray-900 line-clamp-1">
                                         {post.title}
                                     </p>
                                 </td>
@@ -831,14 +831,14 @@ function PostsTab({ onRefresh }) {
                                 <td className="px-6 py-4 text-right space-x-2">
                                     <button
                                         onClick={() => handleToggleLock(post.id)}
-                                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-600 rounded"
+                                        className="p-1.5 hover:bg-gray-100 rounded"
                                         title={post.is_locked ? 'Mở khóa' : 'Khóa'}
                                     >
                                         {post.is_locked ? <Unlock size={16} /> : <Lock size={16} />}
                                     </button>
                                     <button
                                         onClick={() => handleDelete(post.id)}
-                                        className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                                        className="p-1.5 text-red-500 hover:bg-red-50 rounded"
                                         title="Ẩn bài viết"
                                     >
                                         <Trash2 size={16} />
@@ -864,10 +864,10 @@ function PostsTab({ onRefresh }) {
 function AllUsersTab({ users, loading, onRefresh, sortBy, setSortBy }) {
     const getSupportBadge = (user) => {
         if (user.needs_support) {
-            return <span className="px-2 py-1 text-xs bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded">Cần hỗ trợ</span>;
+            return <span className="px-2 py-1 text-xs bg-red-100 text-red-600 rounded">Cần hỗ trợ</span>;
         }
         if (user.recent_journal_count > 0) {
-            return <span className="px-2 py-1 text-xs bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 rounded">Đang tích cực</span>;
+            return <span className="px-2 py-1 text-xs bg-green-100 text-green-600 rounded">Đang tích cực</span>;
         }
         return null;
     };
@@ -891,14 +891,14 @@ function AllUsersTab({ users, loading, onRefresh, sortBy, setSortBy }) {
     return (
         <div className="space-y-4">
             {/* Filters */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
+            <div className="bg-white rounded-2xl p-4 shadow-sm">
                 <div className="flex items-center justify-between flex-wrap gap-4">
                     <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sắp xếp theo:</span>
+                        <span className="text-sm font-medium text-gray-700">Sắp xếp theo:</span>
                         <select
                             value={sortBy}
                             onChange={(e) => setSortBy(e.target.value)}
-                            className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                         >
                             <option value="created_at">Ngày đăng ký</option>
                             <option value="last_login">Lần đăng nhập cuối</option>
@@ -918,8 +918,8 @@ function AllUsersTab({ users, loading, onRefresh, sortBy, setSortBy }) {
             </div>
 
             {/* Users Table */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-100">
                     <h3 className="font-semibold text-lg flex items-center gap-2">
                         <Users className="w-5 h-5 text-blue-500" />
                         Tất cả người dùng ({users.length})
@@ -936,7 +936,7 @@ function AllUsersTab({ users, loading, onRefresh, sortBy, setSortBy }) {
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-50 dark:bg-gray-700">
+                            <thead className="bg-gray-50">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
@@ -948,12 +948,12 @@ function AllUsersTab({ users, loading, onRefresh, sortBy, setSortBy }) {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hành động</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                            <tbody className="divide-y divide-gray-100">
                                 {users.map(user => (
-                                    <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                    <tr key={user.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4 text-sm text-gray-500">#{user.id}</td>
                                         <td className="px-6 py-4">
-                                            <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                            <p className="text-sm font-medium text-gray-900">
                                                 {user.username || `User #${user.id}`}
                                             </p>
                                         </td>
@@ -965,11 +965,11 @@ function AllUsersTab({ users, loading, onRefresh, sortBy, setSortBy }) {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
-                                                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                                <span className="text-sm font-medium text-gray-900">
                                                     {user.journal_count || 0}
                                                 </span>
                                                 {user.recent_journal_count > 0 && (
-                                                    <span className="text-xs text-green-600 dark:text-green-400">
+                                                    <span className="text-xs text-green-600">
                                                         +{user.recent_journal_count} (7 ngày)
                                                     </span>
                                                 )}
@@ -977,7 +977,7 @@ function AllUsersTab({ users, loading, onRefresh, sortBy, setSortBy }) {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex flex-col">
-                                                <span className={`text-sm font-medium ${user.recent_sos_count > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}`}>
+                                                <span className={`text-sm font-medium ${user.recent_sos_count > 0 ? 'text-red-600' : 'text-gray-900'}`}>
                                                     {user.recent_sos_count || 0}
                                                 </span>
                                                 {user.sos_count > 0 && (
@@ -993,7 +993,7 @@ function AllUsersTab({ users, loading, onRefresh, sortBy, setSortBy }) {
                                         <td className="px-6 py-4">
                                             <button
                                                 onClick={() => handleResetPassword(user.id)}
-                                                className="px-3 py-1 bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400 rounded-lg text-xs font-medium hover:bg-yellow-200 dark:hover:bg-yellow-900/60 transition-colors"
+                                                className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-medium hover:bg-yellow-200 transition-colors"
                                             >
                                                 Reset Password
                                             </button>
@@ -1009,24 +1009,24 @@ function AllUsersTab({ users, loading, onRefresh, sortBy, setSortBy }) {
             {/* Summary Stats */}
             {users.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Tổng users</p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{users.length}</p>
+                    <div className="bg-white rounded-xl p-4 shadow-sm">
+                        <p className="text-sm text-gray-500">Tổng users</p>
+                        <p className="text-2xl font-bold text-gray-900">{users.length}</p>
                     </div>
-                    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Cần hỗ trợ</p>
+                    <div className="bg-white rounded-xl p-4 shadow-sm">
+                        <p className="text-sm text-gray-500">Cần hỗ trợ</p>
                         <p className="text-2xl font-bold text-red-600">
                             {users.filter(u => u.needs_support).length}
                         </p>
                     </div>
-                    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Đang tích cực</p>
+                    <div className="bg-white rounded-xl p-4 shadow-sm">
+                        <p className="text-sm text-gray-500">Đang tích cực</p>
                         <p className="text-2xl font-bold text-green-600">
                             {users.filter(u => u.recent_journal_count > 0).length}
                         </p>
                     </div>
-                    <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">SOS (7 ngày)</p>
+                    <div className="bg-white rounded-xl p-4 shadow-sm">
+                        <p className="text-sm text-gray-500">SOS (7 ngày)</p>
                         <p className="text-2xl font-bold text-orange-600">
                             {users.reduce((sum, u) => sum + (u.recent_sos_count || 0), 0)}
                         </p>
@@ -1068,7 +1068,7 @@ function BannedUsersTab({ bannedUsers, onUnban, onRefresh }) {
     return (
         <div className="grid lg:grid-cols-3 gap-6">
             {/* Ban Form */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
                 <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                     <Ban className="w-5 h-5 text-red-500" />
                     Cấm người dùng
@@ -1079,19 +1079,19 @@ function BannedUsersTab({ bannedUsers, onUnban, onRefresh }) {
                         value={banUserId}
                         onChange={e => setBanUserId(e.target.value)}
                         placeholder="User ID"
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none"
                     />
                     <input
                         type="text"
                         value={banReason}
                         onChange={e => setBanReason(e.target.value)}
                         placeholder="Lý do (tùy chọn)"
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none"
                     />
                     <select
                         value={banDays}
                         onChange={e => setBanDays(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none"
                     >
                         <option value="1">1 ngày</option>
                         <option value="7">7 ngày</option>
@@ -1115,7 +1115,7 @@ function BannedUsersTab({ bannedUsers, onUnban, onRefresh }) {
             </div>
 
             {/* Banned Users List */}
-            <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+            <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm">
                 <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                     <Users className="w-5 h-5 text-orange-500" />
                     Danh sách cấm ({bannedUsers.length})
@@ -1125,7 +1125,7 @@ function BannedUsersTab({ bannedUsers, onUnban, onRefresh }) {
                 ) : (
                     <div className="space-y-3 max-h-[400px] overflow-y-auto">
                         {bannedUsers.map(user => (
-                            <div key={user.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
+                            <div key={user.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                                 <div>
                                     <p className="font-medium">{user.username || `User #${user.user_id}`}</p>
                                     <p className="text-sm text-gray-500">{user.reason || 'Không có lý do'}</p>
@@ -1183,14 +1183,14 @@ function SOSLogsTab({ sosLogs, onRefresh }) {
     return (
         <div className="space-y-4">
             {/* Filters */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
+            <div className="bg-white rounded-2xl p-4 shadow-sm">
                 <div className="flex items-center gap-4 flex-wrap">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Lọc theo mức độ:</span>
+                    <span className="text-sm font-medium text-gray-700">Lọc theo mức độ:</span>
                     <button
                         onClick={() => setFilterRisk(null)}
                         className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${!filterRisk
                             ? 'bg-blue-500 text-white'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                             }`}
                     >
                         Tất cả
@@ -1201,7 +1201,7 @@ function SOSLogsTab({ sosLogs, onRefresh }) {
                             onClick={() => setFilterRisk(risk)}
                             className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${filterRisk === risk
                                 ? riskColors[risk] || 'bg-gray-500 text-white'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                 }`}
                         >
                             {risk.toUpperCase()}
@@ -1211,8 +1211,8 @@ function SOSLogsTab({ sosLogs, onRefresh }) {
             </div>
 
             {/* Logs List */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-100">
                     <h3 className="font-semibold text-lg flex items-center gap-2">
                         <AlertTriangle className="w-5 h-5 text-red-500" />
                         SOS Logs ({filteredLogs.length})
@@ -1221,7 +1221,7 @@ function SOSLogsTab({ sosLogs, onRefresh }) {
 
                 <div className="overflow-x-auto">
                     <table className="w-full">
-                        <thead className="bg-gray-50 dark:bg-gray-700">
+                        <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thời gian</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Loại sự kiện</th>
@@ -1230,7 +1230,7 @@ function SOSLogsTab({ sosLogs, onRefresh }) {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User ID</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                        <tbody className="divide-y divide-gray-100">
                             {filteredLogs.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
@@ -1239,7 +1239,7 @@ function SOSLogsTab({ sosLogs, onRefresh }) {
                                 </tr>
                             ) : (
                                 filteredLogs.map(log => (
-                                    <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                    <tr key={log.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4 text-sm text-gray-500">
                                             {formatDate(log.created_at)}
                                         </td>
@@ -1253,7 +1253,7 @@ function SOSLogsTab({ sosLogs, onRefresh }) {
                                                 </span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">
+                                        <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
                                             {log.trigger_text || '-'}
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-500">
@@ -1276,7 +1276,7 @@ function SOSLogsTab({ sosLogs, onRefresh }) {
 
 function LogsTab({ logs }) {
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
             <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                 <Activity className="w-5 h-5 text-purple-500" />
                 Nhật ký hoạt động ({logs.length})
@@ -1320,8 +1320,8 @@ function LogItem({ log }) {
     };
 
     return (
-        <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
-            <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
+        <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl">
+            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
                 <Activity className="w-4 h-4 text-gray-500" />
             </div>
             <div className="flex-1 min-w-0">
@@ -1372,25 +1372,25 @@ function SyncLogsTab() {
     };
 
     const StatusBadge = ({ status }) => {
-        if (status === 'success') return <span className="text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-xs px-2 py-1 rounded">Thành công</span>;
-        return <span className="text-red-600 bg-red-100 dark:bg-red-900/30 dark:text-red-400 text-xs px-2 py-1 rounded">Thất bại</span>;
+        if (status === 'success') return <span className="text-green-600 bg-green-100 text-xs px-2 py-1 rounded">Thành công</span>;
+        return <span className="text-red-600 bg-red-100 text-xs px-2 py-1 rounded">Thất bại</span>;
     };
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+        <div className="bg-white rounded-2xl p-6 shadow-sm">
             <div className="flex justify-between items-center mb-6">
                 <h3 className="font-semibold text-lg flex items-center gap-2">
                     <Database className="w-5 h-5 text-blue-500" />
                     Lịch sử đồng bộ ({total})
                 </h3>
-                <button onClick={loadLogs} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+                <button onClick={loadLogs} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                     <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 </button>
             </div>
 
             <div className="overflow-x-auto">
                 <table className="w-full">
-                    <thead className="bg-gray-50 dark:bg-gray-700">
+                    <thead className="bg-gray-50">
                         <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thời gian</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
@@ -1400,12 +1400,12 @@ function SyncLogsTab() {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Chi tiết</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                    <tbody className="divide-y divide-gray-100">
                         {logs.length === 0 ? (
                             <tr><td colSpan={6} className="text-center py-8 text-gray-500">Chưa có dữ liệu</td></tr>
                         ) : (
                             logs.map(log => (
-                                <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <tr key={log.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4 text-sm text-gray-500">{formatDate(log.created_at)}</td>
                                     <td className="px-6 py-4 text-sm">
                                         <div className="font-medium">{log.display_name || log.username || `#${log.user_id}`}</div>
@@ -1650,7 +1650,7 @@ export default function AdminDashboard() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-100 via-indigo-50/50 to-purple-50/30 dark:from-slate-900 dark:via-indigo-950/50 dark:to-slate-900 flex">
+        <div className="min-h-screen bg-gradient-to-br from-slate-100 via-indigo-50/50 to-purple-50/30 flex">
             {/* Sidebar */}
             <AdminSidebar
                 activeTab={activeTab}
@@ -1662,10 +1662,10 @@ export default function AdminDashboard() {
             {/* Main Content */}
             <main className={`flex-1 ${sidebarCollapsed ? 'md:ml-16' : 'md:ml-0'} transition-all duration-300`}>
                 {/* Header */}
-                <header className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl shadow-sm sticky top-0 z-40 border-b border-indigo-100 dark:border-indigo-900/50">
+                <header className="bg-white/80 backdrop-blur-xl shadow-sm sticky top-0 z-40 border-b border-indigo-100">
                     <div className="px-6 py-4 flex items-center justify-between">
                         <div>
-                            <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-indigo-700 dark:from-white dark:to-indigo-200 bg-clip-text text-transparent">
+                            <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-indigo-700 bg-clip-text text-transparent">
                                 {activeTab === 'overview' && 'Tổng quan'}
                                 {activeTab === 'database-stats' && 'Thống kê Database'}
                                 {activeTab === 'all-users' && 'Tất cả người dùng'}
@@ -1677,7 +1677,7 @@ export default function AdminDashboard() {
                                 {activeTab === 'logs' && 'Nhật ký admin'}
                                 {activeTab === 'sync-logs' && 'Lịch sử đồng bộ'}
                             </h1>
-                            <p className="text-sm text-indigo-600/70 dark:text-indigo-300/70 font-medium">
+                            <p className="text-sm text-indigo-600/70 font-medium">
                                 Quản trị forum Bạn Đồng Hành
                             </p>
                         </div>
@@ -1796,10 +1796,10 @@ export default function AdminDashboard() {
 
                 {/* Warning Footer */}
                 <div className="p-6 pt-0">
-                    <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-2xl border border-yellow-200 dark:border-yellow-800">
+                    <div className="p-4 bg-yellow-50 rounded-2xl border border-yellow-200">
                         <div className="flex gap-3">
                             <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0" />
-                            <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                            <p className="text-sm text-yellow-700">
                                 <strong>Lưu ý:</strong> Mọi hành động admin đều được ghi nhật ký. Cân nhắc kỹ trước khi thực hiện.
                             </p>
                         </div>
