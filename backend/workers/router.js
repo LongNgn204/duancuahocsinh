@@ -47,12 +47,12 @@ import { formatMessagesForLLM, getRecentMessages } from './memory.js';
 import { createTraceContext, addTraceHeader } from './observability.js';
 import { rateLimitMiddleware } from './rate-limiter.js';
 
-// AI modules - Vertex AI integration
+// AI modules - OpenAI ChatGPT for chat, Vertex AI for Voice Call
 import aiProxy from './ai-proxy.js';
 import aiTTS from './ai-tts.js';
 import aiLive from './ai-live.js';
 import aiLiveConfig from './ai-live-config.js';
-import debugVertex from './debug-vertex.js';
+// debug-vertex removed - no longer needed
 
 // Durable Objects cho Voice Call WebSocket proxy
 import { VoiceCallSessionOpenAI } from './voice-call-do.js';
@@ -188,12 +188,12 @@ function matchRoute(pathname, method) {
     if (pathname === '/api/data/bookmarks' && method === 'DELETE') return 'data:bookmarks:delete';
     if (pathname.match(/^\/api\/data\/bookmarks\/\d+$/) && method === 'DELETE') return 'data:bookmarks:delete-id';
 
-    // AI Chat (Vertex AI via backend)
+    // AI Chat (OpenAI ChatGPT via backend)
     if (pathname === '/' && method === 'POST') return 'ai:chat';
     if (pathname === '/api/chat' && method === 'POST') return 'ai:chat';
     if (pathname === '/api/ai/chat' && method === 'POST') return 'ai:chat';
 
-    // AI TTS (Vertex AI TTS via backend)
+    // AI TTS (backend)
     if (pathname === '/api/ai/tts' && method === 'POST') return 'ai:tts';
 
     // AI Live (Voice Call via backend - WebSocket)
@@ -201,9 +201,6 @@ function matchRoute(pathname, method) {
 
     // AI Live Config (HTTP endpoint để lấy access token)
     if (pathname === '/api/ai/live-config' && method === 'POST') return 'ai:live-config';
-
-    // Debug Vertex AI (temporary)
-    if (pathname === '/api/debug/vertex') return 'debug:vertex';
 
     // Forum routes
     if (pathname === '/api/forum/posts' && method === 'GET') return 'forum:posts:list';
@@ -508,30 +505,25 @@ export default {
                     response = await syncChatThreads(request, env);
                     break;
 
-                // AI Chat - Vertex AI Gemini via backend proxy
+                // AI Chat - OpenAI ChatGPT (gpt-4o-mini)
                 case 'ai:chat':
                     response = await aiProxy.fetch(request, env);
                     break;
 
-                // AI TTS - Vertex AI TTS via backend proxy
+                // AI TTS - backend
                 case 'ai:tts':
                     response = await aiTTS.fetch(request, env);
                     break;
 
                 // AI Live - Voice Call WebSocket proxy via Durable Objects
                 case 'ai:live':
-                    // Sử dụng Durable Objects để proxy WebSocket đến Vertex AI
+                    // Sử dụng Durable Objects để proxy WebSocket (Voice Call)
                     response = await handleVoiceCall(request, env);
                     break;
 
                 // AI Live Config - lấy access token cho Voice Call
                 case 'ai:live-config':
                     response = await aiLiveConfig.fetch(request, env);
-                    break;
-
-                // Debug Vertex AI (temporary)
-                case 'debug:vertex':
-                    response = await debugVertex.fetch(request, env);
                     break;
 
                 // Forum endpoints

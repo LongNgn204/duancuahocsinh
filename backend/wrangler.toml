@@ -17,7 +17,7 @@ database_name = "ban-dong-hanh-db"
 database_id = "a6a814eb-b5fb-4626-9258-f519060d8c89"
 
 # Durable Objects cho Voice Call WebSocket proxy
-# Chú thích: Durable Objects hỗ trợ outbound WebSocket để proxy đến Vertex AI
+# Chú thích: Durable Objects hỗ trợ outbound WebSocket để proxy đến OpenAI Realtime API
 [durable_objects]
 bindings = [
   { name = "VOICE_CALL_SESSION", class_name = "VoiceCallSessionOpenAI" }
@@ -34,22 +34,26 @@ renamed_classes = [{ from = "VoiceCallSession", to = "VoiceCallSessionOpenAI" }]
 [vars]
 # CORS origin allow-list
 ALLOW_ORIGIN = "http://localhost:5173,https://duancuahocsinh.pages.dev,*.bandonghanh.pages.dev"
-# Workers AI model (chỉ dùng cho embeddings, KHÔNG dùng cho chat - đã deprecated)
-# Chat sử dụng Vertex AI Gemini qua backend proxy
+# Workers AI model (chỉ dùng cho embeddings, KHÔNG dùng cho chat)
+# Chat sử dụng OpenAI ChatGPT (gpt-4o-mini) - xem ai-proxy.js
 MODEL = "@cf/meta/llama-3.1-8b-instruct"
 # Token limit hàng tháng
 MONTHLY_TOKEN_LIMIT = "500000"
 # Token budget hàng ngày cho AI (kiểm soát chi phí)
 MAX_TOKEN_BUDGET = "50000"
 
-# Vertex AI Configuration - US region để test (preview models chưa available ở Asia)
+# Vertex AI Configuration - GIỮ LẠI cho Voice Call (cloud-run server.js)
+# Chat đã chuyển sang OpenAI, xem backend/workers/ai-proxy.js
 VERTEX_PROJECT_ID = "ban-dong-hanh-483002"
 VERTEX_LOCATION = "us-central1"
 # Fallback region
 VERTEX_LOCATION_FALLBACK = "us-east1"
-# Secrets (set via: wrangler secret put VERTEX_CLIENT_EMAIL, wrangler secret put VERTEX_PRIVATE_KEY)
+# Secrets for Voice Call (set via: wrangler secret put VERTEX_CLIENT_EMAIL, etc.)
 # VERTEX_CLIENT_EMAIL = "your-service-account@project.iam.gserviceaccount.com"
 # VERTEX_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+# 
+# OpenAI API Key cho Chat (set via: wrangler secret put OPENAI_API_KEY)
+# OPENAI_API_KEY = "sk-xxxx" (required for chat)
 
 # Admin Authentication (standalone - không cần database)
 # Đổi password này thành password riêng của bạn!

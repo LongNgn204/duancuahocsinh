@@ -1,8 +1,8 @@
 {
     "name": "ban-dong-hanh-worker",
     "version": "1.0.0",
-    "description": "Cloudflare Worker - AI Proxy cho Bạn Đồng Hành",
-    "main": "workers/ai-proxy.js",
+    "description": "Cloudflare Worker - AI Proxy (OpenAI ChatGPT) + Voice Call (Vertex AI)",
+    "main": "workers/router.js",
     "type": "module",
     "scripts": {
         "dev": "wrangler dev",
