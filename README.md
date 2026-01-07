@@ -86,7 +86,7 @@
 - **Thư viện truyện** với bài học cuộc sống
 - **Chế độ đọc immersive** toàn màn hình
 - **AI đọc truyện** với giọng đọc tự nhiên
-- **Theme** Light / Sepia / Dark
+- **Theme** Light / Sepia
 
 ### 5. Trò Chơi Giáo Dục (Games)
 
@@ -453,7 +453,7 @@ Sau khi đăng nhập, bạn sẽ thấy Dashboard với các thành phần:
 3. Đọc truyện trong chế độ toàn màn hình
 4. Có thể:
    - Bật AI đọc truyện bằng giọng nói
-   - Đổi theme (Light/Sepia/Dark)
+   - Đổi theme (Light/Sepia)
    - Điều chỉnh kích thước chữ
 
 #### 7. Chơi game

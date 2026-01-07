@@ -47,12 +47,10 @@ import { formatMessagesForLLM, getRecentMessages } from './memory.js';
 import { createTraceContext, addTraceHeader } from './observability.js';
 import { rateLimitMiddleware } from './rate-limiter.js';
 
-// AI modules - OpenAI ChatGPT for chat, Vertex AI for Voice Call
+// AI modules - OpenAI ChatGPT for chat
 import aiProxy from './ai-proxy.js';
-import aiTTS from './ai-tts.js';
-import aiLive from './ai-live.js';
-import aiLiveConfig from './ai-live-config.js';
-// debug-vertex removed - no longer needed
+// ai-tts, ai-live, ai-live-config removed - không còn cần thiết
+// Voice Call đã được xử lý qua Durable Objects (voice-call-do.js)
 
 // Durable Objects cho Voice Call WebSocket proxy
 import { VoiceCallSessionOpenAI } from './voice-call-do.js';
@@ -193,14 +191,8 @@ function matchRoute(pathname, method) {
     if (pathname === '/api/chat' && method === 'POST') return 'ai:chat';
     if (pathname === '/api/ai/chat' && method === 'POST') return 'ai:chat';
 
-    // AI TTS (backend)
-    if (pathname === '/api/ai/tts' && method === 'POST') return 'ai:tts';
-
-    // AI Live (Voice Call via backend - WebSocket)
-    if (pathname === '/api/ai/live') return 'ai:live';
-
-    // AI Live Config (HTTP endpoint để lấy access token)
-    if (pathname === '/api/ai/live-config' && method === 'POST') return 'ai:live-config';
+    // AI Live (Voice Call via Durable Objects) - đã xử lý ở đầu router
+    // Routes /api/ai/tts và /api/ai/live-config đã deprecated
 
     // Forum routes
     if (pathname === '/api/forum/posts' && method === 'GET') return 'forum:posts:list';
@@ -510,21 +502,8 @@ export default {
                     response = await aiProxy.fetch(request, env);
                     break;
 
-                // AI TTS - backend
-                case 'ai:tts':
-                    response = await aiTTS.fetch(request, env);
-                    break;
-
-                // AI Live - Voice Call WebSocket proxy via Durable Objects
-                case 'ai:live':
-                    // Sử dụng Durable Objects để proxy WebSocket (Voice Call)
-                    response = await handleVoiceCall(request, env);
-                    break;
-
-                // AI Live Config - lấy access token cho Voice Call
-                case 'ai:live-config':
-                    response = await aiLiveConfig.fetch(request, env);
-                    break;
+                // Note: Voice Call (ai:live) đã được xử lý ở đầu router với Durable Objects
+                // Routes ai:tts, ai:live, ai:live-config đã deprecated
 
                 // Forum endpoints
                 case 'forum:posts:list':

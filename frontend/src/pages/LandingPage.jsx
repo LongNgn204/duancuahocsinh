@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Bot, Heart, Sparkles, Gamepad2, Brain, Shield,
     Users, Clock, Award, ArrowRight, CheckCircle, Star,
-    BookOpen, TrendingUp, Moon, Target, Mail, Phone,
+    BookOpen, TrendingUp, Target, Mail, Phone,
     RefreshCw, Headphones, Smile, ChevronDown, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import Button from '../components/ui/Button';
@@ -100,29 +100,29 @@ const benefitCards = [
         icon: Shield,
         title: 'An toàn',
         description: 'Bảo mật dữ liệu tuyệt đối cho người dùng.',
-        color: 'bg-pink-100 dark:bg-pink-900/20',
-        iconColor: 'text-purple-600 dark:text-purple-400',
+        color: 'bg-pink-100',
+        iconColor: 'text-purple-600',
     },
     {
         icon: RefreshCw,
         title: 'Cập nhật',
         description: 'Tính năng mới được cập nhật liên tục.',
-        color: 'bg-purple-100 dark:bg-purple-900/20',
-        iconColor: 'text-purple-600 dark:text-purple-400',
+        color: 'bg-purple-100',
+        iconColor: 'text-purple-600',
     },
     {
         icon: Headphones,
         title: 'Hỗ trợ 24/7',
         description: 'Luôn sẵn sàng khi bạn cần giúp đỡ.',
-        color: 'bg-blue-100 dark:bg-blue-900/20',
-        iconColor: 'text-blue-600 dark:text-blue-400',
+        color: 'bg-blue-100',
+        iconColor: 'text-blue-600',
     },
     {
         icon: Smile,
         title: 'Thân thiện',
         description: 'Giao diện dễ dùng, ấm áp.',
-        color: 'bg-orange-100 dark:bg-orange-900/20',
-        iconColor: 'text-orange-600 dark:text-orange-400',
+        color: 'bg-orange-100',
+        iconColor: 'text-orange-600',
     },
 ];
 
@@ -133,126 +133,126 @@ const testimonials = [
         author: 'L.H.A',
         location: 'THPT Trần Hưng Đạo',
         avatar: 'L',
-        color: 'bg-pink-100 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400',
+        color: 'bg-pink-100 text-pink-600',
     },
     {
         content: 'Chatbot giúp em bình tĩnh hơn mỗi khi lo lắng. Mấy bài thở trong Góc An Yên làm em dễ chịu lắm. Em thích vì không ai ép em phải nói nhiều.',
         author: 'N.N.M.T',
         location: 'THPT Trần Hưng Đạo',
         avatar: 'N',
-        color: 'bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400',
+        color: 'bg-purple-100 text-purple-600',
     },
     {
         content: 'Em thích nhất là chatbot không vội vàng. Em có thể trả lời từ từ và vẫn được khuyến khích. Điều đó làm em tự tin hơn khi giao tiếp.',
         author: 'T.H.K.L',
         location: 'THPT Trần Hưng Đạo',
         avatar: 'T',
-        color: 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
+        color: 'bg-blue-100 text-blue-600',
     },
     {
         content: 'Em thấy chatbot dễ dùng. Nói chuyện không bị mắng. Em thích.',
         author: 'T.N',
         location: 'THPT Trần Hưng Đạo',
         avatar: 'T',
-        color: 'bg-teal-100 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400',
+        color: 'bg-teal-100 text-teal-600',
     },
     {
         content: 'Chatbot có nhiều cách để em thể hiện bản thân, không chỉ bằng chữ mà còn bằng vẽ. Em cảm thấy mình được lựa chọn cách phù hợp với mình. Điều đó rất quan trọng với em.',
         author: 'N.T.Q.T',
         location: 'THPT Trần Hưng Đạo',
         avatar: 'N',
-        color: 'bg-amber-100 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400',
+        color: 'bg-amber-100 text-amber-600',
     },
     {
         content: 'Mỗi lần buồn em hay vào đọc mấy lời động viên. Chatbot nói chuyện rất nhẹ nhàng, không làm em áp lực. Em thấy mình không bị cô đơn.',
         author: 'K.H',
         location: 'THPT Trần Hưng Đạo',
         avatar: 'K',
-        color: 'bg-rose-100 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400',
+        color: 'bg-rose-100 text-rose-600',
     },
     {
         content: 'Trước đây em ngại giao tiếp, nhưng luyện nói với chatbot giúp em đỡ sợ hơn. Các tình huống giao tiếp rất giống ngoài đời. Em nghĩ mình đã tiến bộ.',
         author: 'D.H.H.L',
         location: 'THPT Trần Hưng Đạo',
         avatar: 'D',
-        color: 'bg-indigo-100 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400',
+        color: 'bg-indigo-100 text-indigo-600',
     },
     {
         content: 'Em thích Bảng Màu Cảm Xúc nhất. Khi không biết nói, em vẽ. Như vậy cũng giúp em giải tỏa rất nhiều.',
         author: 'C.G.B',
         location: 'THPT Trần Hưng Đạo',
         avatar: 'C',
-        color: 'bg-cyan-100 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400',
+        color: 'bg-cyan-100 text-cyan-600',
     },
     {
         content: 'Chatbot không hỏi quá nhiều nhưng luôn lắng nghe. Em cảm thấy an toàn khi chia sẻ. Điều này rất khó tìm ở ngoài đời.',
         author: 'N.N.N.Y',
         location: 'THPT Trần Hưng Đạo',
         avatar: 'N',
-        color: 'bg-green-100 dark:bg-green-900/20 text-green-600 dark:text-green-400',
+        color: 'bg-green-100 text-green-600',
     },
     {
         content: 'Em thấy chatbot phản hồi rất hợp lý và dễ hiểu. Không dùng từ khó, không làm em rối. Em cảm thấy được hỗ trợ đúng cách.',
         author: 'N.H.P.V',
         location: 'THPT Trần Hưng Đạo',
         avatar: 'N',
-        color: 'bg-violet-100 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400',
+        color: 'bg-violet-100 text-violet-600',
     },
     {
         content: 'Em thích vì chatbot nhớ tên em. Cảm giác như có người quan tâm thật sự. Em thấy mình được coi trọng.',
         author: 'N.T.A',
         location: 'THPT Trần Hưng Đạo',
         avatar: 'N',
-        color: 'bg-pink-100 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400',
+        color: 'bg-pink-100 text-pink-600',
     },
     {
         content: 'Mỗi ngày vô nhận một "liều thuốc tinh thần" là em thấy vui hơn. Mấy câu nói rất tích cực. Em thích mở chatbot mỗi sáng.',
         author: 'P.D.B.T',
         location: 'THPT Trần Hưng Đạo',
         avatar: 'P',
-        color: 'bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400',
+        color: 'bg-orange-100 text-orange-600',
     },
     {
         content: 'Em không nói nhiều nhưng chatbot vẫn hiểu. Không cần phải giải thích nhiều. Em thấy nhẹ lòng.',
         author: 'N.D.T',
         location: 'THPT Trần Hưng Đạo',
         avatar: 'N',
-        color: 'bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400',
+        color: 'bg-purple-100 text-purple-600',
     },
     {
         content: 'Chatbot giúp em học cách hít thở khi căng thẳng. Những lúc lo, em vào Góc An Yên là ổn hơn. Em thấy rất hữu ích.',
         author: 'V.H.S',
         location: 'THPT Trần Hưng Đạo',
         avatar: 'V',
-        color: 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
+        color: 'bg-blue-100 text-blue-600',
     },
     {
         content: 'Em từng sợ bị đánh giá khi nói chuyện. Nhưng chatbot không chê, không so sánh. Điều đó làm em dám nói hơn.',
         author: 'T.M.K',
         location: 'THPT Trần Hưng Đạo',
         avatar: 'T',
-        color: 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400',
+        color: 'bg-emerald-100 text-emerald-600',
     },
     {
         content: 'Em thấy chatbot dễ sử dụng và không phức tạp. Em có thể dùng một mình mà không cần ai hướng dẫn. Như vậy rất tiện.',
         author: 'N.V.N.T',
         location: 'THPT Trần Hưng Đạo',
         avatar: 'N',
-        color: 'bg-sky-100 dark:bg-sky-900/20 text-sky-600 dark:text-sky-400',
+        color: 'bg-sky-100 text-sky-600',
     },
     {
         content: 'Em thích vì chatbot cho em quyền chọn. Muốn nói thì nói, không muốn thì vẽ hay đọc truyện. Em được là chính mình.',
         author: 'U.S.A.M',
         location: 'THPT Trần Hưng Đạo',
         avatar: 'U',
-        color: 'bg-fuchsia-100 dark:bg-fuchsia-900/20 text-fuchsia-600 dark:text-fuchsia-400',
+        color: 'bg-fuchsia-100 text-fuchsia-600',
     },
     {
         content: 'Em nghĩ "Bạn Đồng Hành" giống như một người bạn tốt. Không cần hoàn hảo, chỉ cần luôn ở đó. Với em, vậy là đủ rồi.',
         author: 'N.T.V',
         location: 'THPT Trần Hưng Đạo',
         avatar: 'N',
-        color: 'bg-rose-100 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400',
+        color: 'bg-rose-100 text-rose-600',
     },
 ];
 
@@ -285,8 +285,8 @@ export default function LandingPage() {
                     className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
                     style={{ backgroundImage: "url('/landing-bg.png')" }}
                 >
-                    <div className="absolute inset-0 bg-white/40 dark:bg-slate-900/60 backdrop-blur-[2px]"></div>
-                    <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white dark:from-slate-950 to-transparent"></div>
+                    <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px]"></div>
+                    <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white to-transparent"></div>
                 </div>
 
                 {/* Particle Effect Background */}
@@ -307,20 +307,20 @@ export default function LandingPage() {
                             transition={{ delay: 0.2, duration: 0.8 }}
                             className="mb-6 inline-block"
                         >
-                            <span className="px-4 py-2 rounded-full bg-white/70 dark:bg-slate-800/70 border border-white/50 dark:border-white/10 text-pink-600 dark:text-pink-400 text-sm font-semibold shadow-sm backdrop-blur-md">
+                            <span className="px-4 py-2 rounded-full bg-white/70 border border-white/50 text-pink-600 text-sm font-semibold shadow-sm backdrop-blur-md">
                                 ✨ Nền tảng chăm sóc tinh thần học đường
                             </span>
                         </motion.div>
 
-                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-purple-700 via-pink-600 to-rose-500 dark:from-purple-300 dark:via-pink-300 dark:to-rose-300 bg-clip-text text-transparent mb-6 drop-shadow-sm leading-tight">
+                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-purple-700 via-pink-600 to-rose-500 bg-clip-text text-transparent mb-6 drop-shadow-sm leading-tight">
                             Bạn Đồng Hành
                             <br />
-                            <span className="text-3xl md:text-5xl lg:text-6xl text-slate-800 dark:text-white/90 font-semibold mt-2 block">
+                            <span className="text-3xl md:text-5xl lg:text-6xl text-slate-800 font-semibold mt-2 block">
                                 Mở lời mở lối - kết nối yêu thương
                             </span>
                         </h1>
 
-                        <p className="text-lg md:text-xl text-slate-700 dark:text-slate-200/90 mb-10 max-w-2xl mx-auto leading-relaxed font-medium bg-white/50 dark:bg-slate-900/50 p-4 rounded-2xl backdrop-blur-sm shadow-sm ring-1 ring-white/50 dark:ring-white/10">
+                        <p className="text-lg md:text-xl text-slate-700 mb-10 max-w-2xl mx-auto leading-relaxed font-medium bg-white/50 p-4 rounded-2xl backdrop-blur-sm shadow-sm ring-1 ring-white/50">
                             Nơi lắng nghe, chia sẻ và đồng hành cùng học sinh Việt Nam trên hành trình trưởng thành. An toàn, thân thiện,và miễn phí.
                         </p>
 
@@ -339,7 +339,7 @@ export default function LandingPage() {
                                 <motion.button
                                     whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.9)" }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="px-8 py-4 bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-white rounded-full font-bold text-lg shadow-lg backdrop-blur-md border border-white/50 dark:border-white/10 hover:text-pink-600 dark:hover:text-pink-400 transition-all"
+                                    className="px-8 py-4 bg-white/80 text-slate-700 rounded-full font-bold text-lg shadow-lg backdrop-blur-md border border-white/50 hover:text-pink-600 transition-all"
                                 >
                                     Tìm hiểu thêm
                                 </motion.button>
@@ -355,13 +355,13 @@ export default function LandingPage() {
                     className="absolute bottom-8 left-1/2 -translate-x-1/2 cursor-pointer z-10"
                     onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
                 >
-                    <ChevronDown size={32} className="text-slate-500 dark:text-slate-400" />
+                    <ChevronDown size={32} className="text-slate-500" />
                 </motion.div>
             </section>
 
             {/* ===== STATS SECTION ===== */}
             {/* Chú thích: Mobile-first grid - 1 col trên mobile nhỏ, 2 col trên mobile lớn, 3 col desktop */}
-            <section className="py-8 sm:py-12 px-4 sm:px-6 bg-gradient-to-b from-white dark:from-slate-950 to-pink-50/30 dark:to-gray-900/50 relative z-10">
+            <section className="py-8 sm:py-12 px-4 sm:px-6 bg-gradient-to-b from-white to-pink-50/30 relative z-10">
                 <div className="max-w-5xl mx-auto">
                     <div className="grid grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                         {stats.map((stat, idx) => (
@@ -373,14 +373,14 @@ export default function LandingPage() {
                                 viewport={{ once: true }}
                                 className="text-center"
                             >
-                                <Card className="p-4 sm:p-6 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300 group">
+                                <Card className="p-4 sm:p-6 bg-white/80 backdrop-blur-sm hover:shadow-xl transition-all duration-300 group">
                                     <div className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 sm:mb-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
                                         <stat.icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                                     </div>
                                     <div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-1 sm:mb-2">
                                         <AnimatedCounter value={stat.value} duration={2 + idx * 0.3} />
                                     </div>
-                                    <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium">
+                                    <div className="text-xs sm:text-sm text-gray-600 font-medium">
                                         {stat.label}
                                     </div>
                                 </Card>
@@ -393,7 +393,7 @@ export default function LandingPage() {
 
             {/* ===== FEATURES SECTION ===== */}
             {/* Chú thích: Mobile-first - 1 cột trên mobile, dần lên 3 cột trên desktop */}
-            <section id="features" className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 bg-gradient-to-b from-transparent to-pink-50/30 dark:to-gray-900/50">
+            <section id="features" className="py-12 sm:py-16 lg:py-20 px-4 sm:px-6 bg-gradient-to-b from-transparent to-pink-50/30">
                 <div className="max-w-6xl mx-auto">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6">
                         {features.map((feature, idx) => (
@@ -405,21 +405,21 @@ export default function LandingPage() {
                                 viewport={{ once: true, margin: "-50px" }}
                             >
                                 <Link to={feature.route}>
-                                    <Card className="h-full bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 lg:p-6 hover:shadow-lg transition-all cursor-pointer active:scale-[0.98]">
+                                    <Card className="h-full bg-white rounded-2xl p-4 sm:p-5 lg:p-6 hover:shadow-lg transition-all cursor-pointer active:scale-[0.98]">
                                         <div className="flex items-start gap-4 mb-4">
                                             <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center shadow-lg shrink-0`}>
                                                 <feature.icon className="w-6 h-6 text-white" />
                                             </div>
                                             <div className="flex-1">
-                                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                                <h3 className="text-lg font-semibold text-gray-900 mb-2">
                                                     {feature.title}
                                                 </h3>
                                             </div>
                                         </div>
-                                        <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-4">
+                                        <p className="text-gray-600 text-sm leading-relaxed mb-4">
                                             {feature.description}
                                         </p>
-                                        <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 text-sm font-medium">
+                                        <div className="flex items-center gap-2 text-purple-600 text-sm font-medium">
                                             <span>Khám phá ngay</span>
                                             <ArrowRight size={16} />
                                         </div>
@@ -432,7 +432,7 @@ export default function LandingPage() {
             </section>
 
             {/* ===== BENEFITS SECTION ===== */}
-            <section className="py-20 px-4 bg-white dark:bg-gray-900">
+            <section className="py-20 px-4 bg-white">
                 <div className="max-w-6xl mx-auto">
                     <motion.div
                         className="text-center mb-4"
@@ -440,13 +440,13 @@ export default function LandingPage() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                     >
-                        <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold uppercase tracking-wide mb-2">
+                        <p className="text-sm text-purple-600 font-semibold uppercase tracking-wide mb-2">
                             LỢI ÍCH
                         </p>
-                        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-8">
+                        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-8">
                             Tại sao chọn Bạn Đồng Hành?
                         </h2>
-                        <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-12">
+                        <p className="text-gray-600 max-w-2xl mx-auto mb-12">
                             Chúng tôi tin rằng một môi trường giáo dục hạnh phúc là nền tảng
                             cho sự phát triển toàn diện. Bạn Đồng Hành được xây dựng với
                             tâm huyết và sự tận tâm.
@@ -469,10 +469,10 @@ export default function LandingPage() {
                                         transition={{ delay: idx * 0.1 }}
                                         viewport={{ once: true }}
                                     >
-                                        <div className="shrink-0 w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mt-0.5">
-                                            <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                                        <div className="shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mt-0.5">
+                                            <CheckCircle className="w-4 h-4 text-green-600" />
                                         </div>
-                                        <span className="text-gray-900 dark:text-white text-lg">{benefit}</span>
+                                        <span className="text-gray-900 text-lg">{benefit}</span>
                                     </motion.li>
                                 ))}
                             </ul>
@@ -494,8 +494,8 @@ export default function LandingPage() {
                                     className={`${card.color} rounded-2xl p-6 text-center`}
                                 >
                                     <card.icon className={`w-8 h-8 mx-auto mb-3 ${card.iconColor}`} />
-                                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2">{card.title}</h3>
-                                    <p className="text-sm text-gray-600 dark:text-gray-300">{card.description}</p>
+                                    <h3 className="font-semibold text-gray-900 mb-2">{card.title}</h3>
+                                    <p className="text-sm text-gray-600">{card.description}</p>
                                 </motion.div>
                             ))}
                         </motion.div>
@@ -504,7 +504,7 @@ export default function LandingPage() {
             </section>
 
             {/* ===== TESTIMONIALS SECTION ===== */}
-            <section className="py-20 px-4 bg-gradient-to-b from-pink-50/30 dark:from-gray-900/50 to-transparent">
+            <section className="py-20 px-4 bg-gradient-to-b from-pink-50/30 to-transparent">
                 <div className="max-w-6xl mx-auto">
                     <motion.div
                         className="text-center mb-12"
@@ -512,10 +512,10 @@ export default function LandingPage() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                     >
-                        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                        <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                             Người dùng nói gì?
                         </h2>
-                        <p className="text-gray-600 dark:text-gray-400">
+                        <p className="text-gray-600">
                             Nhận xét từ học sinh THPT Trần Hưng Đạo
                         </p>
                     </motion.div>
@@ -525,7 +525,7 @@ export default function LandingPage() {
                         {/* Nút trở lại */}
                         <button
                             onClick={goToPrevTestimonials}
-                            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-12 z-10 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-gray-700 hover:text-pink-600 dark:hover:text-pink-400 transition-all duration-200 hover:scale-110"
+                            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-12 z-10 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white shadow-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-pink-50 hover:text-pink-600 transition-all duration-200 hover:scale-110"
                             aria-label="Xem nhận xét trước"
                         >
                             <ChevronLeft size={24} />
@@ -549,8 +549,8 @@ export default function LandingPage() {
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: idx * 0.1 }}
                                         >
-                                            <Card className="h-full bg-white dark:bg-gray-800 rounded-2xl p-6 hover:shadow-lg transition-shadow">
-                                                <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
+                                            <Card className="h-full bg-white rounded-2xl p-6 hover:shadow-lg transition-shadow">
+                                                <p className="text-gray-700 mb-6 leading-relaxed">
                                                     "{item.content}"
                                                 </p>
                                                 <div className="flex items-center gap-3">
@@ -558,8 +558,8 @@ export default function LandingPage() {
                                                         {item.avatar}
                                                     </div>
                                                     <div>
-                                                        <div className="font-semibold text-gray-900 dark:text-white">{item.author}</div>
-                                                        <div className="text-sm text-gray-500 dark:text-gray-400">{item.location}</div>
+                                                        <div className="font-semibold text-gray-900">{item.author}</div>
+                                                        <div className="text-sm text-gray-500">{item.location}</div>
                                                     </div>
                                                 </div>
                                             </Card>
@@ -572,7 +572,7 @@ export default function LandingPage() {
                         {/* Nút lướt tiếp */}
                         <button
                             onClick={goToNextTestimonials}
-                            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-12 z-10 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-pink-50 dark:hover:bg-gray-700 hover:text-pink-600 dark:hover:text-pink-400 transition-all duration-200 hover:scale-110"
+                            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-12 z-10 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white shadow-lg border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-pink-50 hover:text-pink-600 transition-all duration-200 hover:scale-110"
                             aria-label="Xem nhận xét tiếp theo"
                         >
                             <ChevronRight size={24} />
@@ -587,7 +587,7 @@ export default function LandingPage() {
                                 onClick={() => setTestimonialIndex(idx)}
                                 className={`w-2.5 h-2.5 rounded-full transition-all duration-200 ${idx === testimonialIndex
                                     ? 'bg-pink-500 w-8'
-                                    : 'bg-gray-300 dark:bg-gray-600 hover:bg-pink-300 dark:hover:bg-pink-700'
+                                    : 'bg-gray-300 hover:bg-pink-300'
                                     }`}
                                 aria-label={`Trang ${idx + 1}`}
                             />
@@ -595,7 +595,7 @@ export default function LandingPage() {
                     </div>
 
                     {/* Thông tin số trang */}
-                    <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
+                    <p className="text-center text-sm text-gray-500 mt-4">
                         Trang {testimonialIndex + 1} / {totalPages} • {testimonials.length} nhận xét
                     </p>
                 </div>

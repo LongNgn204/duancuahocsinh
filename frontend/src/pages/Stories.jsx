@@ -3,7 +3,7 @@
 // UX: Hiển thị toàn bộ truyện, highlight đoạn đang đọc, progress bar
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, ChevronLeft, ChevronRight, ArrowLeft, Moon, Sun, Type, Clock, User } from 'lucide-react';
+import { BookOpen, ChevronLeft, ChevronRight, ArrowLeft, Sun, Type, Clock, User } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { useSound } from '../contexts/SoundContext';
 
@@ -15,7 +15,7 @@ export default function Stories() {
 
     // Reader State
     const [currentParagraph, setCurrentParagraph] = useState(0);
-    const [theme, setTheme] = useState('light'); // 'light', 'sepia', 'dark'
+    const [theme, setTheme] = useState('light'); // 'light', 'sepia'
     const [isAudioPlaying, setIsAudioPlaying] = useState(false); // Track audio state
     const paragraphRefs = useRef([]);
     const contentRef = useRef(null);
@@ -87,7 +87,6 @@ export default function Stories() {
     const getThemeClass = () => {
         switch (theme) {
             case 'sepia': return 'bg-[#f4ecd8] text-[#5b4636]';
-            case 'dark': return 'bg-slate-900 text-slate-200';
             default: return 'bg-white text-slate-800';
         }
     };
@@ -95,7 +94,6 @@ export default function Stories() {
     const getHighlightClass = () => {
         switch (theme) {
             case 'sepia': return 'bg-amber-200/60';
-            case 'dark': return 'bg-indigo-900/60';
             default: return 'bg-indigo-100/80';
         }
     };
@@ -189,7 +187,6 @@ export default function Stories() {
                                     <div className="flex gap-1 bg-white/10 rounded-full p-1 border border-black/5">
                                         <button onClick={() => setTheme('light')} className={`p-2 rounded-full transition-all ${theme === 'light' ? 'bg-white shadow-sm' : ''}`}><Sun size={16} /></button>
                                         <button onClick={() => setTheme('sepia')} className={`p-2 rounded-full transition-all ${theme === 'sepia' ? 'bg-[#e3d0b0] shadow-sm' : ''}`}><Type size={16} /></button>
-                                        <button onClick={() => setTheme('dark')} className={`p-2 rounded-full transition-all ${theme === 'dark' ? 'bg-slate-700 shadow-sm text-white' : ''}`}><Moon size={16} /></button>
                                     </div>
                                 </div>
                             </div>

@@ -42,18 +42,9 @@ MONTHLY_TOKEN_LIMIT = "500000"
 # Token budget hàng ngày cho AI (kiểm soát chi phí)
 MAX_TOKEN_BUDGET = "50000"
 
-# Vertex AI Configuration - GIỮ LẠI cho Voice Call (cloud-run server.js)
-# Chat đã chuyển sang OpenAI, xem backend/workers/ai-proxy.js
-VERTEX_PROJECT_ID = "ban-dong-hanh-483002"
-VERTEX_LOCATION = "us-central1"
-# Fallback region
-VERTEX_LOCATION_FALLBACK = "us-east1"
-# Secrets for Voice Call (set via: wrangler secret put VERTEX_CLIENT_EMAIL, etc.)
-# VERTEX_CLIENT_EMAIL = "your-service-account@project.iam.gserviceaccount.com"
-# VERTEX_PRIVATE_KEY = "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
-# 
-# OpenAI API Key cho Chat (set via: wrangler secret put OPENAI_API_KEY)
-# OPENAI_API_KEY = "sk-xxxx" (required for chat)
+# OpenAI API Key cho Chat và Voice Call (set via: wrangler secret put OPENAI_API_KEY)
+# Chat: gpt-4o-mini | Voice Call: gpt-4o-realtime-preview
+# OPENAI_API_KEY = "sk-xxxx" (required)
 
 # Admin Authentication (standalone - không cần database)
 # Đổi password này thành password riêng của bạn!
