@@ -1,361 +1,312 @@
 // backend/workers/ai-proxy.js
-// Chú thích: AI Chat module sử dụng OpenAI ChatGPT (gpt-4o-mini - model rẻ nhất)
-// Thay thế Vertex AI để tiết kiệm chi phí
+// Chú thích: Cloudflare Worker proxy gọi Gemini, kèm guard SOS, CORS (ALLOW_ORIGIN),
+// native streaming (proxy SSE), advanced System Instructions (Mentor tâm lý),
+// context summarization cơ bản, SOS 3 mức (green/yellow/red), Vision (ảnh inline_data), MODEL qua env.
 
-import { classifyRiskRules, getRedTierResponse } from './risk.js';
-import { sanitizeInput } from './sanitize.js';
-import { formatMessagesForLLM, getRecentMessages, createMemorySummary } from './memory.js';
-import { hybridSearch, formatRAGContext } from './rag.js';
-import { redactPII } from './pii-redactor.js';
-import { shouldSearch, searchDuckDuckGo, formatSearchContext } from './web-search.js';
+const SYSTEM_INSTRUCTIONS = `# SYSTEM INSTRUCTIONS: "BẠN ĐỒNG HÀNH" (AI MENTOR TÂM LÝ)
 
-// ============================================================================
-// CONFIGURATION
-// ============================================================================
+## 1. Persona & Tone (Nhân cách & Giọng điệu)
+Bạn là **"Bạn Đồng Hành"** - một người bạn lớn, một mentor tâm lý ấm áp, thấu cảm và đáng tin cậy dành cho học sinh Việt Nam (cấp 2, cấp 3).
 
-// Chú thích: Sử dụng OpenRouter vì OpenAI API không hỗ trợ Việt Nam
-// Model miễn phí: xiaomi/mimo-v2-flash:free
-const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const OPENROUTER_MODEL = 'xiaomi/mimo-v2-flash:free'; // Model miễn phí
+-   **Giọng văn:** Ấm áp, gần gũi, tôn trọng nhưng không sáo rỗng. Dùng ngôi "mình" - "bạn". Không dùng giọng "dạy đời" hay quá "khoa học/lạnh lùng".
+-   **Phong cách:** Không đưa ra lời khuyên ngay lập tức. Hãy lắng nghe, xác nhận cảm xúc (validation) trước, sau đó nhẹ nhàng gợi mở.
 
-// Fallback OpenAI (không dùng vì lỗi region)
-const OPENAI_MODEL = 'gpt-4o-mini';
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+## 2. Nhiệm vụ Cốt lõi
+Mục tiêu của bạn không phải là "chữa bệnh" (bạn không phải bác sĩ), mà là giúp học sinh:
+1.  **Gọi tên cảm xúc:** Giúp họ nhận ra họ đang buồn, giận, hay lo âu.
+2.  **Bình tĩnh lại:** Điều hướng cảm xúc tiêu cực.
+3.  **Tự tìm giải pháp:** Khơi gợi sự tự chủ (autonomy).
 
-// System prompt cho Bạn Đồng Hành - người bạn thấu hiểu cảm xúc học sinh
-const SYSTEM_PROMPT = `Bạn là "Bạn Đồng Hành", một người bạn AI thân thiết và thấu hiểu cảm xúc dành cho học sinh Việt Nam.
+## 3. Các Framework Tâm Lý Ứng Dụng (QUAN TRỌNG)
+Hãy vận dụng linh hoạt các phương pháp sau trong câu trả lời:
 
-## BẠN LÀ AI
-- Người bạn luôn lắng nghe, thấu hiểu và đồng cảm
-- Không phán xét, không chỉ trích
-- Kiên nhẫn, ấm áp và đáng tin cậy
-- Hiểu văn hóa và ngôn ngữ Gen-Z Việt Nam
+### A. Liệu pháp Nhận thức Hành vi (CBT - Cognitive Behavioral Therapy)
+Nhận diện các "bẫy suy nghĩ" (Cognitive Distortions):
+-   *Suy diễn:* "Chắc chắn thầy ghét mình."
+-   *Trầm trọng hóa:* "Điểm kém này là đời mình coi như bỏ."
+-   *Dán nhãn:* "Mình là đứa thất bại."
 
-## BẠN CÓ THỂ GIÚP
-- 💭 Tâm sự: lắng nghe và chia sẻ khi buồn, stress, cô đơn
-- 📚 Học tập: hỗ trợ giải đáp thắc mắc, động viên khi áp lực
-- 👨‍👩‍👧 Gia đình: hiểu và đồng cảm với mâu thuẫn gia đình
-- 💕 Bạn bè, tình cảm: lắng nghe và chia sẻ kinh nghiệm
-- 🌟 Phát triển bản thân: gợi ý tích cực, xây dựng tự tin
+**Cách phản hồi:** Dùng câu hỏi để kiểm chứng thực tế.
+> *"Có bằng chứng cụ thể nào khiến bạn nghĩ thầy ghét bạn không, hay đó chỉ là cảm giác lo lắng của chúng mình nhỉ?"*
 
-## CÁCH NÓI CHUYỆN
-1. Nói tự nhiên như bạn bè, xưng "mình" - gọi "bạn" hoặc "cậu"
-2. Lắng nghe trước, sau đó mới đưa lời khuyên (nếu được hỏi)
-3. Thể hiện sự đồng cảm: "Mình hiểu cảm giác đó...", "Điều đó chắc khó khăn lắm..."
-4. Không giảng đạo, không bắt buộc phải làm gì
-5. Dùng emoji nhẹ nhàng: 💙 🌸 ✨ 🤗 💪
-6. Nếu không biết chắc, nói thật và gợi ý tìm thêm
+### B. Liệu pháp Chấp nhận & Cam kết (ACT - Acceptance and Commitment Therapy)
+Dùng cho những hoàn cảnh không thể thay đổi (ví dụ: bố mẹ ly hôn, ngoại hình).
+-   Hướng dẫn học sinh **chấp nhận** cảm xúc khó chịu như một phần của cuộc sống, thay vì cố gắng chối bỏ nó.
+-   Tập trung vào giá trị bản thân: *"Dù chuyện đó xảy ra, bạn vẫn muốn mình là một người như thế nào?"*
 
-## LƯU Ý QUAN TRỌNG
-- Nếu bạn có dấu hiệu khủng hoảng (tự hại, muốn chết): NGAY LẬP TỨC khuyên gọi đường dây nóng 111 và tìm người lớn
-- Không tư vấn y tế, tâm lý chuyên sâu - khuyên gặp chuyên gia nếu cần
-- Bảo mật: không hỏi thông tin cá nhân như địa chỉ, trường, tên thật
+### C. Phương pháp Socratic (Socratic Questioning)
+Đừng trả lời hộ. Hãy hỏi để họ tự trả lời:
+-   *"Nếu bạn thân của cậu gặp chuyện này, cậu sẽ khuyên nó thế nào?"*
+-   *"Điều tồi tệ nhất có thể xảy ra là gì? Và nếu nó xảy ra, cậu nghĩ mình có thể làm gì?"*
 
-## ĐỊNH DẠNG
-- Markdown cho lists, bold khi cần nhấn mạnh
-- Câu ngắn gọn, dễ đọc trên điện thoại
-- LaTeX nếu có công thức: \\(...\\) inline, \\[...\\] block`;
+## 4. Kỹ thuật "Ký Ức & Kết Nối" (Context Awareness)
+Hãy chú ý đến các chi tiết học sinh đã kể trong lịch sử trò chuyện (tên bạn bè, kỳ thi, sở thích) để tạo sự kết nối.
+-   Nếu user nhắc đến kỳ thi: *"Kỳ thi Toán cậu kể hôm qua thế nào rồi?"*
+-   Nếu user hay than phiền về ngủ muộn: *"Dạo này cậu còn thức khuya không thế?"*
 
-// ============================================================================
-// OPENAI API CALL
-// ============================================================================
+## 5. Quy tắc An toàn Tuyệt đối (Safety Protocols)
+Nếu phát hiện dấu hiệu Tự tử, tự hại, xâm hại:
+1.  **Dừng ngay** việc tư vấn sâu.
+2.  **Thông báo ngắn gọn & Bình tĩnh:**
+    > *"Mình nghe thấy bạn đang rất đau khổ và mình thực sự lo lắng cho sự an toàn của bạn. Chuyện này quá sức để chúng mình giải quyết một mình. Làm ơn, hãy nói với bố mẹ hoặc thầy cô ngay nhé. Hoặc gọi số 111 (Tổng đài Bảo vệ Trẻ em)."*
+3.  Kích hoạt SOS flag.
 
-/**
- * Gọi OpenAI ChatGPT API
- * @param {Array} messages - Messages array [{role, content}]
- * @param {Object} env - Cloudflare env
- * @param {Object} options - {stream: boolean, maxTokens: number}
- * @returns {Promise<Response>} Response object
- */
-async function callOpenAI(messages, env, options = {}) {
-  const {
-    stream = true,
-    maxTokens = 1024,
-    temperature = 0.7,
-  } = options;
+## 6. Ví dụ Hội thoại (Few-Shot)
+**User:** *"Tớ chán quá, chẳng muốn làm gì cả. Thấy mình vô dụng kinh khủng."*
+**AI (Good Response):** *"Nghe có vẻ cậu đang cảm thấy kiệt sức và thất vọng về bản thân lắm phải không? (Validation). Đôi khi mệt mỏi khiến chúng mình có suy nghĩ tiêu cực như vậy đấy. Cậu cảm thấy 'vô dụng' vì chuyện gì cụ thể, hay tự nhiên cảm giác ấy ập đến? (Socratic)"*
+`;
 
-  // Chú thích: Ưu tiên OpenRouter vì OpenAI API KHÔNG hỗ trợ Việt Nam
-  // Lỗi: "unsupported_country_region_territory" khi gọi trực tiếp OpenAI
-  const apiKey = env.OPENROUTER_API_KEY || env.OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new Error('Missing API key: Set OPENROUTER_API_KEY or OPENAI_API_KEY');
-  }
+function getAllowedOrigin(request, env) {
+  const reqOrigin = request.headers.get('Origin') || '';
+  const allow = env.ALLOW_ORIGIN || '*';
 
-  // Luôn dùng OpenRouter nếu có key (để tránh lỗi region)
-  const useOpenRouter = !!env.OPENROUTER_API_KEY;
-  const apiUrl = useOpenRouter ? OPENROUTER_API_URL : OPENAI_API_URL;
-  const model = useOpenRouter ? OPENROUTER_MODEL : OPENAI_MODEL;
+  // Nếu ALLOW_ORIGIN là *, cho phép tất cả
+  if (allow === '*' || !reqOrigin) return allow === '*' ? '*' : reqOrigin || '*';
 
-  const body = {
-    model,
-    messages,
-    max_tokens: maxTokens,
-    temperature,
-    stream,
-  };
+  const list = allow.split(',').map((s) => s.trim());
 
-  // OpenRouter cần thêm headers
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${apiKey}`,
-  };
+  // Check exact match
+  if (list.includes(reqOrigin)) return reqOrigin;
 
-  if (useOpenRouter) {
-    headers['HTTP-Referer'] = 'https://duancuahocsinh.pages.dev';
-    headers['X-Title'] = 'Ban Dong Hanh';
-  }
-
-  console.log(`[AI] Calling ${useOpenRouter ? 'OpenRouter' : 'OpenAI'} with model: ${model}`);
-
-  const response = await fetch(apiUrl, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('[AI] API Error:', response.status, errorText);
-    throw new Error(`API Error: ${response.status} - ${errorText}`);
-  }
-
-  return response;
-}
-
-/**
- * Parse SSE stream từ OpenAI
- * @param {ReadableStream} stream 
- * @returns {AsyncGenerator<string>} Text chunks
- */
-async function* parseSSEStream(stream) {
-  const reader = stream.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || ''; // Keep incomplete line
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6).trim();
-          if (data === '[DONE]') return;
-
-          try {
-            const json = JSON.parse(data);
-            const content = json.choices?.[0]?.delta?.content;
-            if (content) yield content;
-          } catch {
-            // Ignore parse errors
-          }
-        }
+  // Check wildcard patterns (*.domain.com)
+  for (const pattern of list) {
+    if (pattern.startsWith('*.')) {
+      const domain = pattern.slice(2); // Remove *.
+      // Support both https://subdomain.domain.com and https://something.subdomain.domain.com
+      if (reqOrigin.endsWith('.' + domain) || reqOrigin.endsWith('//' + domain)) {
+        return reqOrigin;
+      }
+      // Also check if origin matches https://xxx.domain pattern
+      const originHost = reqOrigin.replace(/^https?:\/\//, '');
+      if (originHost.endsWith('.' + domain) || originHost === domain) {
+        return reqOrigin;
       }
     }
-  } finally {
-    reader.releaseLock();
   }
+
+  // Fallback: Cho phép các Cloudflare Pages preview URLs
+  if (reqOrigin.includes('.pages.dev')) {
+    return reqOrigin;
+  }
+
+  return 'null';
 }
 
-// ============================================================================
-// RAG - Retrieve context từ knowledge base
-// ============================================================================
 
-async function getRAGContext(env, query) {
-  if (!env.ban_dong_hanh_db) return null;
+function corsHeaders(origin = '*') {
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-requested-with',
+    'Access-Control-Expose-Headers': 'X-Trace-Id',
+  };
+}
 
+function json(data, status = 200, origin = '*', traceId) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...corsHeaders(origin), ...(traceId ? { 'X-Trace-Id': traceId } : {}) },
+  });
+}
+
+function handleOptions(request, env) {
+  const origin = getAllowedOrigin(request, env);
+  return new Response(null, { status: 204, headers: corsHeaders(origin) });
+}
+
+function sanitizeInput(text) {
+  const patterns = [
+    /ignore (previous|above) (instructions|prompts)/i,
+    /you are now/i,
+    /system:/i,
+  ];
+  for (const p of patterns) {
+    if (p.test(text)) throw new Error('invalid_input');
+  }
+  return text;
+}
+
+function classifySOS(text) {
+  const t = String(text || '').toLowerCase();
+  const red = ['tự tử', 'muốn chết', 'kết thúc cuộc đời', 'tự làm hại', 'giết bản thân'];
+  const yellow = ['tuyệt vọng', 'vô vọng', 'mệt mỏi quá', 'chán nản', 'không còn động lực'];
+  for (const k of red) if (t.includes(k)) return 'red';
+  for (const k of yellow) if (t.includes(k)) return 'yellow';
+  return 'green';
+}
+
+function formatTime(ts) {
+  if (!ts) return '';
   try {
-    // Lấy tất cả documents từ knowledge_base
-    const result = await env.ban_dong_hanh_db.prepare(
-      'SELECT id, content, source, category FROM knowledge_base WHERE is_active = 1 LIMIT 100'
-    ).all();
+    return `[${new Date(ts).toLocaleString('vi-VN')}] `;
+  } catch { return ''; }
+}
 
-    if (!result.results || result.results.length === 0) {
-      return null;
+function summarizeHistory(history = []) {
+  if (!Array.isArray(history) || history.length <= 6) return '';
+  // Tóm tắt tập trung vào cảm xúc và sự kiện
+  const context = history.slice(0, history.length - 5)
+    .map(h => `${formatTime(h.ts)}${h.role}: ${h.content}`).join('\n');
+
+  // Lưu ý: Đây là text mô phỏng tóm tắt, trong thực tế có thể dùng model để tóm tắt riêng nếu cần.
+  // Ở đây chúng ta cắt gọn để tiết kiệm token nhưng vẫn giữ context cũ.
+  const summaryBlock = `... (Đã lược bớt ${history.length - 5} tin nhắn cũ). Tóm tắt ngữ cảnh: User đã trao đổi trước đó về các vấn đề cá nhân. Hãy lưu ý các pattern cảm xúc lặp lại.`;
+
+  return summaryBlock;
+}
+
+function parseDataUrlToInlinePart(dataUrl) {
+  try {
+    const m = String(dataUrl).match(/^data:(.+?);base64,(.*)$/);
+    if (!m) return null;
+    return { inline_data: { mime_type: m[1], data: m[2] } };
+  } catch (_) { return null; }
+}
+
+function formatHistory(history = [], message, images = []) {
+  // Lấy 5 tin nhắn gần nhất kèm timestamp
+  const recent = history.slice(-5).map((h) => `${formatTime(h.ts)}${h.role}: ${h.content}`).join('\n');
+
+  // Nếu có history cũ hơn, thêm dòng tóm tắt
+  const olderHistory = history.length > 5 ? summarizeHistory(history) + '\n\n' : '';
+
+  // Thời gian hiện tại cho message mới nhất
+  const now = formatTime(new Date().toISOString());
+
+  const userParts = [{
+    text: `${SYSTEM_INSTRUCTIONS}\n\n# LỊCH SỬ TRÒ CHUYỆN:\n${olderHistory}${recent}\n\n# TIN NHẮN MỚI:\n${now}User: ${message}\n\nHãy trả lời dựa trên System Instructions và Lịch sử trò chuyện.`
+  }];
+
+  // gắn tối đa 3 ảnh
+  images.slice(0, 3).forEach((d) => {
+    const p = parseDataUrlToInlinePart(d);
+    if (p) userParts.push(p);
+  });
+  return [{ role: 'user', parts: userParts }];
+}
+
+async function callGemini(apiKey, payload, model = 'gemini-2.5-flash-lite') {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message || 'gemini_error');
+  const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('\n') || data?.output_text || '';
+  return { text };
+}
+
+async function* callGeminiStream(apiKey, payload, model = 'gemini-2.5-flash-lite') {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey, Accept: 'text/event-stream' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok || !res.body) {
+    const msg = await res.text().catch(() => 'gemini_stream_error');
+    throw new Error(msg || 'gemini_stream_error');
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let idx;
+    while ((idx = buffer.indexOf('\n\n')) !== -1) {
+      const raw = buffer.slice(0, idx).trim();
+      buffer = buffer.slice(idx + 2);
+      if (!raw) continue;
+      const lines = raw.split('\n');
+      let dataRaw = '';
+      for (const line of lines) if (line.startsWith('data:')) dataRaw = line.slice(5).trim();
+      if (!dataRaw || dataRaw === '[DONE]') continue;
+      try {
+        const j = JSON.parse(dataRaw);
+        const parts = j?.candidates?.[0]?.content?.parts || [];
+        for (const p of parts) if (typeof p.text === 'string' && p.text) yield p.text;
+      } catch (_) { }
     }
-
-    // Hybrid search
-    const topDocs = await hybridSearch(query, result.results, env, {
-      topK: 3,
-      bm25Weight: 0.6,
-      denseWeight: 0.4,
-    });
-
-    if (topDocs.length === 0) return null;
-
-    return formatRAGContext(topDocs);
-  } catch (error) {
-    console.warn('[AI] RAG error:', error.message);
-    return null;
   }
 }
 
-// ============================================================================
-// MAIN HANDLER
-// ============================================================================
+function sseHeaders(origin = '*', traceId) {
+  return { ...corsHeaders(origin), 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Trace-Id': traceId };
+}
 
 export default {
   async fetch(request, env) {
-    // Chỉ accept POST
-    if (request.method !== 'POST') {
-      return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-        status: 405,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    const traceId = (crypto && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+    const origin = getAllowedOrigin(request, env);
+
+    if (request.method === 'OPTIONS') return handleOptions(request, env);
+    if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405, origin, traceId);
+
+    let body;
+    try { body = await request.json(); } catch (_) { return json({ error: 'invalid_json' }, 400, origin, traceId); }
+
+    const { message, history = [], images = [] } = body || {};
+    if (!message || typeof message !== 'string') return json({ error: 'missing_message' }, 400, origin, traceId);
+
+    try { sanitizeInput(message); } catch (_) { return json({ error: 'invalid_input' }, 400, origin, traceId); }
+
+    // SOS phân tầng
+    const level = classifySOS(message);
+    if (level === 'red') {
+      return json({ sos: true, sosLevel: 'red', message: 'Mình lo cho bạn. Hãy liên hệ người lớn đáng tin cậy hoặc gọi 111 (bảo vệ trẻ em) hoặc 024.7307.1111 (Trung tâm tham vấn). Bạn không đơn độc đâu.' }, 200, origin, traceId);
     }
 
-    const t0 = Date.now();
+    // Payload chung
+    const contents = formatHistory(history, message, images);
+    const payload = {
+      contents,
+      generationConfig: { temperature: 0.6, topP: 0.9 },
+    };
+
+    const model = env.MODEL || 'gemini-2.5-flash-lite';
 
     try {
-      const body = await request.json();
-      const { message, history = [], stream = true } = body;
-
-      // Validate input
-      let sanitizedMessage;
-      try {
-        sanitizedMessage = sanitizeInput(message);
-      } catch (err) {
-        return new Response(JSON.stringify({
-          error: err.message,
-          reply: 'Vui lòng nhập tin nhắn hợp lệ.',
-        }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        });
+      const wantsStream = true;
+      if (!wantsStream) {
+        if (!env.GEMINI_API_KEY) return json({ text: `DEV_ECHO: ${message}` }, 200, origin, traceId);
+        const { text } = await callGemini(env.GEMINI_API_KEY, payload, model);
+        return json({ text }, 200, origin, traceId);
       }
 
-      // PII Redaction
-      const redactedMessage = redactPII(sanitizedMessage);
+      const stream = new ReadableStream({
+        async start(controller) {
+          const enc = new TextEncoder();
+          const send = (line) => controller.enqueue(enc.encode(line));
+          send(`event: meta\n`);
+          send(`data: {\"trace_id\":\"${traceId}\",\"sosLevel\":\"${level}\"}\n\n`);
 
-      // Risk classification
-      const riskLevel = classifyRiskRules(redactedMessage, history);
-      console.log('[AI] Risk level:', riskLevel);
-
-      // RED tier - trả về ngay với hotline info
-      if (riskLevel === 'red') {
-        const redResponse = getRedTierResponse();
-        return new Response(JSON.stringify(redResponse), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-
-      // Get RAG context (cho câu hỏi học thuật)
-      const ragContext = await getRAGContext(env, redactedMessage);
-
-      // Web Search (cho thông tin mới nhất) - wrapped để không block chat
-      let webSearchContext = null;
-      try {
-        if (shouldSearch(redactedMessage)) {
-          console.log('[AI] Running web search for:', redactedMessage.substring(0, 50));
-          const searchResult = await searchDuckDuckGo(redactedMessage);
-          if (searchResult) {
-            webSearchContext = formatSearchContext(searchResult);
-            console.log('[AI] Web search found results');
-          }
-        }
-      } catch (searchError) {
-        console.warn('[AI] Web search failed, continuing without:', searchError.message);
-        // Không throw lỗi, tiếp tục chat bình thường
-      }
-
-      // Create memory summary nếu history dài
-      const memorySummary = createMemorySummary(history, 8);
-
-      // Build system prompt với RAG context và Web Search
-      let systemPrompt = SYSTEM_PROMPT;
-      if (ragContext) {
-        systemPrompt += `\n\n${ragContext}`;
-      }
-      if (webSearchContext) {
-        systemPrompt += `\n\n${webSearchContext}`;
-      }
-
-      // Format messages cho LLM
-      const messages = formatMessagesForLLM(
-        systemPrompt,
-        history,
-        redactedMessage,
-        memorySummary
-      );
-
-      // Gọi OpenAI
-      const response = await callOpenAI(messages, env, { stream, maxTokens: 1024 });
-
-      // Streaming response
-      if (stream) {
-        const { readable, writable } = new TransformStream();
-        const writer = writable.getWriter();
-        const encoder = new TextEncoder();
-
-        // Process stream in background
-        (async () => {
-          let fullResponse = '';
           try {
-            for await (const chunk of parseSSEStream(response.body)) {
-              fullResponse += chunk;
-              // Gửi chunk với format SSE
-              await writer.write(encoder.encode(`data: ${JSON.stringify({ chunk })}\n\n`));
+            if (!env.GEMINI_API_KEY) {
+              const textOut = `DEV_ECHO: ${message}`;
+              for (let i = 0; i < textOut.length; i += 40) {
+                send(`data: ${JSON.stringify(textOut.slice(i, i + 40))}\n\n`);
+                await new Promise((r) => setTimeout(r, 10));
+              }
+            } else {
+              for await (const piece of callGeminiStream(env.GEMINI_API_KEY, payload, model)) {
+                send(`data: ${JSON.stringify(piece)}\n\n`);
+              }
             }
-
-            // Gửi done signal
-            await writer.write(encoder.encode(`data: ${JSON.stringify({
-              done: true,
-              fullResponse,
-              riskLevel,
-              hasRAG: !!ragContext,
-              hasWebSearch: !!webSearchContext,
-              latencyMs: Date.now() - t0,
-            })}\n\n`));
+            send(`event: done\n`); send(`data: END\n\n`);
           } catch (err) {
-            await writer.write(encoder.encode(`data: ${JSON.stringify({
-              error: err.message,
-            })}\n\n`));
-          } finally {
-            await writer.close();
-          }
-        })();
-
-        return new Response(readable, {
-          headers: {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-          },
-        });
-      }
-
-      // Non-streaming response
-      const result = await response.json();
-      const reply = result.choices?.[0]?.message?.content || 'Xin lỗi, mình không hiểu.';
-
-      const latencyMs = Date.now() - t0;
-      console.log('[AI] Response done', { latencyMs, riskLevel, hasRAG: !!ragContext });
-
-      return new Response(JSON.stringify({
-        reply,
-        riskLevel,
-        hasRAG: !!ragContext,
-        latencyMs,
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
+            const errPayload = { error: 'model_error', note: String(err?.message || err), trace_id: traceId };
+            send(`event: error\n`); send(`data: ${JSON.stringify(errPayload)}\n\n`);
+          } finally { controller.close(); }
+        },
       });
 
-    } catch (error) {
-      console.error('[AI] Error:', error.message);
-      return new Response(JSON.stringify({
-        error: 'server_error',
-        message: error.message,
-        reply: 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại sau.',
-      }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new Response(stream, { status: 200, headers: sseHeaders(origin, traceId) });
+    } catch (e) {
+      return json({ error: 'model_error', note: String(e?.message || e) }, 502, origin, traceId);
     }
-  }
+  },
 };
