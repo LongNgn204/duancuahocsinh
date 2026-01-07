@@ -119,19 +119,25 @@ export async function streamChat(message, history = [], onChunk, options = {}) {
                             return { sos: true, sosLevel: data.sosLevel };
                         }
 
-                        // Handle text chunks
-                        if (data.type === 'delta' && data.text) {
+                        // Handle text chunks - support cả 2 format:
+                        // Format 1 (ai-proxy OpenAI): {chunk: "..."}
+                        // Format 2 (Vertex AI cũ): {type: "delta", text: "..."}
+                        if (data.chunk) {
+                            onChunk(data.chunk);
+                        } else if (data.type === 'delta' && data.text) {
                             onChunk(data.text);
                         }
 
-                        // Handle done
-                        if (data.type === 'done') {
+                        // Handle done - support cả 2 format:
+                        // Format 1 (ai-proxy): {done: true, fullResponse: "..."}
+                        // Format 2 (cũ): {type: "done"}
+                        if (data.done || data.type === 'done') {
                             return sosData;
                         }
 
                         // Handle error
-                        if (data.type === 'error') {
-                            throw new Error(data.note || data.error);
+                        if (data.type === 'error' || data.error) {
+                            throw new Error(data.note || data.error || data.message);
                         }
                     } catch (e) {
                         // Skip invalid JSON
