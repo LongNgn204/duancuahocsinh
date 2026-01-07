@@ -36,9 +36,9 @@ export class VoiceCallSessionOpenAI {
             return;
         }
 
-        // Chú thích: Sử dụng model chính thức từ OpenAI (không phải Azure)
-        const model = 'gpt-4o-realtime-preview-2024-12-17';
-        const openaiUrl = `wss://api.openai.com/v1/realtime?model=${model}`;
+        // Chú thích: Sử dụng https:// thay vì wss:// - CF Workers tự động upgrade khi có header
+        const model = 'gpt-realtime-mini-2025-10-06';
+        const openaiUrl = `https://api.openai.com/v1/realtime?model=${model}`;
 
         try {
             console.log('[DO] Connecting to OpenAI Realtime:', model);
@@ -193,5 +193,18 @@ Bạn là "Bạn Đồng Hành" - một người bạn thân thiện, ấm áp, 
         };
         this.openaiWs.send(JSON.stringify(sessionUpdate));
         console.log('[DO] Session update sent - Friendly persona configured');
+
+        // Chú thích: Trigger AI nói chào ngay sau khi connect (không cần đợi user audio)
+        setTimeout(() => {
+            const triggerGreeting = {
+                type: "response.create",
+                response: {
+                    modalities: ["text", "audio"],
+                    instructions: "Hãy chào bạn một cách thân thiện, vui vẻ. Ví dụ: 'Ê, chào bạn! Mình là Bạn Đồng Hành đây. Hôm nay bạn thế nào?'"
+                }
+            };
+            this.openaiWs.send(JSON.stringify(triggerGreeting));
+            console.log('[DO] Triggered initial greeting');
+        }, 500);
     }
 }
