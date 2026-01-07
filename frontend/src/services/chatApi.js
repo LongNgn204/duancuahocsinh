@@ -1,16 +1,16 @@
-// src/services/gemini.js
-// Chú thích: Gemini Chat API - v2.0 Gọi qua Backend Vertex AI
-// Thay đổi: Không còn gọi trực tiếp Google AI, mà gọi qua backend /api/ai/chat
+// src/services/chatApi.js
+// Chú thích: Chat API Service - Gọi backend OpenAI ChatGPT (gpt-4o-mini)
+// Backend: /api/ai/chat → ai-proxy.js → OpenAI API
 
 // Backend API URL - Default to production URL
 const BACKEND_API_URL = import.meta.env.VITE_API_URL || 'https://ban-dong-hanh-worker.stu725114073.workers.dev';
 const CHAT_ENDPOINT = `${BACKEND_API_URL}/api/ai/chat`;
 
 /**
- * Kiểm tra backend API đã được cấu hình chưa
+ * Kiểm tra backend API đã sẵn sàng chưa
  */
-export function isGeminiConfigured() {
-    // Luôn trả về true vì AI chạy qua backend
+export function isChatConfigured() {
+    // Luôn trả về true vì AI chạy qua backend (backend có OPENAI_API_KEY)
     return true;
 }
 
@@ -46,7 +46,7 @@ export function filterProfanity(text) {
 }
 
 /**
- * Stream chat qua Backend Vertex AI
+ * Stream chat qua Backend (OpenAI ChatGPT gpt-4o-mini)
  * @param {string} message - Tin nhắn từ user
  * @param {Array} history - Lịch sử chat [{role, content}]
  * @param {Function} onChunk - Callback nhận từng chunk text
@@ -71,11 +71,11 @@ export async function streamChat(message, history = [], onChunk, options = {}) {
 
         if (!response.ok) {
             const error = await response.text();
-            console.error('[Gemini] Backend API Error:', error);
+            console.error('[ChatAPI] Backend Error:', error);
             throw new Error(`Backend API error: ${response.status}`);
         }
 
-        // Read SSE stream từ backend
+        // Read SSE stream từ backend (ai-proxy.js)
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
@@ -96,7 +96,7 @@ export async function streamChat(message, history = [], onChunk, options = {}) {
                 if (line.startsWith('event: ')) {
                     const eventType = line.slice(7).trim();
                     if (eventType === 'error') {
-                        console.error('[Gemini] SSE error event received');
+                        console.error('[ChatAPI] SSE error event received');
                     }
                     continue;
                 }
@@ -109,7 +109,7 @@ export async function streamChat(message, history = [], onChunk, options = {}) {
                         // Handle meta event (SOS level, trace ID)
                         if (data.trace_id) {
                             sosData = data;
-                            console.log('[Gemini] Trace:', data.trace_id, 'SOS:', data.sosLevel);
+                            console.log('[ChatAPI] Trace:', data.trace_id, 'SOS:', data.sosLevel);
                             continue;
                         }
 
@@ -119,30 +119,26 @@ export async function streamChat(message, history = [], onChunk, options = {}) {
                             return { sos: true, sosLevel: data.sosLevel };
                         }
 
-                        // Handle text chunks - support cả 2 format:
-                        // Format 1 (ai-proxy OpenAI): {chunk: "..."}
-                        // Format 2 (Vertex AI cũ): {type: "delta", text: "..."}
+                        // Handle text chunks từ ai-proxy.js
+                        // Format: {chunk: "..."}
                         if (data.chunk) {
                             onChunk(data.chunk);
-                        } else if (data.type === 'delta' && data.text) {
-                            onChunk(data.text);
                         }
 
-                        // Handle done - support cả 2 format:
-                        // Format 1 (ai-proxy): {done: true, fullResponse: "..."}
-                        // Format 2 (cũ): {type: "done"}
-                        if (data.done || data.type === 'done') {
+                        // Handle done signal
+                        // Format: {done: true, fullResponse: "...", riskLevel: "...", latencyMs: ...}
+                        if (data.done) {
                             return sosData;
                         }
 
                         // Handle error
-                        if (data.type === 'error' || data.error) {
-                            throw new Error(data.note || data.error || data.message);
+                        if (data.error) {
+                            throw new Error(data.message || data.error);
                         }
                     } catch (e) {
                         // Skip invalid JSON
                         if (!line.includes('[DONE]')) {
-                            console.warn('[Gemini] Parse error:', e.message);
+                            console.warn('[ChatAPI] Parse error:', e.message);
                         }
                     }
                 }
@@ -151,7 +147,7 @@ export async function streamChat(message, history = [], onChunk, options = {}) {
 
         return sosData;
     } catch (err) {
-        console.error('[Gemini] Stream error:', err);
+        console.error('[ChatAPI] Stream error:', err);
         throw err;
     }
 }
@@ -166,3 +162,6 @@ export async function chat(message, history = []) {
     });
     return result;
 }
+
+// Re-export với tên cũ cho backward compatibility
+export const isGeminiConfigured = isChatConfigured;

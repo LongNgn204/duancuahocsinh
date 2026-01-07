@@ -1,14 +1,14 @@
 // src/hooks/useVoiceAgentCF.js
-// Chú thích: Hook Voice Chat với Gemini AI
+// Chú thích: Hook Voice Chat với OpenAI ChatGPT
 // STT: SpeechRecognition (vi-VN) - chạy trên browser
 // TTS: Gemini TTS (gemini-2.5-pro-preview-tts) với fallback browser
-// LLM: Gemini API frontend streaming
+// LLM: OpenAI ChatGPT (gpt-4o-mini) qua backend
 // SOS: Phát hiện từ khóa tiêu cực và hiện cảnh báo
 
-// v9.0: Chuyển sang Gemini TTS với fallback browser SpeechSynthesis
+// v10.0: Chuyển sang OpenAI ChatGPT qua backend
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { detectSOSLevel, sosMessage, getSuggestedAction } from '../utils/sosDetector';
-import { streamChat, isGeminiConfigured } from '../services/gemini';
+import { streamChat, isChatConfigured } from '../services/chatApi';
 import { speak as geminiSpeak, stopSpeaking as geminiStop } from '../services/geminiTTS';
 
 /**
@@ -166,7 +166,7 @@ export function useVoiceAgentCF(options = {}) {
     }, []);
 
     // ========================================================================
-    // LLM CALL (Gemini Streaming)
+    // LLM CALL (OpenAI ChatGPT Streaming qua backend)
     // ========================================================================
     const sendToLLM = useCallback(async (text) => {
         // ====== SOS DETECTION - QUAN TRỌNG ======
@@ -199,8 +199,8 @@ export function useVoiceAgentCF(options = {}) {
         try {
             let fullResponse = '';
 
-            console.log('[VoiceAgent] Calling streamChat...');
-            // Gọi Gemini Streaming từ service
+            console.log('[VoiceAgent] Calling ChatGPT streamChat...');
+            // Gọi OpenAI ChatGPT Streaming từ backend
             await streamChat(
                 text,
                 [],
@@ -210,22 +210,22 @@ export function useVoiceAgentCF(options = {}) {
                 }
             );
 
-            console.log('[VoiceAgent] Gemini Response complete:', fullResponse.length, 'chars');
+            console.log('[VoiceAgent] ChatGPT Response complete:', fullResponse.length, 'chars');
 
             // Respond
             if (fullResponse) {
                 console.log('[VoiceAgent] Speaking response...');
                 speak(fullResponse);
             } else {
-                console.warn('[VoiceAgent] Empty response from Gemini');
+                console.warn('[VoiceAgent] Empty response from ChatGPT');
                 setStatus('idle');
             }
 
         } catch (err) {
-            console.error('[VoiceAgent] Gemini error:', err);
-            const errorMsg = isGeminiConfigured()
+            console.error('[VoiceAgent] ChatGPT error:', err);
+            const errorMsg = isChatConfigured()
                 ? 'Xin lỗi, mình đang gặp chút trục trặc. Bạn nói lại được không?'
-                : 'Chưa cấu hình API Key. Vui lòng kiểm tra cài đặt.';
+                : 'Chưa cấu hình OpenAI API Key ở backend.';
 
             setError(errorMsg);
             speak(errorMsg);

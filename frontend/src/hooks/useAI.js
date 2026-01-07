@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { detectSOSLevel, sosMessage, getSuggestedAction } from '../utils/sosDetector';
 import { getCurrentUser, isLoggedIn, getChatThreads, syncChatThreadsToServer } from '../utils/api';
-import { streamChat, isGeminiConfigured, filterProfanity } from '../services/gemini';
+import { streamChat, isChatConfigured, filterProfanity } from '../services/chatApi';
 import { recordActivity } from '../utils/streakService';
 
 const THREADS_KEY = 'chat_threads_v1';
@@ -220,7 +220,7 @@ export function useAI() {
     }));
   };
 
-  // Gemini được gọi trực tiếp qua streamChat() từ services/gemini.js
+  // OpenAI ChatGPT được gọi trực tiếp qua streamChat() từ services/chatApi.js
   // Không cần streamFromEndpoint nữa
 
   const sendMessage = async (text, images = []) => {
@@ -362,10 +362,10 @@ export function useAI() {
         return currentThreads; // Không thay đổi state
       });
     } catch (err) {
-      console.error('[useAI] Gemini error:', err);
-      const errorMsg = isGeminiConfigured()
+      console.error('[useAI] ChatGPT error:', err);
+      const errorMsg = isChatConfigured()
         ? 'Xin lỗi, hiện tại mình đang gặp sự cố kết nối. Bạn thử lại sau nhé.'
-        : 'Chưa cấu hình Gemini API key. Vui lòng thêm VITE_GEMINI_API_KEY vào file .env';
+        : 'Chưa cấu hình OpenAI API key ở backend.';
       const bot = { role: 'assistant', content: errorMsg, ts: nowISO() };
       setThreads((prev) => prev.map((t) => (t.id === currentId ? { ...t, messages: [...t.messages, bot], updatedAt: nowISO() } : t)));
     } finally {
