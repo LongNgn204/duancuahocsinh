@@ -247,15 +247,20 @@ export default {
       // Get RAG context (cho câu hỏi học thuật)
       const ragContext = await getRAGContext(env, redactedMessage);
 
-      // Web Search (cho thông tin mới nhất)
+      // Web Search (cho thông tin mới nhất) - wrapped để không block chat
       let webSearchContext = null;
-      if (shouldSearch(redactedMessage)) {
-        console.log('[AI] Running web search for:', redactedMessage.substring(0, 50));
-        const searchResult = await searchDuckDuckGo(redactedMessage);
-        if (searchResult) {
-          webSearchContext = formatSearchContext(searchResult);
-          console.log('[AI] Web search found results');
+      try {
+        if (shouldSearch(redactedMessage)) {
+          console.log('[AI] Running web search for:', redactedMessage.substring(0, 50));
+          const searchResult = await searchDuckDuckGo(redactedMessage);
+          if (searchResult) {
+            webSearchContext = formatSearchContext(searchResult);
+            console.log('[AI] Web search found results');
+          }
         }
+      } catch (searchError) {
+        console.warn('[AI] Web search failed, continuing without:', searchError.message);
+        // Không throw lỗi, tiếp tục chat bình thường
       }
 
       // Create memory summary nếu history dài
