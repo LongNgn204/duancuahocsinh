@@ -34,6 +34,7 @@ const preprocessLaTeX = (content) => {
     .replace(/\\\[([\s\S]*?)\\\]/g, '$$$$$1$$$$') // \[...\] -> $$...$$
     .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$')     // \(...\) -> $...$ 
     .replace(/\[\s*(\\frac.*?)\]/g, '$$$$$1$$$$')    // Fix lỗi hiển thị [ \frac... ]
+    .replace(/\\cdot(?=[a-zA-Z])/g, '\\cdot ')     // Fix lỗi \cdot dính chữ (vd: \cdotpK)
     .replace(/\n/g, '  \n'); // Markdown line break
 };
 

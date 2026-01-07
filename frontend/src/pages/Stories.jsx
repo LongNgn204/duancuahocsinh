@@ -126,14 +126,14 @@ export default function Stories() {
                             {/* Spine shadow */}
                             <div className="absolute left-0 top-0 bottom-0 w-3 bg-gradient-to-r from-black/30 to-transparent"></div>
 
-                            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white">
-                                <div className="text-6xl mb-4 filter drop-shadow-lg">{story.icon}</div>
-                                <h3 className="font-bold text-xl leading-tight drop-shadow-md mb-3">
+                            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-slate-800">
+                                <div className="text-6xl mb-4 filter drop-shadow-sm">{story.icon}</div>
+                                <h3 className="font-bold text-xl leading-tight mb-3">
                                     {story.title}
                                 </h3>
 
                                 {/* Metadata */}
-                                <div className="flex items-center gap-3 text-white/80 text-sm">
+                                <div className="flex items-center gap-3 text-slate-600 text-sm">
                                     <span className="flex items-center gap-1">
                                         <Clock size={14} />
                                         {story.readingTime}
