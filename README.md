@@ -2,277 +2,273 @@
   <img src="./Thiết kế chưa có tên.png" alt="Bạn Đồng Hành Logo" width="180"/>
 </p>
 
-<h1 align="center">Bạn Đồng Hành</h1>
+<h1 align="center">Bạn Đồng Hành (The Companion)</h1>
 
 <p align="center">
-  <strong>Nền tảng hỗ trợ sức khỏe tinh thần dành cho học sinh Việt Nam</strong>
+  <strong>Nền tảng hỗ trợ sức khỏe tinh thần toàn diện dành cho học sinh Việt Nam 🇻🇳</strong>
 </p>
 
 <p align="center">
-  <a href="https://bandonghanh.pages.dev">🌐 Demo trực tuyến</a> |
-  <a href="#tính-năng-chính">✨ Tính năng</a> |
-  <a href="#công-nghệ-sử-dụng">🛠 Công nghệ</a> |
-  <a href="#cài-đặt">📦 Cài đặt</a>
+  <a href="https://bandonghanh.pages.dev">🌐 Demo Trực Tuyến</a> |
+  <a href="#-tính-năng-nổi-bật">✨ Tính Năng</a> |
+  <a href="#-kiến-trúc--luồng-hoạt-động">🏗 Kiến Trúc</a> |
+  <a href="#-hướng-dẫn-cài-đặt">📦 Cài Đặt</a>
 </p>
 
 ---
 
 ## 📌 Giới thiệu
 
-**Bạn Đồng Hành** là ứng dụng web **miễn phí** giúp học sinh Việt Nam (12-18 tuổi) chăm sóc sức khỏe tinh thần, xây dựng thói quen tích cực và nhận được hỗ trợ khi cần thiết.
+**Bạn Đồng Hành** là một ứng dụng web Progressive Web App (PWA) được thiết kế đặc biệt cho lứa tuổi vị thành niên (12-18 tuổi). Dự án kết hợp công nghệ AI tiên tiến với các phương pháp tâm lý học tích cực để tạo ra một không gian an toàn, nơi các bạn trẻ có thể chia sẻ, học hỏi và chữa lành.
 
-### Sứ mệnh
+### Sứ mệnh cốt lõi
 
-| Mục tiêu | Mô tả |
-|----------|-------|
-| 💭 **Chăm sóc tinh thần** | Bài tập thư giãn, thiền định và kỹ thuật thở |
-| 🌟 **Tư duy tích cực** | Ghi nhận biết ơn, động viên hàng ngày |
-| 🎮 **Giảm căng thẳng** | Trò chơi giáo dục vui nhộn |
-| 🤖 **Hỗ trợ 24/7** | Chatbot AI với thông tin cập nhật |
-| 🆘 **Bảo vệ an toàn** | Hệ thống SOS phát hiện dấu hiệu tiêu cực |
+> "Không ai phải lớn lên một mình."
 
----
-
-## ✨ Tính năng chính
-
-### 1. 💬 Trợ lý AI (Chat Assistant)
-
-- **Chat văn bản** với AI hỗ trợ tâm lý
-- **Web Search tích hợp** - DuckDuckGo cho thông tin mới nhất
-- **Speech-to-Text** nhận diện giọng nói tiếng Việt
-- **Phát hiện SOS** tự động khi nhập từ khóa tiêu cực
-- **Đồng bộ đám mây** lưu trữ lịch sử hội thoại
-
-### 2. 🧘 Góc An Yên (Peace Corner)
-
-- **Bài tập thở** đa chế độ: Bong bóng nhiệm màu, Chạm vào hiện tại, Ô cửa thần kỳ
-- **Animation mượt mà** với hướng dẫn trực quan
-- **Bộ thẻ An Yên** - thẻ động viên và bài tập nhỏ
-- **Nhạc nền** thiên nhiên thư giãn
-
-### 3. 📖 Kể Chuyện (Stories)
-
-- **Thư viện truyện** với bài học cuộc sống
-- **Chế độ đọc immersive** toàn màn hình
-- **Theme** Light / Sepia
-
-### 4. 🎮 Trò Chơi Giáo Dục
-
-| Game | Mô tả |
-|------|-------|
-| **Ong Tập Bay** | Rèn luyện khả năng tập trung |
-| **Phản Xạ** | Luyện phản xạ nhanh |
-| **Ghép Màu** | Nhận diện màu sắc |
-| **Vẽ Tự Do** | Canvas vẽ thư giãn |
-| **Bắn Bong Bóng** | Pop bubbles giảm stress |
-
-### 5. 💚 Lọ Biết Ơn (Gratitude Jar)
-
-- **Viết biết ơn** mỗi ngày
-- **Streak counter** theo dõi chuỗi ngày
-- **Lịch sử 30 ngày** với sparkline chart
-
-### 6. 🆘 Hỗ Trợ Khẩn Cấp (SOS)
-
-- **Phát hiện tự động** từ khóa tiêu cực
-- **Hotline 24/7** hiển thị ngay lập tức
-- **Bản đồ bệnh viện** gần nhất
+| Trụ cột | Mô tả |
+|---------|-------|
+| 🧠 **Thấu hiểu** | AI Mentor lắng nghe và thấu cảm không phán xét |
+| ❤️ **Chữa lành** | Các bài tập thở, thiền và viết nhật ký biết ơn |
+| 🛡️ **Bảo vệ** | Hệ thống phát hiện sớm dấu hiệu rủi ro (SOS) |
+| 🌱 **Phát triển** | Thư viện kiến thức kỹ năng sống và hướng nghiệp |
 
 ---
 
-## 🏗 Kiến trúc hệ thống
+## ✨ Tính năng nổi bật
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      USER BROWSER                            │
-└──────────────────────────┬──────────────────────────────────┘
-                           │
-         ┌─────────────────┼─────────────────┐
-         │                 │                 │
-         ▼                 ▼                 ▼
-┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
-│    Frontend     │ │  Backend API    │ │  DuckDuckGo     │
-│  React + Vite   │ │  Cloudflare     │ │  Search API     │
-│                 │ │  Workers        │ │  (Free)         │
-│ - UI/UX         │ │                 │ │                 │
-│ - State mgmt    │─▶│ - AI Chat      │─▶│ - Web Search   │
-│ - STT (Web API) │ │ - Auth          │ │                 │
-└─────────────────┘ │ - Data sync     │ └─────────────────┘
-                    └────────┬────────┘
-                             │
-                    ┌────────▼────────┐    ┌─────────────────┐
-                    │  Cloudflare D1  │    │   OpenRouter    │
-                    │   (SQLite)      │    │   (AI API)      │
-                    │                 │    │                 │
-                    │ - Users         │    │ - xiaomi/mimo   │
-                    │ - Chat threads  │    │   -v2-flash     │
-                    │ - Gratitude     │    │   (FREE)        │
-                    └─────────────────┘    └─────────────────┘
+### 1. 🤖 AI Mentor (Trợ lý ảo thông minh)
+- **Chat & Voice:** Trò chuyện bằng văn bản hoặc giọng nói tiếng Việt tự nhiên.
+- **Real-time Context:** AI nhớ ngữ cảnh hội thoại và cá nhân hóa phản hồi.
+- **Safety First:** Cơ chế kiểm duyệt nội dung độc hại và phát hiện SOS đa tầng.
+
+### 2. 📊 Real-time Dashboard
+- **Streak:** Theo dõi chuỗi ngày điểm danh liên tục.
+- **Chat Stats:** Thống kê số lượng tương tác thực tế với AI.
+- **Biểu đồ cảm xúc:** Theo dõi biến động tâm trạng theo tuần.
+
+### 3. 🧠 Góc Kiến Thức (Knowledge Hub)
+- **Thư viện bài viết:** 15+ chủ đề từ tâm lý, tình yêu tuổi học trò đến hướng nghiệp (Ikigai) và tài chính cá nhân.
+- **Responsive UI:** Trải nghiệm đọc mượt mà trên mọi thiết bị với chế độ Focus Mode.
+
+### 4. 🧘 Wellness Center (Trung tâm an yên)
+- **Bài tập thở:** 4-7-8, Box Breathing với hướng dẫn visual sinh động.
+- **Lọ Biết Ơn:** Ghi lại những điều tích cực nhỏ bé mỗi ngày.
+- **Góc Nhỏ:** Đồng hồ Pomodoro và âm thanh thiên nhiên giúp tập trung.
+
+### 5. 🎮 Game Therapy (Trị liệu qua trò chơi)
+- **Color Match:** Rèn luyện phản xạ và nhận diện màu sắc.
+- **Bubble Pop:** Xả stress bằng cách đập bong bóng ảo.
+- **Memory Flip:** Luyện trí nhớ ngắn hạn.
+
+---
+
+## 🏗 Kiến trúc & Luồng hoạt động
+
+### System Architecture
+
+```mermaid
+graph TD
+    User[User Device 📱/💻] -->|HTTPS| Cloudflare[Cloudflare Edge Network ☁️]
+    
+    subgraph Frontend [React SPA]
+        UI[User Interface]
+        State[Global State (Context)]
+        Cache[Local Storage]
+    end
+    
+    subgraph Backend [Cloudflare Workers]
+        Router[API Router]
+        Auth[Auth Service]
+        AI[AI Proxy Service]
+        Risk[Risk Engine (SOS)]
+        Data[Data Service]
+    end
+    
+    subgraph Database [Cloudflare D1]
+        DB[(SQLite DB)]
+    end
+    
+    subgraph External_APIs [External Services]
+        OpenRouter[OpenRouter AI API]
+        DDG[DuckDuckGo Search]
+    end
+    
+    Cloudflare --> Frontend
+    Cloudflare --> Backend
+    
+    UI <--> State
+    State <--> Router
+    
+    Router --> Auth
+    Router --> AI
+    Router --> Data
+    
+    Auth <--> DB
+    Data <--> DB
+    
+    AI --> Risk
+    AI --> DDG
+    AI --> OpenRouter
 ```
 
-### Luồng xử lý AI Chat
+### Authentication Flow
 
-```
-User Message → Backend AI Proxy → Web Search (nếu cần) → OpenRouter LLM → Response
+```mermaid
+sequenceDiagram
+    participant User
+    participant FE as Frontend
+    participant BE as Backend Worker
+    participant DB as D1 Database
+    
+    User->>FE: Nhập Username/Password
+    FE->>BE: POST /api/auth/login
+    BE->>DB: SELECT user
+    DB-->>BE: User Data (Hash)
+    BE->>BE: Verify Password (Bcrypt)
+    alt Valid
+        BE->>DB: UPDATE last_login
+        BE->>BE: Calculate Stats (Streak/Chats)
+        BE-->>FE: Success + User Info + Real Stats
+        FE->>FE: Update Context & LocalStorage
+    else Invalid
+        BE-->>FE: Error 401
+    end
 ```
 
-| Bước | Mô tả |
-|------|-------|
-| 1 | User nhập text hoặc nói (STT) |
-| 2 | Frontend gửi tới Backend API |
-| 3 | Backend kiểm tra SOS, PII redaction |
-| 4 | Gọi DuckDuckGo Search (nếu cần thông tin mới) |
-| 5 | Gọi OpenRouter với model miễn phí |
-| 6 | Streaming response về frontend |
+### AI Chat Flow (with Data Sync)
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant FE as Frontend
+    participant BE as Backend
+    participant AI as OpenRouter
+    participant DB as D1 DB
+
+    User->>FE: Gửi tin nhắn
+    FE->>BE: POST /api/ai/chat (Stream)
+    BE->>BE: Check SOS & Profanity
+    BE->>AI: Request Completion
+    AI-->>BE: SSE Stream Response
+    BE-->>FE: SSE Stream Response
+    FE->>FE: Hiển thị dần tin nhắn
+    
+    Note over FE, DB: Auto Sync Process
+    FE->>BE: POST /api/data/chat/messages (Background)
+    BE->>DB: INSERT chat_messages
+    BE->>DB: UPDATE chat_threads
+    BE-->>FE: Sync Success
+```
 
 ---
 
 ## 🛠 Công nghệ sử dụng
 
-### Tech Stack
-
-| Layer | Công nghệ |
-|-------|-----------|
-| **Frontend** | React 19, Vite 6, Tailwind CSS 4, Framer Motion |
-| **Routing** | React Router 7 |
-| **AI Chat** | OpenRouter API (xiaomi/mimo-v2-flash:free) |
-| **Web Search** | DuckDuckGo Instant Answer API (Free) |
-| **STT** | Web Speech API (browser native) |
-| **Backend** | Cloudflare Workers |
-| **Database** | Cloudflare D1 (SQLite) |
-| **Hosting** | Cloudflare Pages + Workers |
-
-### API Flow
-
-```
-Frontend ──▶ Backend Worker ──▶ OpenRouter (AI)
-                    │
-                    └──▶ DuckDuckGo (Search)
-```
+| Lĩnh vực | Công nghệ |
+|----------|-----------|
+| **Frontend Core** | React 18, Vite 6 |
+| **Styling** | Tailwind CSS 4, Framer Motion (Animations) |
+| **State Management** | React Context API, Custom Hooks |
+| **Markdown & Math** | React Markdown, KaTeX, Remark/Rehype |
+| **Backend** | Cloudflare Workers (Serverless) |
+| **Database** | Cloudflare D1 (Distributed SQLite) |
+| **AI Integration** | OpenRouter API (Gemini/Mistral/Llama) |
+| **Search Engine** | DuckDuckGo Instant Answer API |
+| **Deployment** | Cloudflare Pages |
 
 ---
 
-## 📁 Cấu trúc dự án
+## 📁 Cấu trúc thư mục
 
 ```
 duancuahocsinh/
 ├── frontend/                 # React Application
 │   ├── src/
-│   │   ├── components/       # UI Components
-│   │   ├── pages/            # Page components
-│   │   ├── services/         # API Services
-│   │   │   └── chatApi.js    # Chat API (OpenRouter via backend)
-│   │   ├── hooks/            # Custom Hooks
-│   │   └── utils/            # Utility functions
-│   └── public/               # Static assets
+│   │   ├── components/       # Reusable UI Blocks
+│   │   │   ├── layout/       # Sidebar, Header, etc.
+│   │   │   ├── ui/           # Buttons, Cards, Inputs
+│   │   │   └── games/        # Game Components
+│   │   ├── pages/            # Main Screens (Dashboard, Chat, KnowledgeHub...)
+│   │   ├── services/         # API Integration Logic
+│   │   ├── hooks/            # Custom Hooks (useAI, useAuth)
+│   │   ├── data/             # Static Contents (Articles, Quotes)
+│   │   └── utils/            # Helpers
+│   └── public/               # Assets
 │
-├── backend/                  # Cloudflare Workers
-│   └── workers/
-│       ├── router.js         # Main entry point
-│       ├── ai-proxy.js       # AI Chat handler (OpenRouter)
-│       ├── web-search.js     # DuckDuckGo Search
-│       ├── auth.js           # Authentication
-│       ├── risk.js           # SOS Detection
-│       └── data-api.js       # User data sync
+├── backend/                  # Serverless Backend
+│   ├── workers/
+│   │   ├── router.js         # API Entry Point
+│   │   ├── auth.js           # Login/Register Logic
+│   │   ├── ai-proxy.js       # AI Handling & Prompt Engineering
+│   │   ├── data-api.js       # CRUD Operations
+│   │   └── schema.sql        # Database Structure
+│   └── wrangler.toml         # Cloudflare Config
 │
-└── README.md
+└── README.md                 # Project Documentation
 ```
 
 ---
 
-## 📦 Cài đặt
+## 📦 Hướng dẫn cài đặt
 
-### Yêu cầu
+### Yêu cầu tiên quyết
+- Node.js 18.x trở lên
+- Tài khoản Cloudflare (để deploy backend)
 
-- **Node.js** 18+
-- **npm** hoặc **pnpm**
-- **Wrangler CLI** (cho backend)
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-
-# Tạo file .env
-echo "VITE_API_URL=https://ban-dong-hanh-worker.stu725114073.workers.dev" > .env
-
-# Chạy development
-npm run dev
-```
-
-### Backend
+### 1. Setup Backend (Cloudflare Workers)
 
 ```bash
 cd backend
 npm install
 
-# Set OpenRouter API Key
-npx wrangler secret put OPENROUTER_API_KEY
+# Login vào Cloudflare
+npx wrangler login
 
-# Deploy
-npm run deploy
+# Tạo database D1
+npx wrangler d1 create ban_dong_hanh_db
+
+# Chạy migration để tạo bảng
+npx wrangler d1 execute ban_dong_hanh_db --local --file=./workers/schema.sql
+
+# Start local server
+npm run dev
 ```
 
-### Environment Variables
-
-| Biến | Mô tả |
-|------|-------|
-| `VITE_API_URL` | URL Backend Worker |
-| `OPENROUTER_API_KEY` | OpenRouter API Key (backend secret) |
-
----
-
-## 🔐 Bảo mật
-
-| Tính năng | Mô tả |
-|-----------|-------|
-| **PII Redaction** | Tự động ẩn thông tin cá nhân |
-| **SOS Detection** | Phát hiện và chặn nội dung tiêu cực |
-| **HTTPS Only** | Mọi kết nối được mã hóa |
-| **No API Key Exposed** | API keys được lưu ở backend |
-
----
-
-## 🤝 Đóng góp
+### 2. Setup Frontend
 
 ```bash
-# 1. Fork repository
-# 2. Tạo branch mới
-git checkout -b feature/ten-tinh-nang
+cd frontend
+npm install
 
-# 3. Commit thay đổi
-git commit -m "feat: Thêm tính năng XYZ"
+# Tạo file .env.local
+echo "VITE_API_URL=http://localhost:8787" > .env.local
 
-# 4. Push và tạo Pull Request
-git push origin feature/ten-tinh-nang
+# Start dev server
+npm run dev
 ```
 
-### Guidelines
-
-- **Comments tiếng Việt** - Giải thích code bằng tiếng Việt
-- **Conventional Commits** - feat, fix, docs, refactor...
-- **ESLint + Prettier** - Tuân thủ linting rules
+Truy cập `http://localhost:5173` để trải nghiệm ứng dụng!
 
 ---
 
-## 📞 Liên hệ
+## 🤝 Đóng góp (Contributing)
 
-| Kênh | Thông tin |
-|------|-----------|
-| **Email** | stu725114073@hnue.edu.vn |
-| **Website** | https://bandonghanh.pages.dev |
-| **Issues** | https://github.com/LongNgn204/duancuahocsinh/issues |
+Chúng tôi luôn hoan nghênh mọi sự đóng góp để dự án ngày càng hoàn thiện hơn cho cộng đồng học sinh Việt Nam.
+
+1.  **Fork** dự án này.
+2.  Tạo branch tính năng mới (`git checkout -b feature/AmazingFeature`).
+3.  Commit thay đổi (`git commit -m 'Add some AmazingFeature'`).
+4.  Push lên branch (`git push origin feature/AmazingFeature`).
+5.  Mở một **Pull Request**.
 
 ---
 
 ## 📄 License
 
-Dự án được phát hành dưới giấy phép **MIT License**.
+Dự án thuộc về **LongNgn204** và được chia sẻ dưới giấy phép [MIT License](LICENSE).
 
 ---
 
 <p align="center">
-  Made with ❤️ for Vietnamese students<br/>
-  <strong>Bạn Đồng Hành</strong> - 2025
+  Made with ❤️ & ☕ by <strong>Team Bạn Đồng Hành</strong>
 </p>

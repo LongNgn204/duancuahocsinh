@@ -169,7 +169,7 @@ export default function PeaceCorner() {
         }
 
         return () => clearTimeout(phaseTimeoutRef.current);
-    }, [isRunning, currentMode, phase]);
+    }, [isRunning, currentMode]);
 
     // Chú thích: Logic cho bài tập GROUNDING và OBSERVATION (5 bước)
     useEffect(() => {
@@ -205,7 +205,7 @@ export default function PeaceCorner() {
         }
 
         return () => clearTimeout(stepTimeoutRef.current);
-    }, [isRunning, currentMode, phase, stepDuration]);
+    }, [isRunning, currentMode, stepDuration]);
 
     // TTS Helper - DISABLED (sẽ thêm audio sau)
     const speak = (text) => {
