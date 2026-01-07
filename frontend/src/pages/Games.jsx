@@ -153,28 +153,28 @@ export default function Games() {
                     ))}
                 </motion.div>
 
-                {/* Tip Banner */}
+                {/* Tip Banner - Pastel colors */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
-                    className="bg-indigo-600 rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl shadow-indigo-500/30"
+                    className="bg-gradient-to-r from-violet-100 to-purple-100 rounded-3xl p-8 relative overflow-hidden shadow-lg border border-violet-200"
                 >
                     <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
-                        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center shrink-0">
-                            <Sparkles size={32} />
+                        <div className="w-16 h-16 bg-violet-200 rounded-full flex items-center justify-center shrink-0">
+                            <Sparkles size={32} className="text-violet-600" />
                         </div>
                         <div>
-                            <h3 className="text-2xl font-bold mb-2">Chơi vui nhưng đừng quên giờ giấc nhé!</h3>
-                            <p className="text-indigo-100 text-lg">
+                            <h3 className="text-2xl font-bold mb-2 text-violet-800">Chơi vui nhưng đừng quên giờ giấc nhé!</h3>
+                            <p className="text-violet-600 text-lg">
                                 Nên chơi khoảng 15 phút để thư giãn mắt và tinh thần.
                             </p>
                         </div>
                     </div>
 
                     {/* Decor */}
-                    <div className="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
-                    <div className="absolute bottom-0 left-0 -ml-10 -mb-10 w-40 h-40 bg-pink-500/20 rounded-full blur-2xl" />
+                    <div className="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 bg-violet-200/50 rounded-full blur-2xl" />
+                    <div className="absolute bottom-0 left-0 -ml-10 -mb-10 w-40 h-40 bg-pink-200/50 rounded-full blur-2xl" />
                 </motion.div>
             </div>
         </div>

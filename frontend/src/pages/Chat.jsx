@@ -27,6 +27,16 @@ function formatTime(ts) {
   } catch (_) { return ''; }
 }
 
+// Hàm tiền xử lý LaTeX chuẩn hóa
+const preprocessLaTeX = (content) => {
+  if (typeof content !== 'string') return '';
+  return content
+    .replace(/\\\[([\s\S]*?)\\\]/g, '$$$$$1$$$$') // \[...\] -> $$...$$
+    .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$')     // \(...\) -> $...$ 
+    .replace(/\[\s*(\\frac.*?)\]/g, '$$$$$1$$$$')    // Fix lỗi hiển thị [ \frac... ]
+    .replace(/\n/g, '  \n'); // Markdown line break
+};
+
 // CSS Keyframe cho animation message mới
 const fadeInUpStyle = `
 @keyframes fadeInUp {
@@ -74,12 +84,20 @@ const Bubble = React.memo(function Bubble({ role, children, ts, isUser, onRead, 
             : 'bg-white text-slate-700 rounded-tl-md border border-slate-100 shadow-sm'
           }
         `}>
-          <div className={`text-[15px] md:text-base leading-relaxed prose prose-sm max-w-none prose-slate`}>
+          <div className={`text-[15px] md:text-base leading-relaxed prose prose-sm max-w-none prose-slate prose-p:my-1 prose-pre:my-2 prose-blockquote:my-2`}>
             <ReactMarkdown
               remarkPlugins={[remarkGfm, remarkMath]}
               rehypePlugins={[rehypeKatex]}
+              components={{
+                p: ({ node, ...props }) => <p className="mb-2 last:mb-0" {...props} />,
+                code: ({ node, inline, className, children, ...props }) => {
+                  return inline ?
+                    <code className="bg-slate-100 px-1 py-0.5 rounded text-sm font-mono text-slate-800" {...props}>{children}</code> :
+                    <code className="block bg-slate-800 text-slate-50 p-3 rounded-lg text-sm overflow-x-auto my-2" {...props}>{children}</code>
+                }
+              }}
             >
-              {String(children).replace(/\n/g, '  \n')}
+              {preprocessLaTeX(children)}
             </ReactMarkdown>
           </div>
         </div>

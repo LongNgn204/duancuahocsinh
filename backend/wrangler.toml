@@ -33,7 +33,7 @@ renamed_classes = [{ from = "VoiceCallSession", to = "VoiceCallSessionOpenAI" }]
 
 [vars]
 # CORS origin allow-list
-ALLOW_ORIGIN = "http://localhost:5173,https://duancuahocsinh.pages.dev,*.bandonghanh.pages.dev"
+ALLOW_ORIGIN = "http://localhost:5173,http://localhost:5174,https://duancuahocsinh.pages.dev,*.bandonghanh.pages.dev"
 # Workers AI model (chỉ dùng cho embeddings, KHÔNG dùng cho chat)
 # Chat sử dụng OpenRouter (set via: wrangler secret put OPENROUTER_API_KEY)
 MODEL = "mistralai/devstral-2512:free"

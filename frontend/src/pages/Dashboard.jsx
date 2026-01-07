@@ -12,6 +12,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useSound } from '../contexts/SoundContext';
 // Import streak service thay vì định nghĩa local
 import { getStreak, getLoginHistory, generateWeeklyProgress, getTodayString, recordActivity } from '../utils/streakService';
+import { addCheckin, isLoggedIn } from '../utils/api';
 
 // Châm ngôn cuộc sống
 const lifeQuotes = [
@@ -116,7 +117,7 @@ function getVietnameseDate() {
 }
 
 export default function Dashboard() {
-    const { user } = useAuth();
+    const { user, refreshUser } = useAuth();
     const { playSound } = useSound();
     const greeting = getGreeting();
     const vietnameseDate = getVietnameseDate();
@@ -143,10 +144,11 @@ export default function Dashboard() {
     // Calculate completed days this week
     const completedDays = weeklyProgress.filter(d => d.completed).length;
 
-    // User stats with real streak
+    // User stats with real streak from Backend preference
     const userStats = {
-        streak: streak,
-        chatCount: user?.chat_count || 0,
+        // Ưu tiên lấy từ backend (user.stats) để có dữ liệu thực tế nhất
+        streak: user?.stats?.streak ?? streak,
+        chatCount: user?.stats?.chatCount ?? (user?.chat_count || 0),
         xp: user?.xp || 100,
         level: user?.level || 1
     };
@@ -180,6 +182,9 @@ export default function Dashboard() {
         // recordActivity trả về lịch sử đã cập nhật, đảm bảo hôm nay được tính
         const updatedHistory = recordActivity('dashboard_visit');
         setLoginHistory(updatedHistory);
+
+        // Refresh user data from server (stats)
+        if (user) refreshUser();
 
         // Tính streak từ lịch sử đã cập nhật
         const currentStreak = getStreak();
@@ -245,7 +250,7 @@ export default function Dashboard() {
                                         <MessageSquare size={16} className="text-blue-500 sm:w-[18px] sm:h-[18px]" />
                                         <span className="text-xl sm:text-2xl font-bold text-slate-800">{userStats.chatCount}</span>
                                     </div>
-                                    <p className="text-[10px] sm:text-xs text-slate-500">Cuộc chat</p>
+                                    <p className="text-[10px] sm:text-xs text-slate-500">Cuộc trò chuyện</p>
                                 </div>
                                 <div className="w-px h-6 sm:h-8 bg-pink-200 flex-shrink-0" />
                                 <div className="text-center flex-shrink-0">
@@ -341,9 +346,47 @@ export default function Dashboard() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
                 >
-                    <div className="flex items-center gap-3 mb-4">
-                        <TrendingUp size={20} className="text-emerald-600" />
-                        <h2 className="text-xl font-bold text-slate-900">Tiến độ tuần này</h2>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                            <TrendingUp size={20} className="text-emerald-600" />
+                            <h2 className="text-xl font-bold text-slate-900">Tiến độ tuần này</h2>
+                        </div>
+
+                        {/* Nút điểm danh thủ công */}
+                        {!weeklyProgress.find(d => d.current && d.completed) && (
+                            <motion.button
+                                onClick={async () => {
+                                    playSound('pop');
+                                    // 1. Lưu local trước để UI update ngay
+                                    const updated = recordActivity('manual_checkin');
+                                    setLoginHistory(updated);
+                                    setStreak(getStreak());
+                                    setWeeklyProgress(generateWeeklyProgress());
+
+                                    // 2. Sync lên server (nếu đã đăng nhập)
+                                    if (isLoggedIn()) {
+                                        try {
+                                            await addCheckin('manual');
+                                            console.log('[Dashboard] Checkin synced to server');
+                                        } catch (err) {
+                                            console.warn('[Dashboard] Failed to sync checkin:', err.message);
+                                        }
+                                    }
+                                }}
+                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-400 to-green-500 text-white text-sm font-medium rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all"
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                <CheckCircle2 size={16} />
+                                Điểm danh
+                            </motion.button>
+                        )}
+
+                        {weeklyProgress.find(d => d.current && d.completed) && (
+                            <span className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-700 text-sm font-medium rounded-xl">
+                                <CheckCircle2 size={16} />
+                                Đã điểm danh ✓
+                            </span>
+                        )}
                     </div>
 
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">

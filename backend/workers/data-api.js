@@ -489,6 +489,113 @@ export async function unlockAchievement(request, env) {
 }
 
 // =============================================================================
+// CHECK-IN ENDPOINTS (Điểm danh hàng ngày)
+// =============================================================================
+
+/**
+ * GET /api/data/checkins - Lấy lịch sử điểm danh (90 ngày gần nhất)
+ * Query params: ?days=90
+ */
+export async function getCheckins(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    const url = new URL(request.url);
+    const days = Math.min(parseInt(url.searchParams.get('days') || '90'), 365);
+
+    try {
+        // Lấy điểm danh trong N ngày gần nhất
+        const result = await env.ban_dong_hanh_db.prepare(`
+            SELECT DATE(created_at) as date, activity_type 
+            FROM checkins 
+            WHERE user_id = ? AND created_at >= datetime('now', '-' || ? || ' days')
+            ORDER BY date DESC
+        `).bind(userId, days).all();
+
+        // Convert to array of dates
+        const dates = result.results.map(r => r.date);
+        const uniqueDates = [...new Set(dates)];
+
+        return json({
+            items: result.results,
+            dates: uniqueDates,
+            count: uniqueDates.length
+        });
+    } catch (error) {
+        console.error('[Data] getCheckins error:', error.message);
+        // Table might not exist yet
+        if (error.message.includes('no such table')) {
+            return json({ items: [], dates: [], count: 0 });
+        }
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+/**
+ * POST /api/data/checkins - Điểm danh hôm nay
+ * Body: { activity_type?: string } - loại hoạt động (manual, login, chat...)
+ */
+export async function addCheckin(request, env) {
+    const userId = getUserId(request);
+    if (!userId) return json({ error: 'not_authenticated' }, 401);
+
+    try {
+        const body = await request.json().catch(() => ({}));
+        const activityType = body.activity_type || 'manual';
+        const today = new Date().toISOString().split('T')[0];
+
+        // Check xem hôm nay đã check-in chưa
+        const existing = await env.ban_dong_hanh_db.prepare(`
+            SELECT id FROM checkins 
+            WHERE user_id = ? AND DATE(created_at) = ?
+        `).bind(userId, today).first();
+
+        if (existing) {
+            return json({ success: true, alreadyCheckedIn: true, date: today });
+        }
+
+        // Insert new check-in
+        const result = await env.ban_dong_hanh_db.prepare(`
+            INSERT INTO checkins (user_id, activity_type) 
+            VALUES (?, ?) 
+            RETURNING id, DATE(created_at) as date, activity_type
+        `).bind(userId, activityType).first();
+
+        return json({ success: true, item: result, newCheckin: true }, 201);
+    } catch (error) {
+        console.error('[Data] addCheckin error:', error.message);
+        // Create table if not exists
+        if (error.message.includes('no such table')) {
+            try {
+                await env.ban_dong_hanh_db.prepare(`
+                    CREATE TABLE IF NOT EXISTS checkins (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        activity_type TEXT DEFAULT 'manual',
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                    )
+                `).run();
+                // Create index
+                await env.ban_dong_hanh_db.prepare(`
+                    CREATE INDEX IF NOT EXISTS idx_checkins_user_date ON checkins(user_id, DATE(created_at))
+                `).run();
+                // Retry insert
+                const result = await env.ban_dong_hanh_db.prepare(`
+                    INSERT INTO checkins (user_id, activity_type) 
+                    VALUES (?, ?) 
+                    RETURNING id, DATE(created_at) as date, activity_type
+                `).bind(userId, 'manual').first();
+                return json({ success: true, item: result, newCheckin: true, tableCreated: true }, 201);
+            } catch (createError) {
+                console.error('[Data] Failed to create checkins table:', createError.message);
+            }
+        }
+        return json({ error: 'server_error' }, 500);
+    }
+}
+
+// =============================================================================
 // STATS ENDPOINT
 // =============================================================================
 

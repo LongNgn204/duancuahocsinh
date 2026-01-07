@@ -19,6 +19,7 @@ import {
     getBreathingSessions, addBreathingSession,
     getSleepLogs, addSleepLog, deleteSleepLog, updateSleepLog,
     getAchievements, unlockAchievement,
+    getCheckins, addCheckin, // Check-in/Điểm danh
     getStats, exportData, importData,
     // Phase 1 additions
     getGameScores, addGameScore,
@@ -179,6 +180,10 @@ function matchRoute(pathname, method) {
     // Data routes - User Stats / Gamification
     if (pathname === '/api/data/user-stats' && method === 'GET') return 'data:user-stats:get';
     if (pathname === '/api/data/user-stats/add-xp' && method === 'POST') return 'data:user-stats:xp';
+
+    // Data routes - Check-in / Điểm danh
+    if (pathname === '/api/data/checkins' && method === 'GET') return 'data:checkins:list';
+    if (pathname === '/api/data/checkins' && method === 'POST') return 'data:checkins:add';
 
     // Data routes - Bookmarks
     if (pathname === '/api/data/bookmarks' && method === 'GET') return 'data:bookmarks:list';
@@ -464,6 +469,14 @@ export default {
                     break;
                 case 'data:user-stats:xp':
                     response = await addUserXP(request, env);
+                    break;
+
+                // Check-in / Điểm danh endpoints
+                case 'data:checkins:list':
+                    response = await getCheckins(request, env);
+                    break;
+                case 'data:checkins:add':
+                    response = await addCheckin(request, env);
                     break;
 
                 // Bookmarks endpoints

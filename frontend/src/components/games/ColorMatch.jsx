@@ -2,12 +2,13 @@
 // Chú thích: Color Match v1.0 - Memory game với các cặp màu sắc
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
 import GlowOrbs from '../ui/GlowOrbs';
 import {
-    Play, RotateCcw, Trophy, Brain, Timer, Sparkles, Star
+    Play, RotateCcw, Trophy, Brain, Timer, Sparkles, Star, ArrowLeft
 } from 'lucide-react';
 import { isLoggedIn, saveGameScore, rewardXP } from '../../utils/api';
 
@@ -180,12 +181,17 @@ export default function ColorMatch() {
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                 >
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-                            <Brain className="w-8 h-8 text-[--brand]" />
-                            <span className="gradient-text">Ghép Màu</span>
-                        </h1>
-                        <p className="text-[--muted] text-sm mt-1">Tìm các cặp màu giống nhau</p>
+                    <div className="flex items-center gap-3">
+                        <Link to="/games" className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 transition-colors shadow-sm">
+                            <ArrowLeft size={20} className="text-slate-600" />
+                        </Link>
+                        <div>
+                            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold flex items-center gap-2 sm:gap-3">
+                                <Brain className="w-6 h-6 sm:w-8 sm:h-8 text-[--brand]" />
+                                <span className="gradient-text">Ghép Màu</span>
+                            </h1>
+                            <p className="text-[--muted] text-sm mt-1 hidden sm:block">Tìm các cặp màu giống nhau</p>
+                        </div>
                     </div>
 
                     {stats.bestTime && (

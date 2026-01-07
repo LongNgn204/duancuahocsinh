@@ -971,6 +971,31 @@ export async function addUserXP(xp, source) {
 }
 
 // =============================================================================
+// DATA API - CHECK-INS / ĐIỂM DANH
+// =============================================================================
+
+/**
+ * Lấy lịch sử điểm danh
+ * @param {number} days - Số ngày gần nhất (max 365)
+ * @returns {Promise<{items: Array, dates: string[], count: number}>}
+ */
+export async function getCheckins(days = 90) {
+    return apiRequest(`/api/data/checkins?days=${days}`);
+}
+
+/**
+ * Điểm danh hôm nay
+ * @param {string} activityType - Loại hoạt động: 'manual', 'login', 'chat', 'breathing'...
+ * @returns {Promise<{success: boolean, newCheckin?: boolean, alreadyCheckedIn?: boolean}>}
+ */
+export async function addCheckin(activityType = 'manual') {
+    return apiRequest('/api/data/checkins', {
+        method: 'POST',
+        body: JSON.stringify({ activity_type: activityType }),
+    });
+}
+
+// =============================================================================
 // XP REWARDS CONFIG (frontend-side)
 // =============================================================================
 export const XP_REWARDS = {

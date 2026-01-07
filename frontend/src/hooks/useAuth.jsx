@@ -62,12 +62,25 @@ export function AuthProvider({ children }) {
         setShowAuthModal(false);
     }, []);
 
+    const refreshUser = useCallback(async () => {
+        try {
+            const data = await getMe();
+            if (data.user) {
+                setUser(data.user);
+                setCurrentUser(data.user);
+            }
+        } catch (err) {
+            console.warn('[Auth] Refresh user failed:', err);
+        }
+    }, []);
+
     const value = {
         user,
         isLoggedIn: !!user,
         loading,
         login,
         logout,
+        refreshUser,
         showAuthModal,
         openAuthModal,
         closeAuthModal,

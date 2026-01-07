@@ -22,13 +22,13 @@ const GROUNDING_STEPS = [
     { number: 1, sense: 'NẾM', emoji: '👅', icon: Cherry, examples: 'vị ngọt của trà, vị thanh của nước lọc', color: 'bg-purple-100 border-purple-300' },
 ];
 
-// Chú thích: Bài tập "Ô cửa thần kỳ" - observation exercise
+// Chú thích: Bài tập "Ô cửa thần kỳ" - observation exercise (giống style Chạm vào hiện tại)
 const WINDOW_STEPS = [
-    { step: 1, text: 'Hãy dành một phút nhìn ra ngoài cửa sổ hoặc xung quanh bạn' },
-    { step: 2, text: 'Đừng cố gắng đặt tên cho những gì bạn thấy' },
-    { step: 3, text: 'Chỉ cần chú ý đến màu sắc, hình dạng và sự chuyển động' },
-    { step: 4, text: 'Hãy nhìn mọi thứ như thể bạn đang thấy chúng lần đầu tiên' },
-    { step: 5, text: 'Cảm nhận sự kỳ diệu trong những điều đơn giản' },
+    { step: 1, text: 'Hãy dành một phút nhìn ra ngoài cửa sổ hoặc xung quanh bạn', emoji: '👀', color: 'bg-sky-100 border-sky-300' },
+    { step: 2, text: 'Đừng cố gắng đặt tên cho những gì bạn thấy', emoji: '🧘', color: 'bg-violet-100 border-violet-300' },
+    { step: 3, text: 'Chỉ cần chú ý đến màu sắc, hình dạng và sự chuyển động', emoji: '🎨', color: 'bg-pink-100 border-pink-300' },
+    { step: 4, text: 'Hãy nhìn mọi thứ như thể bạn đang thấy chúng lần đầu tiên', emoji: '✨', color: 'bg-amber-100 border-amber-300' },
+    { step: 5, text: 'Cảm nhận sự kỳ diệu trong những điều đơn giản', emoji: '💫', color: 'bg-emerald-100 border-emerald-300' },
 ];
 
 // Chú thích: Cấu hình các bài tập - duration được tính động
@@ -379,7 +379,7 @@ export default function PeaceCorner() {
         }
 
         if (currentMode.type === 'observation') {
-            // Chú thích: Bài tập "Ô cửa thần kỳ"
+            // Chú thích: Bài tập "Ô cửa thần kỳ" - giống style "Chạm vào hiện tại"
             const step = WINDOW_STEPS[currentStep] || WINDOW_STEPS[0];
 
             return (
@@ -397,29 +397,29 @@ export default function PeaceCorner() {
                         </div>
                     )}
 
-                    {/* Detailed instructions */}
-                    <div className="bg-amber-50 rounded-xl p-4 text-amber-900 text-sm">
-                        <p className="font-medium mb-2">Hướng dẫn chi tiết:</p>
-                        <ol className="list-decimal list-inside space-y-1 text-xs">
-                            {WINDOW_STEPS.map((s, idx) => (
-                                <li key={idx} className={isRunning && currentStep === idx ? 'font-bold text-amber-700' : ''}>
-                                    {s.text}
-                                </li>
-                            ))}
-                        </ol>
+                    {/* Steps - styled like grounding */}
+                    <div className="space-y-3">
+                        {WINDOW_STEPS.map((s, idx) => (
+                            <motion.div
+                                key={s.step}
+                                animate={{
+                                    scale: isRunning && currentStep === idx ? 1.02 : 1,
+                                    opacity: isRunning && currentStep !== idx ? 0.5 : 1
+                                }}
+                                className={`p-4 rounded-xl border-2 ${s.color} transition-all ${isRunning && currentStep === idx ? 'ring-2 ring-offset-2 ring-emerald-400' : ''
+                                    }`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className="text-2xl">{s.emoji}</span>
+                                    <div>
+                                        <p className="font-medium text-slate-800">
+                                            Bước {s.step}: {s.text}
+                                        </p>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
                     </div>
-
-                    {/* Current step highlight */}
-                    {isRunning && (
-                        <motion.div
-                            key={currentStep}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="bg-gradient-to-r from-green-400 to-emerald-400 rounded-2xl p-6 text-white text-center shadow-lg"
-                        >
-                            <p className="text-lg font-bold">{step.text}</p>
-                        </motion.div>
-                    )}
 
                     {/* Start button content */}
                     {!isRunning && phase === 'idle' && (

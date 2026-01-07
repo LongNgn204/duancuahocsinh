@@ -54,6 +54,7 @@ export default function BeeFlying() {
   const frameCountRef = useRef(0);
   const scoreRef = useRef(0);
   const gameActiveRef = useRef(false);
+  const startDelayRef = useRef(0); // Delay trước khi gravity áp dụng
 
   const [difficulty, setDifficulty] = useState('medium');
   const [score, setScore] = useState(0);
@@ -82,10 +83,11 @@ export default function BeeFlying() {
   // Chú thích: Reset game về trạng thái ban đầu
   const reset = useCallback(() => {
     beeYRef.current = HEIGHT / 2;
-    beeVelocityRef.current = 0;
+    beeVelocityRef.current = -3; // Initial upward velocity để ong không rơi ngay
     pipesRef.current = [];
     frameCountRef.current = 0;
     scoreRef.current = 0;
+    startDelayRef.current = 60; // 60 frames (~1 giây) delay trước khi ống xuất hiện
     gameActiveRef.current = true;
     setScore(0);
     setGameOver(false);
@@ -202,8 +204,10 @@ export default function BeeFlying() {
     beeVelocityRef.current += settings.gravity;
     beeYRef.current += beeVelocityRef.current;
 
-    // Chú thích: Tạo ống mới mỗi 100 frames
-    if (frameCountRef.current % 100 === 0) {
+    // Chú thích: Tạo ống mới mỗi 100 frames (sau khi qua start delay)
+    if (startDelayRef.current > 0) {
+      startDelayRef.current--;
+    } else if (frameCountRef.current % 100 === 0) {
       const minGapY = settings.gap / 2 + 50;
       const maxGapY = HEIGHT - settings.gap / 2 - 100;
       const gapY = minGapY + Math.random() * (maxGapY - minGapY);

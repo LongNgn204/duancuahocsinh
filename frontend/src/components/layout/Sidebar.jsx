@@ -25,20 +25,18 @@ const sections = [
     items: [
       { icon: Sparkles, label: 'Liều thuốc tinh thần', path: '/wellness' },
       { icon: Heart, label: 'Góc An Yên', path: '/breathing' },
+      { icon: Brain, label: 'Góc Kiến Thức', path: '/knowledge-hub' },
       { icon: Star, label: 'Lọ Biết Ơn', path: '/gratitude' },
       { icon: Timer, label: 'Góc Nhỏ', path: '/corner' },
       { icon: Shield, label: 'SOS', path: '/emergency', badge: 'SOS' },
     ],
   },
-  // Chú thích: Đưa tất cả games và Kể chuyện vào mục Thư giãn
+  // Chú thích: Gom tất cả games vào một dashboard "Trò Chơi", Bảng Màu Cảm Xúc để riêng
   {
     label: 'Thư giãn',
     items: [
       { icon: BookOpenCheck, label: 'Kể Chuyện', path: '/stories' },
-      { icon: MousePointer2, label: 'Ong Bay', path: '/games/bee-flying' },
-      { icon: Trophy, label: 'Chọn Hình', path: '/games/match-shape' },
-      { icon: Coffee, label: 'Bấm Bong Bóng', path: '/games/bubble' },
-      { icon: Brain, label: 'Ghép Màu', path: '/games/memory' },
+      { icon: Gamepad2, label: 'Trò Chơi', path: '/games' },
       { icon: Palette, label: 'Bảng Màu Cảm Xúc', path: '/games/emotion-palette' },
     ],
   },

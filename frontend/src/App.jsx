@@ -75,8 +75,8 @@ function AppLayout({ children }) {
       {/* Body */}
       <div className={`flex-1 relative z-10 ${focusMode ? 'grid place-items-center' : 'flex'}`}>
         {!focusMode && <Sidebar />}
-        <main className="flex-1 p-3 pb-8 sm:p-4 md:p-6 md:pb-8 lg:p-8 md:ml-0" role="main">
-          <div className="max-w-6xl mx-auto">
+        <main className="flex-1 overflow-x-hidden p-2 pb-20 sm:p-3 sm:pb-8 md:p-4 lg:p-6 md:ml-0" role="main">
+          <div className="w-full max-w-6xl mx-auto">
             {children}
           </div>
         </main>

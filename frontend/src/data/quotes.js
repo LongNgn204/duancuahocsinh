@@ -11,9 +11,9 @@ export const EMOTION_GROUPS = [
         id: 'motivation',
         name: 'Động lực học tập',
         icon: Flame,
-        gradient: 'from-orange-400 to-red-500',
+        gradient: 'from-orange-200 to-amber-300', // Pastel
         bg: 'bg-orange-50',
-        text: 'text-orange-600',
+        text: 'text-orange-700',
         quotes: [
             'Mỗi bước nhỏ đều đưa bạn đến gần hơn với mục tiêu!',
             'Học tập không phải là cuộc đua, hãy đi theo nhịp của riêng bạn.',
@@ -33,9 +33,9 @@ export const EMOTION_GROUPS = [
         id: 'selflove',
         name: 'Yêu bản thân',
         icon: Heart,
-        gradient: 'from-pink-400 to-rose-500',
+        gradient: 'from-pink-200 to-rose-300', // Pastel
         bg: 'bg-pink-50',
-        text: 'text-pink-600',
+        text: 'text-pink-700',
         quotes: [
             'Bạn xứng đáng được yêu thương, bắt đầu từ chính mình.',
             'Không cần hoàn hảo để được yêu thương.',
@@ -54,9 +54,9 @@ export const EMOTION_GROUPS = [
         id: 'calm',
         name: 'Bình yên',
         icon: Wind,
-        gradient: 'from-blue-400 to-cyan-500',
+        gradient: 'from-blue-200 to-cyan-300', // Pastel
         bg: 'bg-blue-50',
-        text: 'text-blue-600',
+        text: 'text-blue-700',
         quotes: [
             'Hít thở sâu, mọi thứ rồi sẽ ổn.',
             'Đừng lo lắng về ngày mai, hãy sống trọn vẹn hôm nay.',
@@ -74,9 +74,9 @@ export const EMOTION_GROUPS = [
         id: 'confidence',
         name: 'Tự tin',
         icon: Star,
-        gradient: 'from-yellow-400 to-amber-500',
+        gradient: 'from-yellow-200 to-amber-300', // Pastel
         bg: 'bg-yellow-50',
-        text: 'text-yellow-600',
+        text: 'text-yellow-700',
         quotes: [
             'Bạn có thể làm được nhiều hơn bạn nghĩ!',
             'Đừng so sánh mình với người khác.',
@@ -94,15 +94,15 @@ export const EMOTION_GROUPS = [
         id: 'stress',
         name: 'Giảm áp lực',
         icon: Shield,
-        gradient: 'from-purple-400 to-indigo-500',
+        gradient: 'from-purple-200 to-violet-300', // Pastel
         bg: 'bg-purple-50',
-        text: 'text-purple-600',
+        text: 'text-purple-700',
         quotes: [
             'Áp lực là tạm thời, sức mạnh của bạn là vĩnh viễn.',
             'Không phải lúc nào cũng phải hoàn hảo.',
             'Hãy chia nhỏ vấn đề, từng bước một.',
             'Điểm số không phải tất cả, sức khỏe tinh thần quan trọng hơn.',
-            'Bạn được phép nói "tôi cần giúp đỡ".',
+            'Bạn được phép nói \"tôi cần giúp đỡ\".',
             'Căng thẳng không có nghĩa là bạn yếu đuối.',
             'Bạn không cô đơn trong chuyện này.',
             'Hãy tập trung vào những gì bạn có thể kiểm soát.',
@@ -115,9 +115,9 @@ export const EMOTION_GROUPS = [
         id: 'grief',
         name: 'Nỗi buồn',
         icon: CloudRain,
-        gradient: 'from-slate-400 to-slate-600',
+        gradient: 'from-slate-200 to-slate-400', // Pastel
         bg: 'bg-slate-50',
-        text: 'text-slate-600',
+        text: 'text-slate-700',
         quotes: [
             'Khóc không sao cả, nước mắt giúp chữa lành.',
             'Nỗi buồn nhắc nhở chúng ta rằng mình biết yêu thương.',
@@ -133,9 +133,9 @@ export const EMOTION_GROUPS = [
         id: 'friendship',
         name: 'Tình bạn',
         icon: Users,
-        gradient: 'from-teal-400 to-emerald-500',
+        gradient: 'from-teal-200 to-emerald-300', // Pastel
         bg: 'bg-teal-50',
-        text: 'text-teal-600',
+        text: 'text-teal-700',
         quotes: [
             'Một người bạn tốt là người nghe được những điều bạn không nói.',
             'Chất lượng quan trọng hơn số lượng trong tình bạn.',
@@ -151,7 +151,7 @@ export const EMOTION_GROUPS = [
         id: 'exam',
         name: 'Mùa thi cử',
         icon: BookOpen,
-        gradient: 'from-red-400 to-rose-600',
+        gradient: 'from-rose-200 to-pink-300', // Pastel
         bg: 'bg-rose-50',
         text: 'text-rose-700',
         quotes: [
@@ -168,7 +168,7 @@ export const EMOTION_GROUPS = [
         id: 'gratitude',
         name: 'Biết ơn',
         icon: Sun,
-        gradient: 'from-yellow-300 to-orange-400',
+        gradient: 'from-yellow-200 to-orange-300', // Pastel
         bg: 'bg-yellow-50',
         text: 'text-yellow-700',
         quotes: [
@@ -185,7 +185,7 @@ export const EMOTION_GROUPS = [
         id: 'hope',
         name: 'Hy vọng',
         icon: Anchor,
-        gradient: 'from-cyan-400 to-blue-500',
+        gradient: 'from-cyan-200 to-blue-300', // Pastel
         bg: 'bg-cyan-50',
         text: 'text-cyan-700',
         quotes: [
@@ -201,7 +201,7 @@ export const EMOTION_GROUPS = [
         id: 'joy',
         name: 'Niềm vui',
         icon: Smile,
-        gradient: 'from-lime-400 to-green-500',
+        gradient: 'from-lime-200 to-green-300', // Pastel
         bg: 'bg-lime-50',
         text: 'text-lime-700',
         quotes: [
@@ -217,7 +217,7 @@ export const EMOTION_GROUPS = [
         id: 'success',
         name: 'Thành công',
         icon: Trophy,
-        gradient: 'from-violet-400 to-purple-600',
+        gradient: 'from-violet-200 to-purple-300', // Pastel
         bg: 'bg-violet-50',
         text: 'text-violet-700',
         quotes: [

@@ -2,6 +2,8 @@
 // Chú thích: Game bấm bong bóng để thư giãn
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import Card from '../ui/Card';
 
 const COLORS = [
@@ -102,10 +104,16 @@ export default function BubblePop() {
     }, [gameState, bubbles.length, createBubble]);
 
     return (
-        <div className="space-y-6">
-            <div className="text-center">
-                <h1 className="text-2xl font-bold gradient-text mb-2">🫧 Bấm Bong Bóng</h1>
-                <p className="text-[--muted]">Bấm vào các bong bóng để thư giãn!</p>
+        <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
+            {/* Header with back button */}
+            <div className="flex items-center gap-3">
+                <Link to="/games" className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 transition-colors shadow-sm">
+                    <ArrowLeft size={20} className="text-slate-600" />
+                </Link>
+                <div>
+                    <h1 className="text-xl sm:text-2xl font-bold gradient-text">🫧 Bấm Bong Bóng</h1>
+                    <p className="text-[--muted] text-sm hidden sm:block">Bấm vào các bong bóng để thư giãn!</p>
+                </div>
             </div>
 
             {/* Game Stats */}

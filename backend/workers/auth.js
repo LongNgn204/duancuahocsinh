@@ -175,6 +175,58 @@ export async function handleRegister(request, env) {
 }
 
 /**
+ * Helper tính toán stats cho user (streak, chat count)
+ */
+async function calculateUserStats(env, userId) {
+    try {
+        // 1. Chat Count (số tin nhắn user gửi)
+        const chatCountResult = await env.ban_dong_hanh_db.prepare(
+            "SELECT COUNT(*) as count FROM chat_messages WHERE user_id = ? AND role = 'user'"
+        ).bind(userId).first();
+        const chatCount = chatCountResult ? chatCountResult.count : 0;
+
+        // 2. Streak (từ bảng checkins)
+        // Lấy các ngày check-in trong 90 ngày gần nhất
+        const checkinsResult = await env.ban_dong_hanh_db.prepare(`
+            SELECT DATE(created_at) as date 
+            FROM checkins 
+            WHERE user_id = ? 
+            ORDER BY created_at DESC
+        `).bind(userId).all();
+
+        let streak = 0;
+        if (checkinsResult.results && checkinsResult.results.length > 0) {
+            const dates = [...new Set(checkinsResult.results.map(r => r.date))]; // Unique dates
+            const today = new Date().toISOString().split('T')[0];
+            const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+            // Nếu ngày mới nhất là hôm nay hoặc hôm qua thì mới tính streak
+            if (dates[0] === today || dates[0] === yesterday) {
+                streak = 1;
+                for (let i = 1; i < dates.length; i++) {
+                    const prevDate = new Date(dates[i - 1]);
+                    const currDate = new Date(dates[i]);
+                    // Tính khoảng cách ngày
+                    const diffTime = Math.abs(prevDate - currDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    if (diffDays === 1) {
+                        streak++;
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return { chatCount, streak };
+    } catch (error) {
+        console.warn('[Auth] Stats calc error (ignore):', error.message);
+        return { chatCount: 0, streak: 0 };
+    }
+}
+
+/**
  * Handler đăng nhập
  * POST /api/auth/login
  * Body: { username, password }
@@ -249,31 +301,20 @@ export async function handleLogin(request, env) {
 
         // Update last login
         try {
-            const updateResult = await env.ban_dong_hanh_db.prepare(
+            await env.ban_dong_hanh_db.prepare(
                 "UPDATE users SET last_login = datetime('now') WHERE id = ?"
             ).bind(user.id).run();
-
-            console.log('[Auth] UPDATE executed - changes:', updateResult.changes, 'success:', updateResult.success);
-
-            if (updateResult.changes === 0) {
-                console.warn('[Auth] WARNING: UPDATE affected 0 rows for user', user.id);
-            }
         } catch (updateError) {
             console.error('[Auth] UPDATE error:', updateError.message);
-            // Continue anyway - không fail login nếu update lỗi
         }
 
-        // Get updated user with last_login
+        // Get updated user (and calculate stats)
         const updatedUser = await env.ban_dong_hanh_db.prepare(
             'SELECT id, username, display_name, created_at, COALESCE(last_login, NULL) as last_login FROM users WHERE id = ?'
         ).bind(user.id).first();
 
-        console.log('[Auth] SELECT result:', {
-            id: updatedUser?.id,
-            username: updatedUser?.username,
-            last_login: updatedUser?.last_login,
-            has_last_login: 'last_login' in (updatedUser || {})
-        });
+        // Calculate stats
+        const stats = await calculateUserStats(env, user.id);
 
         // Build response
         const responseUser = {
@@ -281,18 +322,9 @@ export async function handleLogin(request, env) {
             username: updatedUser.username,
             display_name: updatedUser.display_name || updatedUser.username,
             created_at: updatedUser.created_at,
+            last_login: updatedUser.last_login || null,
+            stats: stats // Trả về stats
         };
-
-        if ('last_login' in updatedUser) {
-            responseUser.last_login = updatedUser.last_login;
-        } else {
-            const lastLoginCheck = await env.ban_dong_hanh_db.prepare(
-                'SELECT last_login FROM users WHERE id = ?'
-            ).bind(user.id).first();
-            responseUser.last_login = lastLoginCheck?.last_login || null;
-        }
-
-        console.log('[Auth] Final response user:', responseUser);
 
         return createJsonResponse({
             success: true,
@@ -342,7 +374,6 @@ export async function handleCheckUsername(request, env) {
 export async function handleGetMe(request, env) {
     try {
         const userId = request.headers.get('X-User-Id');
-
         if (!userId) {
             return createJsonResponse({ error: 'not_authenticated' }, 401);
         }
@@ -360,8 +391,15 @@ export async function handleGetMe(request, env) {
             'SELECT theme, notifications, sound, font_size FROM user_settings WHERE user_id = ?'
         ).bind(user.id).first();
 
+        // Calculate stats
+        const stats = await calculateUserStats(env, user.id);
+
         return createJsonResponse({
-            user: { ...user, settings: settings || {} }
+            user: {
+                ...user,
+                settings: settings || {},
+                stats: stats // Trả về stats
+            }
         });
 
     } catch (error) {
