@@ -1,12 +1,13 @@
 // src/components/voice/VoiceCallBot.jsx
-// Voice Call Bot component - UI for real-time voice chat with OpenAI ChatGPT
-// Web Speech API (STT) + ChatGPT backend - TTS disabled
+// Voice Call Bot component - REALTIME Audio Version
+// Uses OpenAI Realtime API (WebSocket) instead of Text Chat API
 
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Phone, PhoneOff, Mic, MicOff, Volume2 } from 'lucide-react';
-import { useVoiceCall, formatDuration } from '../../hooks/useVoiceCall';
-
+import { Phone, PhoneOff, Mic, MicOff, Volume2, AlertCircle } from 'lucide-react';
+import { formatDuration } from '../../hooks/useVoiceCall'; // Helper only
+import { OpenAIRealtimeService, AudioPlayer } from '../../services/openaiRealtime';
+import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import SOSOverlay from '../sos/SOSOverlay';
 
 /**
@@ -60,73 +61,140 @@ function CallButton({ onClick, isActive, disabled, children, variant = 'start' }
 }
 
 /**
- * VoiceCallBot - Main voice call component
+ * VoiceCallBot - Main voice call component (Realtime Audio)
  */
 export default function VoiceCallBot({ onClose }) {
-    const [showSOSOverlay, setShowSOSOverlay] = useState(false);
-    const [sosData, setSosData] = useState({ level: 'high', message: '' });
+    const [status, setStatus] = useState('idle'); // idle | connecting | active | error
+    const [isMuted, setIsMuted] = useState(false);
+    const [duration, setDuration] = useState(0);
+    const [aiSpeaking, setAiSpeaking] = useState(false);
+    const [error, setError] = useState(null);
+    const [transcript, setTranscript] = useState(''); // Used for subtitles if available
 
-    const {
-        status,
-        error,
-        duration,
-        transcript,
-        lastUserMessage,
-        isMuted,
-        isSupported,
-        sosDetected,
-        startCall,
-        endCall,
-        toggleMute,
-        clearSOS
-    } = useVoiceCall({
-        onSOS: (level, message) => {
-            console.log('[VoiceCallBot] SOS detected:', level);
-            setSosData({ level, message });
-            setShowSOSOverlay(true);
+    const durationTimerRef = useRef(null);
+    const realtimeServiceRef = useRef(null);
+    const audioPlayerRef = useRef(null);
+    const isConnectingRef = useRef(false);
+
+    // Audio Recorder
+    const { isRecording, startRecording, stopRecording } = useAudioRecorder((base64Audio) => {
+        if (realtimeServiceRef.current && !isMuted && status === 'active') {
+            realtimeServiceRef.current.sendAudio(base64Audio);
         }
     });
 
-    // v2.0: Thêm status 'listening' cho Web Speech API STT
-    const isCallActive = status === 'active' || status === 'speaking' || status === 'listening';
-    const isConnecting = status === 'connecting';
-    const isListening = (status === 'active' || status === 'listening') && !isMuted;
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            endCall();
+        };
+    }, []);
 
-    // Status messages - cập nhật cho STT flow mới
-    const statusMessage = {
-        idle: 'Sẵn sàng gọi điện',
-        connecting: 'Đang kết nối...',
-        active: isMuted ? 'Đã tắt mic - Nhấn để bật lại' : 'Nói gì đó đi...',
-        listening: 'Đang nghe bạn nói... 🎤',
-        speaking: 'AI đang trả lời...',
-        error: error || 'Có lỗi xảy ra'
+    // Duration timer
+    useEffect(() => {
+        if (status === 'active') {
+            durationTimerRef.current = setInterval(() => {
+                setDuration(prev => prev + 1);
+            }, 1000);
+        } else {
+            clearInterval(durationTimerRef.current);
+        }
+        return () => clearInterval(durationTimerRef.current);
+    }, [status]);
+
+
+    // Initialize Service
+    const initRealtimeService = useCallback(() => {
+        if (realtimeServiceRef.current) return;
+
+        // Init Audio Player
+        audioPlayerRef.current = new AudioPlayer();
+        audioPlayerRef.current.onPlaybackStart = () => setAiSpeaking(true);
+        audioPlayerRef.current.onPlaybackEnd = () => setAiSpeaking(false);
+
+        // Init OpenAI Service
+        realtimeServiceRef.current = OpenAIRealtimeService({
+            onOpen: () => {
+                setStatus('active');
+                isConnectingRef.current = false;
+                startRecording(); // Start mic immediately
+            },
+            onClose: () => {
+                if (status !== 'idle') setStatus('idle');
+                stopRecording();
+            },
+            onError: (err) => {
+                console.error("Realtime Error:", err);
+                setError("Mất kết nối với AI");
+                setStatus('error');
+                isConnectingRef.current = false;
+                stopRecording();
+            },
+            onAudioDelta: (delta) => {
+                if (audioPlayerRef.current) {
+                    audioPlayerRef.current.enqueue(delta);
+                }
+            },
+            onTranscriptDelta: (delta) => {
+                // Optional: Show live transcript
+                // setTranscript(prev => prev + delta);
+            }
+        });
+    }, [startRecording, stopRecording, status]);
+
+    const startCall = async () => {
+        if (isConnectingRef.current) return;
+
+        try {
+            setError(null);
+            setStatus('connecting');
+            isConnectingRef.current = true;
+            setDuration(0);
+
+            initRealtimeService();
+            await realtimeServiceRef.current.connect();
+
+        } catch (err) {
+            console.error("Failed to start call:", err);
+            setError("Không thể khởi động cuộc gọi");
+            setStatus('error');
+            isConnectingRef.current = false;
+        }
     };
 
-    // Chú thích: Backend handles auth, assume always available or handle connection error dynamically
-    // const isAPIAvailable = isLiveAPIAvailable(); // Removed logic
+    const endCall = () => {
+        if (realtimeServiceRef.current) {
+            realtimeServiceRef.current.disconnect();
+            realtimeServiceRef.current = null;
+        }
+        if (audioPlayerRef.current) {
+            audioPlayerRef.current.stop();
+            audioPlayerRef.current = null;
+        }
+        stopRecording();
+        setStatus('idle');
+        isConnectingRef.current = false;
+    };
 
+    const toggleMute = () => {
+        setIsMuted(prev => !prev);
+    };
 
-    // Nếu browser không hỗ trợ Web Speech API
-    if (!isSupported) {
-        return (
-            <div className="text-center p-8">
-                <p className="text-red-500 mb-4">
-                    Trình duyệt của bạn không hỗ trợ tính năng gọi điện.
-                </p>
-                <p className="text-slate-500 text-sm">
-                    Vui lòng sử dụng Chrome hoặc Edge trên máy tính.
-                </p>
-            </div>
-        );
-    }
+    // Status messages
+    const statusMessage = {
+        idle: 'Sẵn sàng gọi điện',
+        connecting: 'Đang kết nối Server...',
+        active: isMuted ? 'Đã tắt mic' : (aiSpeaking ? 'AI đang nói...' : 'Đang lắng nghe...'),
+        error: error || 'Lỗi kết nối'
+    };
 
     return (
         <div className="flex flex-col items-center justify-center min-h-[400px] p-8">
             {/* Avatar / Wave visualization */}
-            <div className="mb-8">
+            <div className="mb-8 relative">
                 <motion.div
-                    className="w-32 h-32 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-2xl"
-                    animate={isCallActive ? {
+                    className="w-32 h-32 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-2xl z-10 relative"
+                    animate={status === 'active' ? {
                         boxShadow: [
                             '0 25px 50px -12px rgba(99, 102, 241, 0.25)',
                             '0 25px 50px -12px rgba(99, 102, 241, 0.5)',
@@ -135,32 +203,38 @@ export default function VoiceCallBot({ onClose }) {
                     } : {}}
                     transition={{ duration: 2, repeat: Infinity }}
                 >
-                    {status === 'speaking' ? (
+                    {aiSpeaking ? (
                         <Volume2 size={48} className="text-white animate-pulse" />
                     ) : isMuted ? (
                         <MicOff size={48} className="text-white/50" />
                     ) : (
-                        <Mic size={48} className={`text-white ${isListening ? 'animate-pulse' : ''}`} />
+                        <Mic size={48} className={`text-white ${status === 'active' && !aiSpeaking ? 'animate-pulse' : ''}`} />
                     )}
                 </motion.div>
+
+                {/* Ping animation when active */}
+                {status === 'active' && !isMuted && (
+                    <div className="absolute inset-0 rounded-full bg-indigo-400 animate-ping opacity-20 z-0"></div>
+                )}
             </div>
 
             {/* Voice wave */}
             <div className="mb-6 h-16">
-                <VoiceWave isActive={status === 'speaking'} />
+                {/* Show wave if AI is speaking OR if User is speaking (mic active) */}
+                <VoiceWave isActive={status === 'active' && (aiSpeaking || (!isMuted && isRecording))} />
             </div>
 
             {/* Status */}
             <div className="text-center mb-8">
                 <h3 className="text-xl font-bold text-slate-800 mb-2">
-                    Bạn Đồng Hành
+                    Bạn Đồng Hành (Realtime)
                 </h3>
                 <p className={`text-sm ${status === 'error' ? 'text-red-500' : 'text-slate-500'}`}>
                     {statusMessage[status]}
                 </p>
 
                 {/* Duration */}
-                {isCallActive && (
+                {status === 'active' && (
                     <p className="text-2xl font-mono text-slate-700 mt-4">
                         {formatDuration(duration)}
                     </p>
@@ -169,7 +243,7 @@ export default function VoiceCallBot({ onClose }) {
 
             {/* Controls */}
             <div className="flex items-center gap-6">
-                {!isCallActive && !isConnecting ? (
+                {status === 'idle' || status === 'error' ? (
                     // Start call button
                     <CallButton onClick={startCall} variant="start">
                         <Phone size={28} />
@@ -186,55 +260,26 @@ export default function VoiceCallBot({ onClose }) {
                         </CallButton>
 
                         {/* End call button */}
-                        <CallButton onClick={endCall} variant="end" disabled={isConnecting}>
+                        <CallButton onClick={endCall} variant="end" disabled={status === 'connecting'}>
                             <PhoneOff size={28} />
                         </CallButton>
                     </>
                 )}
             </div>
 
+            {status === 'error' && (
+                <div className="mt-6 flex items-center gap-2 text-red-500 bg-red-50 px-4 py-2 rounded-lg text-sm">
+                    <AlertCircle size={16} />
+                    <span>{error}</span>
+                </div>
+            )}
+
             {/* Hint */}
             {status === 'idle' && (
                 <p className="text-sm text-slate-400 mt-8 text-center max-w-xs">
-                    Nhấn nút xanh để bắt đầu trò chuyện bằng giọng nói với AI
+                    Chế độ hội thoại thời gian thực (Realtime Audio).<br />Sẵn sàng lắng nghe và trò chuyện ngay lập tức.
                 </p>
             )}
-
-            {/* Transcript preview - Hiển thị cả interim và tin nhắn cuối */}
-            <AnimatePresence>
-                {(transcript || lastUserMessage) && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="mt-8 p-4 bg-slate-50 rounded-xl max-w-sm"
-                    >
-                        {/* Tin nhắn cuối của user */}
-                        {lastUserMessage && !transcript && (
-                            <p className="text-sm text-indigo-600 font-medium line-clamp-2">
-                                Bạn: {lastUserMessage}
-                            </p>
-                        )}
-                        {/* Đang nói (interim) */}
-                        {transcript && (
-                            <p className="text-sm text-slate-500 italic line-clamp-2">
-                                {transcript}...
-                            </p>
-                        )}
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* SOS Overlay */}
-            <SOSOverlay
-                isOpen={showSOSOverlay}
-                onClose={() => {
-                    setShowSOSOverlay(false);
-                    clearSOS();
-                }}
-                riskLevel={sosData.level}
-                triggerText={sosData.message}
-            />
         </div>
     );
 }
