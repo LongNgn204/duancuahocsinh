@@ -35,8 +35,8 @@ renamed_classes = [{ from = "VoiceCallSession", to = "VoiceCallSessionOpenAI" }]
 # CORS origin allow-list
 ALLOW_ORIGIN = "http://localhost:5173,https://duancuahocsinh.pages.dev,*.bandonghanh.pages.dev"
 # Workers AI model (chỉ dùng cho embeddings, KHÔNG dùng cho chat)
-# Chat sử dụng OpenAI ChatGPT (gpt-4o-mini) - xem ai-proxy.js
-MODEL = "@cf/meta/llama-3.1-8b-instruct"
+# Chat sử dụng OpenRouter (set via: wrangler secret put OPENROUTER_API_KEY)
+MODEL = "mistralai/devstral-2512:free"
 # Token limit hàng tháng
 MONTHLY_TOKEN_LIMIT = "500000"
 # Token budget hàng ngày cho AI (kiểm soát chi phí)
