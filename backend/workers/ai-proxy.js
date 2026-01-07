@@ -7,18 +7,20 @@ import { sanitizeInput } from './sanitize.js';
 import { formatMessagesForLLM, getRecentMessages, createMemorySummary } from './memory.js';
 import { hybridSearch, formatRAGContext } from './rag.js';
 import { redactPII } from './pii-redactor.js';
+import { shouldSearch, searchDuckDuckGo, formatSearchContext } from './web-search.js';
 
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
 
-// Model rẻ nhất của OpenAI: gpt-4o-mini (~$0.15/1M input, $0.60/1M output)
+// Chú thích: Sử dụng OpenRouter vì OpenAI API không hỗ trợ Việt Nam
+// Model miễn phí: xiaomi/mimo-v2-flash:free
+const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const OPENROUTER_MODEL = 'xiaomi/mimo-v2-flash:free'; // Model miễn phí
+
+// Fallback OpenAI (không dùng vì lỗi region)
 const OPENAI_MODEL = 'gpt-4o-mini';
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-
-// Fallback: OpenRouter nếu muốn dùng multi-provider
-const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const OPENROUTER_MODEL = 'openai/gpt-4o-mini'; // Qua OpenRouter
 
 // System prompt cho Bạn Đồng Hành - người bạn thấu hiểu cảm xúc học sinh
 const SYSTEM_PROMPT = `Bạn là "Bạn Đồng Hành", một người bạn AI thân thiết và thấu hiểu cảm xúc dành cho học sinh Việt Nam.
@@ -72,13 +74,15 @@ async function callOpenAI(messages, env, options = {}) {
     temperature = 0.7,
   } = options;
 
-  // Ưu tiên OpenAI API key, fallback sang OpenRouter
-  const apiKey = env.OPENAI_API_KEY || env.OPENROUTER_API_KEY;
+  // Chú thích: Ưu tiên OpenRouter vì OpenAI API KHÔNG hỗ trợ Việt Nam
+  // Lỗi: "unsupported_country_region_territory" khi gọi trực tiếp OpenAI
+  const apiKey = env.OPENROUTER_API_KEY || env.OPENAI_API_KEY;
   if (!apiKey) {
-    throw new Error('Missing API key: Set OPENAI_API_KEY or OPENROUTER_API_KEY');
+    throw new Error('Missing API key: Set OPENROUTER_API_KEY or OPENAI_API_KEY');
   }
 
-  const useOpenRouter = !env.OPENAI_API_KEY && env.OPENROUTER_API_KEY;
+  // Luôn dùng OpenRouter nếu có key (để tránh lỗi region)
+  const useOpenRouter = !!env.OPENROUTER_API_KEY;
   const apiUrl = useOpenRouter ? OPENROUTER_API_URL : OPENAI_API_URL;
   const model = useOpenRouter ? OPENROUTER_MODEL : OPENAI_MODEL;
 
@@ -243,13 +247,27 @@ export default {
       // Get RAG context (cho câu hỏi học thuật)
       const ragContext = await getRAGContext(env, redactedMessage);
 
+      // Web Search (cho thông tin mới nhất)
+      let webSearchContext = null;
+      if (shouldSearch(redactedMessage)) {
+        console.log('[AI] Running web search for:', redactedMessage.substring(0, 50));
+        const searchResult = await searchDuckDuckGo(redactedMessage);
+        if (searchResult) {
+          webSearchContext = formatSearchContext(searchResult);
+          console.log('[AI] Web search found results');
+        }
+      }
+
       // Create memory summary nếu history dài
       const memorySummary = createMemorySummary(history, 8);
 
-      // Build system prompt với RAG context
+      // Build system prompt với RAG context và Web Search
       let systemPrompt = SYSTEM_PROMPT;
       if (ragContext) {
         systemPrompt += `\n\n${ragContext}`;
+      }
+      if (webSearchContext) {
+        systemPrompt += `\n\n${webSearchContext}`;
       }
 
       // Format messages cho LLM
@@ -285,6 +303,7 @@ export default {
               fullResponse,
               riskLevel,
               hasRAG: !!ragContext,
+              hasWebSearch: !!webSearchContext,
               latencyMs: Date.now() - t0,
             })}\n\n`));
           } catch (err) {
