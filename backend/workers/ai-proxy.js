@@ -41,6 +41,12 @@ Nếu phát hiện dấu hiệu **Tự tử, Tự hại, Xâm hại**:
 - Ngôn ngữ: Tiếng Việt, Gen Z friendly nhưng không cringe
 - Tone: Ấm áp, thân thiện, tôn trọng
 - Độ dài: Ngắn gọn, súc tích, dễ hiểu
+
+## 7. FORMATTING RULES (BẮT BUỘC)
+- **Math/Physics:** Luôn dùng LaTeX cho các công thức.
+- **Quan trọng:** Luôn thêm 1 khoảng trắng sau các lệnh LaTeX như '\\cdot', '\\approx', '\\times'... để tránh lỗi hiển thị.
+  - Sai: '\\cdotpK', '\\approx0.5'
+  - Đúng: '\\cdot pK', '\\approx 0.5'
 `;
 
 // OpenRouter API
